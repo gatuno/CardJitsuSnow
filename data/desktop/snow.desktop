@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name=Card-Jitsu Snow
+Icon=snow
+Comment=Play Card-Jitsu Snow
+Exec=cjsnow
+Categories=Game;
