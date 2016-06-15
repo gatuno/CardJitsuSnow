@@ -37,29 +37,32 @@
 #define _(string) gettext (string)
 
 #include "path.h"
+#include "snow.h"
 
-#define FPS (1000/24)
+#include "water_ninja.h"
+
+#define FPS (1000/30)
 
 /* Enumerar las imágenes */
 enum {
-	IMG_NONE,
+	//IMG_NONE,
 	
 	NUM_IMAGES
 };
 
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
-	"images/none.png",
+	//"images/none.png",
 };
 
 enum {
-	SND_NONE,
+	//SND_NONE,
 	
 	NUM_SOUNDS
 };
 
 const char *sound_names[NUM_SOUNDS] = {
-	"sounds/none.wav",
+	//"sounds/none.wav",
 };
 
 /* Codigos de salida */
@@ -97,9 +100,9 @@ int main (int argc, char *argv[]) {
 	
 	setup ();
 	do {
-		if (game_intro () == GAME_QUIT) break;
+		//if (game_intro () == GAME_QUIT) break;
 		if (game_loop () == GAME_QUIT) break;
-		if (game_finish () == GAME_QUIT) break;
+		//if (game_finish () == GAME_QUIT) break;
 	} while (1 == 0);
 	
 	SDL_Quit ();
@@ -224,6 +227,10 @@ int game_loop (void) {
 	Uint32 last_time, now_time;
 	SDL_Rect rect;
 	
+	WaterNinja *water;
+	
+	water = crear_water_ninja ();
+	
 	/* Predibujar todo */
 	SDL_RenderClear (renderer);
 	SDL_RenderPresent (renderer);
@@ -258,15 +265,29 @@ int game_loop (void) {
 					if (key == SDLK_ESCAPE) {
 						done = GAME_QUIT;
 					}
+					
+					if (key == SDLK_a) {
+						attack_water (water);
+					} else if (key == SDLK_s) {
+						celebrate_water (water);
+					} else if (key == SDLK_d) {
+						move_water (water);
+					} else if (key == SDLK_f) {
+						ko_water (water);
+					} else if (key == SDLK_g) {
+						hit_water (water);
+					}
 					break;
 			}
 		}
+		SDL_RenderClear (renderer);
+		
+		dibujar_water (water);
 		
 		SDL_RenderPresent (renderer);
 		
 		now_time = SDL_GetTicks ();
 		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
-		
 	} while (!done);
 	
 	return done;
@@ -276,9 +297,6 @@ void setup (void) {
 	SDL_Surface * image;
 	SDL_Texture * texture;
 	
-	//TTF_Font *ttf10, *ttf14, *ttf16, *ttf26, *temp_font;
-	SDL_Color color;
-	SDL_Rect rect, rect2;
 	int g;
 	char buffer_file[8192];
 	
@@ -355,10 +373,13 @@ void setup (void) {
 			SDL_Quit ();
 			exit (1);
 		}
-		
-		images[g] = image;
+		texture = SDL_CreateTextureFromSurface (renderer, image);
+		images[g] = texture;
+		SDL_FreeSurface (image);
 		/* TODO: Mostrar la carga de porcentaje */
 	}
+	
+	setup_water_ninja ();
 	
 	if (use_sound) {
 		for (g = 0; g < NUM_SOUNDS; g++) {

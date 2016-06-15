@@ -1,6 +1,19 @@
 gamedatadir = $(pkgdatadir)/data
 
-nobase_dist_gamedata_DATA = 
+nobase_dist_gamedata_DATA = images/water_ninja/idle.png \
+	images/water_ninja/attack.png \
+	images/water_ninja/celebrate.png \
+	images/water_ninja/move.png \
+	images/water_ninja/ghost.png \
+	images/water_ninja/hit.png \
+	images/water_ninja/knockout_intro.png \
+	images/water_ninja/knockout_loop.png \
+	images/water_ninja/powercard_fishdrop.png \
+	images/water_ninja/powercard_summon.png \
+	images/water_ninja/powercard_water_loop.png \
+	images/water_ninja/revived.png \
+	images/water_ninja/revive_other.png \
+	images/water_ninja/revive_other_loop.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications
