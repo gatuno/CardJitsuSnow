@@ -43,16 +43,54 @@
 
 #define FPS (1000/30)
 
+#define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
+
 /* Enumerar las imágenes */
 enum {
-	//IMG_NONE,
+	IMG_BACKGROUND_1,
+	IMG_BACKGROUND_2,
+	IMG_BACKGROUND_3,
+	
+	IMG_FOREGROUND_1,
+	IMG_FOREGROUND_2,
+	
+	IMG_CRAG_ROCK,
+	IMG_ROCK,
+	
+	IMG_UI_FIRE_CARDS,
+	IMG_UI_SNOW_CARDS,
+	IMG_UI_WATER_CARDS,
+	
+	IMG_UI_FRAME,
+	IMG_UI_TILE_ATTACK,
+	IMG_UI_TILE_HEAL,
+	IMG_UI_TILE_MOVE,
+	IMG_UI_TILE_NO_MOVE,
 	
 	NUM_IMAGES
 };
 
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
-	//"images/none.png",
+	"images/background_1.png",
+	"images/background_2.png",
+	"images/background_3.png",
+	
+	"images/foreground_1.png",
+	"images/foreground_2.png",
+	
+	"images/crag_rock.png",
+	"images/rock.png",
+	
+	"images/ui_fire_cards.png",
+	"images/ui_snow_cards.png",
+	"images/ui_water_cards.png",
+	
+	"images/frame.png",
+	"images/tile_attack.png",
+	"images/tile_heal.png",
+	"images/tile_move.png",
+	"images/tile_no_move.png"
 };
 
 enum {
@@ -70,6 +108,32 @@ enum {
 	GAME_NONE = 0, /* No usado */
 	GAME_CONTINUE,
 	GAME_QUIT
+};
+
+/* Objetos */
+enum {
+	NONE = 0,
+	
+	NINJA_FIRE,
+	NINJA_SNOW,
+	NINJA_WATER,
+	
+	ROCK,
+	
+	NUM_OBJECTS
+};
+
+/* Acciones */
+enum {
+	NO_ACTION = 0,
+	MOVE,
+	CANT_MOVE,
+	
+	NINJA_FIRE_MOVE,
+	NINJA_SNOW_MOVE,
+	NINJA_WATER_MOVE,
+	
+	NUM_ACTIONS
 };
 
 /* Prototipos de función */
@@ -109,6 +173,7 @@ int main (int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+#if 0
 int game_intro (void) {
 	int done = 0;
 	SDL_Event event;
@@ -219,6 +284,7 @@ int game_finish (void) {
 	
 	return done;
 }
+#endif
 
 int game_loop (void) {
 	int done = 0;
@@ -227,9 +293,20 @@ int game_loop (void) {
 	Uint32 last_time, now_time;
 	SDL_Rect rect;
 	
-	WaterNinja *water;
+	int g, h, i;
 	
-	water = crear_water_ninja ();
+	int fondo;
+	WaterNinja *water;
+	int escenario[5][9];
+	int acciones[5][9];
+	
+	memset (escenario, 0, sizeof (escenario));
+	
+	escenario[0][2] = escenario[0][6] = escenario[4][2] = escenario[4][6] = ROCK;
+	
+	fondo = RANDOM(3);
+	water = crear_water_ninja (0, 0);
+	escenario[0][0] = NINJA_WATER;
 	
 	/* Predibujar todo */
 	SDL_RenderClear (renderer);
@@ -276,14 +353,63 @@ int game_loop (void) {
 						ko_water (water);
 					} else if (key == SDLK_g) {
 						hit_water (water);
+					} else if (key == SDLK_h) {
+						revive_water (water);
+					} else if (key == SDLK_DOWN) {
+						add_water_offset (water, 0, 1);
+					} else if (key == SDLK_UP) {
+						add_water_offset (water, 0, -1);
+					} else if (key == SDLK_LEFT) {
+						add_water_offset (water, -1, 0);
+					} else if (key == SDLK_RIGHT) {
+						add_water_offset (water, 1, 0);
 					}
 					break;
 			}
 		}
-		SDL_RenderClear (renderer);
+		/* Borrar con el fondo */
+		SDL_RenderCopy (renderer, images[IMG_BACKGROUND_1 + fondo], NULL, NULL);
 		
-		dibujar_water (water);
+		if (fondo == 0) {
+			i = IMG_CRAG_ROCK;
+		} else {
+			i = IMG_ROCK;
+		}
 		
+		rect.x = MAP_X;
+		rect.y = MAP_Y;
+		SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
+		
+		/* Dibujar todos los objetos */
+		for (g = 0; g < 5; g++) {
+			for (h = 0; h < 9; h++) {
+				if (escenario[g][h] == NONE) continue;
+				
+				if (escenario[g][h] == ROCK) {
+					/* Dibujar la piedra */
+					rect.x = MAP_X + (h * 70);
+					rect.y = MAP_Y + (g * 70);
+					SDL_QueryTexture (images[i], NULL, NULL, &rect.w, &rect.h);
+					
+					SDL_RenderCopy (renderer, images[i], NULL, &rect);
+				} else if (escenario[g][h] == NINJA_WATER) {
+					dibujar_water (water);
+				}
+			}
+		}
+		
+		/* Dibujar el frente */
+		if (fondo == 0) {
+			rect.x = 0;
+			rect.y = 298;
+			rect.w = 800;
+			rect.h = 202;
+			
+			SDL_RenderCopy (renderer, images[IMG_FOREGROUND_1], NULL, &rect);
+		} else if (fondo == 1) {
+			SDL_RenderCopy (renderer, images[IMG_FOREGROUND_2], NULL, NULL);
+		}
 		SDL_RenderPresent (renderer);
 		
 		now_time = SDL_GetTicks ();
@@ -308,14 +434,8 @@ void setup (void) {
 			"%s\n"), SDL_GetError());
 		exit (1);
 	}
-	sprintf (buffer_file, "%simages/icon.png", systemdata_path);
-	image = IMG_Load (buffer_file);
-	if (image) {
-		SDL_SetWindowIcon (ventana, image);
-		SDL_FreeSurface (image);
-	}
 	
-	ventana = SDL_CreateWindow (_("Card-Jitsu Snow"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, 0);
+	ventana = SDL_CreateWindow (_("Card-Jitsu Snow"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 500, 0);
 	
 	if (ventana == NULL) {
 		fprintf (stderr,
@@ -324,6 +444,13 @@ void setup (void) {
 			"%s\n"), SDL_GetError());
 		SDL_Quit ();
 		exit (1);
+	}
+	
+	sprintf (buffer_file, "%simages/icon.png", systemdata_path);
+	image = IMG_Load (buffer_file);
+	if (image) {
+		SDL_SetWindowIcon (ventana, image);
+		SDL_FreeSurface (image);
 	}
 	
 	renderer = SDL_CreateRenderer (ventana, -1, SDL_RENDERER_PRESENTVSYNC);

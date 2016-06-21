@@ -38,6 +38,9 @@ typedef struct {
 #define TRUE !FALSE
 #endif
 
+#define MAP_X 90
+#define MAP_Y 80
+
 extern SDL_Renderer *renderer;
 
 extern int use_sound;

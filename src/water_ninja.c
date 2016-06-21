@@ -85,147 +85,171 @@ static const char *water_ninja_images_names[NUM_WATER_NINJA_IMAGES] = {
 };
 
 static SnowSprite sprite_idle[] = {
-	{2,694,90,83,7,15,FALSE},
-	{2,609,90,83,7,15,FALSE},
-	{2,437,90,85,7,13,FALSE},
-	{2,350,90,85,7,13,FALSE},
-	{2,263,90,85,7,13,FALSE},
-	{2,868,88,87,9,11,FALSE},
-	{2,779,88,87,9,11,FALSE},
-	{2,176,90,85,7,13,FALSE},
-	{2,89,90,85,7,13,FALSE},
-	{2,2,90,85,7,13,FALSE},
-	{2,524,90,83,7,15,FALSE},
+	{2,694,90,83,-23,-15,FALSE},
+	{2,609,90,83,-23,-15,FALSE},
+	{2,437,90,85,-23,-17,FALSE},
+	{2,350,90,85,-23,-17,FALSE},
+	{2,263,90,85,-23,-17,FALSE},
+	{2,868,88,87,-21,-19,FALSE},
+	{2,779,88,87,-21,-19,FALSE},
+	{2,176,90,85,-23,-17,FALSE},
+	{2,89,90,85,-23,-17,FALSE},
+	{2,2,90,85,-23,-17,FALSE},
+	{2,524,90,83,-23,-15,FALSE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_attack[] = {
-	{266,336,93,86,38,12,FALSE},
-	{2,262,69,72,63,26,FALSE},
-	{158,336,65,76,60,22,TRUE},
-	{151,250,65,76,60,22,FALSE},
-	{73,262,65,76,60,22,TRUE},
-	{80,336,65,76,60,22,TRUE},
-	{2,336,65,76,60,22,TRUE},
-	{447,94,133,54,3,44,TRUE},
-	{278,182,111,64,20,47,FALSE},
-	{155,2,151,74,21,26,FALSE},
-	{2,178,125,82,53,16,FALSE},
-	{155,78,147,80,31,18,FALSE},
-	{147,160,129,88,47,10,FALSE},
-	{304,94,141,86,39,12,FALSE},
-	{2,90,143,86,39,12,FALSE},
-	{308,2,147,90,37,8,FALSE},
-	{2,2,151,86,36,12,FALSE},
-	{391,229,109,86,39,12,FALSE},
-	{178,405,93,86,38,12,TRUE},
-	{90,405,93,86,38,12,TRUE},
-	{2,405,93,86,38,12,TRUE},
-	{373,317,93,86,38,12,FALSE},
-	{278,248,93,86,38,12,FALSE},
-	{266,336,93,86,38,12,FALSE},
+	{266,336,93,86,-26,-18,FALSE},
+	{2,262,69,72,-1,-4,FALSE},
+	{158,336,65,76,-4,-8,TRUE},
+	{151,250,65,76,-4,-8,FALSE},
+	{73,262,65,76,-4,-8,TRUE},
+	{80,336,65,76,-4,-8,TRUE},
+	{2,336,65,76,-4,-8,TRUE},
+	{447,94,133,54,-61,14,TRUE},
+	{278,182,111,64,-44,17,FALSE},
+	{155,2,151,74,-43,-4,FALSE},
+	{2,178,125,82,-11,-14,FALSE},
+	{155,78,147,80,-33,-12,FALSE},
+	{147,160,129,88,-17,-20,FALSE},
+	{304,94,141,86,-25,-18,FALSE},
+	{2,90,143,86,-25,-18,FALSE},
+	{308,2,147,90,-27,-22,FALSE},
+	{2,2,151,86,-28,-18,FALSE},
+	{391,229,109,86,-25,-18,FALSE},
+	{178,405,93,86,-26,-18,TRUE},
+	{90,405,93,86,-26,-18,TRUE},
+	{2,405,93,86,-26,-18,TRUE},
+	{373,317,93,86,-26,-18,FALSE},
+	{278,248,93,86,-26,-18,FALSE},
+	{266,336,93,86,-26,-18,FALSE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_celebrate[] = {
-	{2,88,86,94,29,24,TRUE},
-	{152,380,62,98,44,20,FALSE},
-	{448,402,62,98,44,20,FALSE},
-	{384,402,62,98,44,20,FALSE},
-	{284,364,62,98,44,20,TRUE},
-	{2,392,62,98,44,20,FALSE},
-	{448,104,62,98,44,20,FALSE},
-	{448,2,62,100,44,18,FALSE},
-	{68,370,82,80,26,38,FALSE},
-	{206,164,88,82,29,52,FALSE},
-	{2,2,114,84,37,54,FALSE},
-	{350,2,96,84,37,60,FALSE},
-	{236,2,112,82,43,60,FALSE},
-	{340,88,106,76,49,62,FALSE},
-	{232,86,106,76,49,62,FALSE},
-	{98,162,106,74,49,62,FALSE},
-	{2,176,106,72,50,62,TRUE},
-	{118,84,112,76,49,61,FALSE},
-	{118,2,116,80,49,61,FALSE},
-	{176,314,106,64,49,62,FALSE},
-	{68,304,106,64,49,62,FALSE},
-	{400,336,106,64,49,62,FALSE},
-	{292,298,106,64,49,62,FALSE},
-	{184,248,106,64,49,62,FALSE},
-	{404,270,106,64,49,62,FALSE},
-	{296,232,106,64,49,62,FALSE},
-	{404,204,106,64,49,62,FALSE},
-	{296,166,106,64,49,62,FALSE},
-	{2,284,106,64,49,62,TRUE},
-	{76,238,106,64,49,62,FALSE},
+	{2,88,86,94,-15,-28,TRUE},
+	{152,380,62,98,0,-32,FALSE},
+	{448,402,62,98,0,-32,FALSE},
+	{384,402,62,98,0,-32,FALSE},
+	{284,364,62,98,0,-32,TRUE},
+	{2,392,62,98,0,-32,FALSE},
+	{448,104,62,98,0,-32,FALSE},
+	{448,2,62,100,0,-34,FALSE},
+	{68,370,82,80,-18,-14,FALSE},
+	{206,164,88,82,-15,0,FALSE},
+	{2,2,114,84,-7,2,FALSE},
+	{350,2,96,84,-7,8,FALSE},
+	{236,2,112,82,-1,8,FALSE},
+	{340,88,106,76,5,10,FALSE},
+	{232,86,106,76,5,10,FALSE},
+	{98,162,106,74,5,10,FALSE},
+	{2,176,106,72,6,10,TRUE},
+	{118,84,112,76,5,9,FALSE},
+	{118,2,116,80,5,9,FALSE},
+	{176,314,106,64,5,10,FALSE},
+	{68,304,106,64,5,10,FALSE},
+	{400,336,106,64,5,10,FALSE},
+	{292,298,106,64,5,10,FALSE},
+	{184,248,106,64,5,10,FALSE},
+	{404,270,106,64,5,10,FALSE},
+	{296,232,106,64,5,10,FALSE},
+	{404,204,106,64,5,10,FALSE},
+	{296,166,106,64,5,10,FALSE},
+	{2,284,106,64,5,10,TRUE},
+	{76,238,106,64,5,10,FALSE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_move[] = {
-	{101,204,72,95,16,22,TRUE},
-	{103,66,70,97,17,20,TRUE},
-	{2,130,66,97,19,20,TRUE},
-	{2,198,64,97,19,20,TRUE},
-	{2,66,62,99,21,18,TRUE},
-	{103,2,62,99,21,19,TRUE},
-	{2,2,62,99,21,20,TRUE},
-	{101,138,64,97,19,21,TRUE},
-	{99,278,68,95,19,22,TRUE},
-	{2,264,70,95,18,22,TRUE},
+	{101,204,72,95,-6,-27,TRUE},
+	{103,66,70,97,-5,-29,TRUE},
+	{2,130,66,97,-3,-29,TRUE},
+	{2,198,64,97,-3,-29,TRUE},
+	{2,66,62,99,-1,-31,TRUE},
+	{103,2,62,99,-1,-30,TRUE},
+	{2,2,62,99,-1,-29,TRUE},
+	{101,138,64,97,-3,-28,TRUE},
+	{99,278,68,95,-3,-27,TRUE},
+	{2,264,70,95,-4,-27,TRUE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_hit[] = {
-	{119,160,105,80,15,19,FALSE},
-	{2,86,115,76,11,23,FALSE},
-	{2,2,125,82,11,17,FALSE},
-	{129,2,125,78,10,22,FALSE},
-	{129,82,125,76,12,23,FALSE},
-	{2,409,79,84,53,15,TRUE},
-	{2,332,75,86,50,13,TRUE},
-	{93,326,89,82,36,17,FALSE},
-	{2,248,89,82,36,17,FALSE},
-	{93,242,89,82,36,17,FALSE},
-	{2,164,89,82,36,17,FALSE},
+	{119,160,105,80,-44,-11,FALSE},
+	{2,86,115,76,-48,-7,FALSE},
+	{2,2,125,82,-48,-13,FALSE},
+	{129,2,125,78,-49,-8,FALSE},
+	{129,82,125,76,-47,-7,FALSE},
+	{2,409,79,84,-6,-15,TRUE},
+	{2,332,75,86,-9,-17,TRUE},
+	{93,326,89,82,-23,-13,FALSE},
+	{2,248,89,82,-23,-13,FALSE},
+	{93,242,89,82,-23,-13,FALSE},
+	{2,164,89,82,-23,-13,FALSE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_ko_intro[] = {
-	{182,266,83,64,29,25,TRUE},
-	{2,160,91,70,27,19,FALSE},
-	{103,2,97,82,27,7,FALSE},
-	{2,80,97,78,28,13,FALSE},
-	{2,2,99,76,29,13,FALSE},
-	{101,144,95,76,28,13,FALSE},
-	{2,434,81,76,29,13,FALSE},
-	{176,351,81,76,29,18,TRUE},
-	{89,338,85,54,29,36,FALSE},
-	{200,86,91,54,29,36,TRUE},
-	{101,86,97,56,28,35,FALSE},
-	{2,290,85,56,28,35,FALSE},
-	{89,280,85,56,28,35,FALSE},
-	{2,232,85,56,28,35,FALSE},
-	{95,222,85,56,28,35,FALSE},
-	{198,179,85,56,28,35,TRUE},
+	{182,266,83,64,-16,4,TRUE},
+	{2,160,91,70,-18,-2,FALSE},
+	{103,2,97,82,-18,-14,FALSE},
+	{2,80,97,78,-17,-8,FALSE},
+	{2,2,99,76,-16,-8,FALSE},
+	{101,144,95,76,-17,-8,FALSE},
+	{2,434,81,76,-16,-8,FALSE},
+	{176,351,81,76,-16,-3,TRUE},
+	{89,338,85,54,-16,15,FALSE},
+	{200,86,91,54,-16,15,TRUE},
+	{101,86,97,56,-17,14,FALSE},
+	{2,290,85,56,-17,14,FALSE},
+	{89,280,85,56,-17,14,FALSE},
+	{2,232,85,56,-17,14,FALSE},
+	{95,222,85,56,-17,14,FALSE},
+	{198,179,85,56,-17,14,TRUE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
 static SnowSprite sprite_ko_loop[] = {
-	{2,350,85,56,28,35,TRUE},
-	{176,263,85,56,28,35,TRUE},
-	{89,234,85,56,28,35,FALSE},
-	{2,234,85,56,28,35,FALSE},
-	{176,176,85,56,28,35,TRUE},
-	{89,176,85,56,28,35,FALSE},
-	{2,176,85,56,28,35,FALSE},
-	{89,118,85,56,28,35,FALSE},
-	{2,118,85,56,28,35,FALSE},
-	{176,89,85,56,28,35,TRUE},
-	{89,60,85,56,28,35,FALSE},
-	{2,60,85,56,28,35,FALSE},
-	{176,2,85,56,28,35,TRUE},
-	{89,2,85,56,28,35,FALSE},
-	{2,2,85,56,28,35,FALSE},
+	{2,350,85,56,-17,14,TRUE},
+	{176,263,85,56,-17,14,TRUE},
+	{89,234,85,56,-17,14,FALSE},
+	{2,234,85,56,-17,14,FALSE},
+	{176,176,85,56,-17,14,TRUE},
+	{89,176,85,56,-17,14,FALSE},
+	{2,176,85,56,-17,14,FALSE},
+	{89,118,85,56,-17,14,FALSE},
+	{2,118,85,56,-17,14,FALSE},
+	{176,89,85,56,-17,14,TRUE},
+	{89,60,85,56,-17,14,FALSE},
+	{2,60,85,56,-17,14,FALSE},
+	{176,2,85,56,-17,14,TRUE},
+	{89,2,85,56,-17,14,FALSE},
+	{2,2,85,56,-17,14,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_revived[] = {
+	{158,391,85,55,-17,14,FALSE},
+	{93,451,85,55,-17,14,FALSE},
+	{188,218,87,67,-16,5,FALSE},
+	{107,2,87,123,-10,-53,FALSE},
+	{103,155,83,133,-9,-65,FALSE},
+	{2,308,89,151,-11,-84,FALSE},
+	{2,155,99,151,-17,-84,FALSE},
+	{2,2,103,151,-19,-84,FALSE},
+	{93,308,63,141,4,-74,FALSE},
+	{158,290,93,99,-23,-32,FALSE},
+	{362,2,87,79,-20,-12,TRUE},
+	{328,378,87,77,-20,-10,TRUE},
+	{354,93,89,81,-22,-14,TRUE},
+	{277,184,89,81,-22,-14,TRUE},
+	{279,2,89,81,-22,-14,TRUE},
+	{271,93,89,81,-22,-14,TRUE},
+	{196,2,89,81,-22,-14,TRUE},
+	{253,287,89,81,-22,-14,TRUE},
+	{188,127,89,81,-22,-14,TRUE},
+	{245,391,89,81,-22,-14,TRUE},
 	{-1,-1,-1,-1,-1,-1,FALSE}
 };
 
@@ -237,29 +261,37 @@ SnowSprite *water_animations[NUM_WATER_NINJA_IMAGES] = {
 	NULL,
 	sprite_hit,
 	sprite_ko_intro,
-	sprite_ko_loop
+	sprite_ko_loop,
+	NULL,
+	NULL,
+	NULL,
+	sprite_revived,
 };
 
 struct _WaterNinja {
 	int frame;
 	int x, y;
 	int estado;
-	
+	int x_real, y_real;
+	int offset_x, offset_y;
 };
 
 static SDL_Texture *water_ninja_images[NUM_WATER_NINJA_IMAGES];
 
-WaterNinja *crear_water_ninja (void) {
+WaterNinja *crear_water_ninja (int x, int y) {
 	WaterNinja *obj;
 	
 	obj = (WaterNinja *) malloc (sizeof (WaterNinja));
 	
-	obj->x = 50;
-	obj->y = 200;
+	obj->x = x;
+	obj->y = y;
+	obj->x_real = MAP_X + (x * 70);
+	obj->y_real = MAP_Y + (y * 70);
 	
 	obj->estado = WATER_NINJA_IDLE;
 	obj->frame = 0;
 	
+	obj->offset_x = obj->offset_y = 0;
 	return obj;
 }
 
@@ -288,24 +320,42 @@ void hit_water (WaterNinja *ninja) {
 	ninja->estado = WATER_NINJA_HIT;
 }
 
+void revive_water (WaterNinja *ninja) {
+	ninja->frame = 0;
+	ninja->estado = WATER_NINJA_REVIVED;
+}
+
+void add_water_offset (WaterNinja *ninja, int x, int y) {
+	ninja->offset_x += x;
+	ninja->offset_y += y;
+	
+	printf ("Water Ninja Offsets: %i, %i\n", ninja->offset_x, ninja->offset_y);
+}
+
 void dibujar_water (WaterNinja *ninja) {
 	SDL_Rect rect, rect2, rect3;
 	int calc;
 	int temp;
 	int est;
+	int sx, sy;
 	
 	est = ninja->estado;
-	//est = WATER_NINJA_ATTACK;
 	
+	sx = ninja->offset_x;
+	sy = ninja->offset_y;
+	if (est == WATER_NINJA_IDLE || est == WATER_NINJA_ATTACK || est == WATER_NINJA_CELEBRATE || est == WATER_NINJA_MOVE || est == WATER_NINJA_HIT || est == WATER_NINJA_REVIVED) {
+		ninja->offset_x = 0;
+		ninja->offset_y = 0;
+	}
 	calc = ninja->frame / 2;
-	//calc = 7;
+	
 	rect2.x = water_animations[est][calc].orig_x;
 	rect2.y = water_animations[est][calc].orig_y;
 	rect.w = rect2.w = water_animations[est][calc].w;
 	rect.h = rect2.h = water_animations[est][calc].h;
 	
-	rect.x = ninja->x + water_animations[est][calc].dest_x;
-	rect.y = ninja->y + water_animations[est][calc].dest_y;
+	rect.x = ninja->x_real + ninja->offset_x + water_animations[est][calc].dest_x;
+	rect.y = ninja->y_real + ninja->offset_y + water_animations[est][calc].dest_y;
 	
 	/*printf ("Ninja = [%3i, %3i]. Dest = [%3i, %3i]. Rect = [%3i, %3i]\n", ninja->x, ninja->y, water_animations[est][calc].dest_x, water_animations[est][calc].dest_y, rect.x, rect.y);
 	rect3.x = ninja->x - 1;
@@ -331,7 +381,7 @@ void dibujar_water (WaterNinja *ninja) {
 		SDL_Point p;
 		p.y = 0;
 		p.x = rect.w;
-		rect.x = ninja->x - rect.w + water_animations[est][calc].dest_x;
+		rect.x = ninja->x_real + ninja->offset_x - rect.w + water_animations[est][calc].dest_x;
 		
 		/*printf ("Rotado, por lo tanto, sus coordenadas son: [%3i, %3i]\n", rect.x, rect.y);
 		
@@ -358,8 +408,13 @@ void dibujar_water (WaterNinja *ninja) {
 			ninja->estado = WATER_NINJA_KO_LOOP;
 		} else if (ninja->estado == WATER_NINJA_HIT) {
 			ninja->estado = WATER_NINJA_IDLE;
+		} else if (ninja->estado == WATER_NINJA_REVIVED) {
+			ninja->estado = WATER_NINJA_IDLE;
 		}
 	}
+	
+	ninja->offset_x = sx;
+	ninja->offset_y = sy;
 }
 
 void setup_water_ninja (void) {

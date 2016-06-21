@@ -1,6 +1,19 @@
 gamedatadir = $(pkgdatadir)/data
 
-nobase_dist_gamedata_DATA = images/water_ninja/idle.png \
+nobase_dist_gamedata_DATA = images/icon.png \
+	images/background_1.png \
+	images/background_2.png \
+	images/background_3.png \
+	images/foreground_1.png \
+	images/foreground_2.png \
+	images/crag_rock.png \
+	images/rock.png \
+	images/frame.png \
+	images/tile_attack.png \
+	images/tile_heal.png \
+	images/tile_move.png \
+	images/tile_no_move.png \
+	images/water_ninja/idle.png \
 	images/water_ninja/attack.png \
 	images/water_ninja/celebrate.png \
 	images/water_ninja/move.png \
@@ -13,7 +26,55 @@ nobase_dist_gamedata_DATA = images/water_ninja/idle.png \
 	images/water_ninja/powercard_water_loop.png \
 	images/water_ninja/revived.png \
 	images/water_ninja/revive_other.png \
-	images/water_ninja/revive_other_loop.png
+	images/water_ninja/revive_other_loop.png \
+	images/ui_fire_cards.png \
+	images/ui_snow_cards.png \
+	images/ui_water_cards.png \
+	images/fire_timer/base.png \
+	images/fire_timer/button_deactive.png \
+	images/fire_timer/button_down.png \
+	images/fire_timer/button_over.png \
+	images/fire_timer/button_up.png \
+	images/fire_timer/tick0.png \
+	images/fire_timer/tick1.png \
+	images/fire_timer/tick2.png \
+	images/fire_timer/tick3.png \
+	images/fire_timer/tick4.png \
+	images/fire_timer/tick5.png \
+	images/fire_timer/tick6.png \
+	images/fire_timer/tick7.png \
+	images/fire_timer/tick8.png \
+	images/fire_timer/tick9.png \
+	images/snow_timer/base.png \
+	images/snow_timer/button_deactive.png \
+	images/snow_timer/button_down.png \
+	images/snow_timer/button_over.png \
+	images/snow_timer/button_up.png \
+	images/snow_timer/tick0.png \
+	images/snow_timer/tick1.png \
+	images/snow_timer/tick2.png \
+	images/snow_timer/tick3.png \
+	images/snow_timer/tick4.png \
+	images/snow_timer/tick5.png \
+	images/snow_timer/tick6.png \
+	images/snow_timer/tick7.png \
+	images/snow_timer/tick8.png \
+	images/snow_timer/tick9.png \
+	images/water_timer/base.png \
+	images/water_timer/button_deactive.png \
+	images/water_timer/button_down.png \
+	images/water_timer/button_over.png \
+	images/water_timer/button_up.png \
+	images/water_timer/tick0.png \
+	images/water_timer/tick1.png \
+	images/water_timer/tick2.png \
+	images/water_timer/tick3.png \
+	images/water_timer/tick4.png \
+	images/water_timer/tick5.png \
+	images/water_timer/tick6.png \
+	images/water_timer/tick7.png \
+	images/water_timer/tick8.png \
+	images/water_timer/tick9.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications
