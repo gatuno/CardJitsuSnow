@@ -3,7 +3,7 @@
 gamedatadir = $(pkgdatadir)/data
 
 bin_PROGRAMS = cjsnow
-cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h
+cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h
 
 if MINGW32
 cjsnow_SOURCES += 

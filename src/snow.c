@@ -2,7 +2,7 @@
  * snow.c
  * This file is part of Card-Jitsu Snow
  *
- * Copyright (C) 2011 - Félix Arreola Rodríguez
+ * Copyright (C) 2016 - Félix Arreola Rodríguez
  *
  * Card-Jitsu Snow is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include "snow.h"
 
 #include "water_ninja.h"
+#include "uitimer.h"
 
 #define FPS (1000/30)
 
@@ -134,6 +135,17 @@ enum {
 	NINJA_WATER_MOVE,
 	
 	NUM_ACTIONS
+};
+
+/* Estatus de la interfaz */
+enum {
+	UI_SHOW_TIMER,
+	UI_WAIT_INPUT,
+	UI_HIDE_TIMER,
+	UI_WAITING_SERVER,
+	UI_ANIMATE,
+	
+	NUM_UI
 };
 
 /* Prototipos de función */
@@ -291,22 +303,28 @@ int game_loop (void) {
 	SDL_Event event;
 	SDL_Keycode key;
 	Uint32 last_time, now_time;
-	SDL_Rect rect;
+	SDL_Rect rect, rect2;
+	Uint32 input_time;
 	
 	int g, h, i;
+	UITimer *timer;
 	
 	int fondo;
 	WaterNinja *water;
 	int escenario[5][9];
 	int acciones[5][9];
 	
+	int local_ninja = NINJA_WATER;
+	int ui_estatus = UI_SHOW_TIMER;
 	memset (escenario, 0, sizeof (escenario));
+	memset (acciones, 0, sizeof (acciones));
 	
 	escenario[0][2] = escenario[0][6] = escenario[4][2] = escenario[4][6] = ROCK;
 	
 	fondo = RANDOM(3);
 	water = crear_water_ninja (0, 0);
 	escenario[0][0] = NINJA_WATER;
+	timer = crear_timer (UI_WATER);
 	
 	/* Predibujar todo */
 	SDL_RenderClear (renderer);
@@ -370,16 +388,16 @@ int game_loop (void) {
 		/* Borrar con el fondo */
 		SDL_RenderCopy (renderer, images[IMG_BACKGROUND_1 + fondo], NULL, NULL);
 		
+		rect.x = MAP_X;
+		rect.y = MAP_Y;
+		SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
+		
 		if (fondo == 0) {
 			i = IMG_CRAG_ROCK;
 		} else {
 			i = IMG_ROCK;
 		}
-		
-		rect.x = MAP_X;
-		rect.y = MAP_Y;
-		SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
-		SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
 		
 		/* Dibujar todos los objetos */
 		for (g = 0; g < 5; g++) {
@@ -398,6 +416,8 @@ int game_loop (void) {
 				}
 			}
 		}
+		
+		dibujar_timer (timer);
 		
 		/* Dibujar el frente */
 		if (fondo == 0) {
@@ -507,6 +527,7 @@ void setup (void) {
 	}
 	
 	setup_water_ninja ();
+	setup_timer ();
 	
 	if (use_sound) {
 		for (g = 0; g < NUM_SOUNDS; g++) {

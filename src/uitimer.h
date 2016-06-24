@@ -1,5 +1,5 @@
 /*
- * snow.h
+ * uitimer.h
  * This file is part of Card-Jitsu Snow
  *
  * Copyright (C) 2016 - Félix Arreola Rodríguez
@@ -18,38 +18,14 @@
  * along with Card-Jitsu Snow. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SNOW_H__
-#define __SNOW_H__
+#ifndef __UITIMER_H__
+#define __UITIMER_H__
 
-#include <SDL.h>
+typedef struct _UITimer UITimer;
 
-typedef struct {
-	int orig_x, orig_y;
-	int w, h;
-	int dest_x, dest_y;
-	int rot;
-} SnowSprite;
+UITimer *crear_timer (int ui);
+void dibujar_timer (UITimer *timer);
+void setup_timer (void);
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE !FALSE
-#endif
-
-#define MAP_X 90
-#define MAP_Y 80
-
-extern SDL_Renderer *renderer;
-
-extern int use_sound;
-
-enum {
-	UI_FIRE = 0,
-	UI_SNOW,
-	UI_WATER
-};
-
-#endif /* __SNOW_H__ */
+#endif /* __UITIMER_H__ */
 
