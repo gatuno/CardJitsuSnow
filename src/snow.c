@@ -307,7 +307,7 @@ int game_loop (void) {
 	Uint32 input_time;
 	
 	int g, h, i;
-	UITimer *timer;
+	UITimer *timer, *timer2, *timer3;
 	
 	int fondo;
 	WaterNinja *water;
@@ -325,6 +325,8 @@ int game_loop (void) {
 	water = crear_water_ninja (0, 0);
 	escenario[0][0] = NINJA_WATER;
 	timer = crear_timer (UI_WATER);
+	timer2 = crear_timer (UI_SNOW);
+	timer3 = crear_timer (UI_FIRE);
 	
 	/* Predibujar todo */
 	SDL_RenderClear (renderer);
@@ -418,6 +420,8 @@ int game_loop (void) {
 		}
 		
 		dibujar_timer (timer);
+		dibujar_timer (timer2);
+		dibujar_timer (timer3);
 		
 		/* Dibujar el frente */
 		if (fondo == 0) {

@@ -39,8 +39,44 @@
 #include "uitimer.h"
 
 #define TIMER_X 320
+#define TIMER_Y 50
+#define TIMER_Z 600
 
 enum {
+	IMG_UI_TIMER_FIRE_BASE,
+	IMG_UI_TIMER_FIRE_BUTTON_DEACTIVE,
+	IMG_UI_TIMER_FIRE_BUTTON_UP,
+	IMG_UI_TIMER_FIRE_BUTTON_OVER,
+	IMG_UI_TIMER_FIRE_BUTTON_DOWN,
+	
+	IMG_UI_TIMER_FIRE_TICK_0,
+	IMG_UI_TIMER_FIRE_TICK_1,
+	IMG_UI_TIMER_FIRE_TICK_2,
+	IMG_UI_TIMER_FIRE_TICK_3,
+	IMG_UI_TIMER_FIRE_TICK_4,
+	IMG_UI_TIMER_FIRE_TICK_5,
+	IMG_UI_TIMER_FIRE_TICK_6,
+	IMG_UI_TIMER_FIRE_TICK_7,
+	IMG_UI_TIMER_FIRE_TICK_8,
+	IMG_UI_TIMER_FIRE_TICK_9,
+	
+	IMG_UI_TIMER_SNOW_BASE,
+	IMG_UI_TIMER_SNOW_BUTTON_DEACTIVE,
+	IMG_UI_TIMER_SNOW_BUTTON_UP,
+	IMG_UI_TIMER_SNOW_BUTTON_OVER,
+	IMG_UI_TIMER_SNOW_BUTTON_DOWN,
+	
+	IMG_UI_TIMER_SNOW_TICK_0,
+	IMG_UI_TIMER_SNOW_TICK_1,
+	IMG_UI_TIMER_SNOW_TICK_2,
+	IMG_UI_TIMER_SNOW_TICK_3,
+	IMG_UI_TIMER_SNOW_TICK_4,
+	IMG_UI_TIMER_SNOW_TICK_5,
+	IMG_UI_TIMER_SNOW_TICK_6,
+	IMG_UI_TIMER_SNOW_TICK_7,
+	IMG_UI_TIMER_SNOW_TICK_8,
+	IMG_UI_TIMER_SNOW_TICK_9,
+	
 	IMG_UI_TIMER_WATER_BASE,
 	IMG_UI_TIMER_WATER_BUTTON_DEACTIVE,
 	IMG_UI_TIMER_WATER_BUTTON_UP,
@@ -62,6 +98,40 @@ enum {
 };
 
 static const char *ui_timer_images_names[NUM_UI_TIMER] = {
+	"images/fire_timer/base.png",
+	"images/fire_timer/button_deactive.png",
+	"images/fire_timer/button_up.png",
+	"images/fire_timer/button_over.png",
+	"images/fire_timer/button_down.png",
+	
+	"images/fire_timer/tick0.png",
+	"images/fire_timer/tick1.png",
+	"images/fire_timer/tick2.png",
+	"images/fire_timer/tick3.png",
+	"images/fire_timer/tick4.png",
+	"images/fire_timer/tick5.png",
+	"images/fire_timer/tick6.png",
+	"images/fire_timer/tick7.png",
+	"images/fire_timer/tick8.png",
+	"images/fire_timer/tick9.png",
+	
+	"images/snow_timer/base.png",
+	"images/snow_timer/button_deactive.png",
+	"images/snow_timer/button_up.png",
+	"images/snow_timer/button_over.png",
+	"images/snow_timer/button_down.png",
+	
+	"images/snow_timer/tick0.png",
+	"images/snow_timer/tick1.png",
+	"images/snow_timer/tick2.png",
+	"images/snow_timer/tick3.png",
+	"images/snow_timer/tick4.png",
+	"images/snow_timer/tick5.png",
+	"images/snow_timer/tick6.png",
+	"images/snow_timer/tick7.png",
+	"images/snow_timer/tick8.png",
+	"images/snow_timer/tick9.png",
+	
 	"images/water_timer/base.png",
 	"images/water_timer/button_deactive.png",
 	"images/water_timer/button_up.png",
@@ -98,13 +168,13 @@ UITimer *crear_timer (int ui) {
 	nuevo->anim = 0;
 	
 	if (ui == UI_FIRE) {
-		//nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
-		//nuevo->img_ring = IMG_UI_TIMER_FIRE_TICK_0;
-		//nuevo->img_button = IMG_UI_TIMER_FIRE_BUTTON_DEACTIVE;
+		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
+		nuevo->img_ring = IMG_UI_TIMER_FIRE_TICK_0;
+		nuevo->img_button = IMG_UI_TIMER_FIRE_BUTTON_DEACTIVE;
 	} else if (ui == UI_SNOW) {
-		//nuevo->img_base = IMG_UI_TIMER_SNOW_BASE;
-		//nuevo->img_ring = IMG_UI_TIMER_SNOW_TICK_0;
-		//nuevo->img_button = IMG_UI_TIMER_SNOW_BUTTON_DEACTIVE;
+		nuevo->img_base = IMG_UI_TIMER_SNOW_BASE;
+		nuevo->img_ring = IMG_UI_TIMER_SNOW_TICK_0;
+		nuevo->img_button = IMG_UI_TIMER_SNOW_BUTTON_DEACTIVE;
 	} else if (ui == UI_WATER) {
 		nuevo->img_base = IMG_UI_TIMER_WATER_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_WATER_TICK_0;
@@ -120,20 +190,29 @@ void dibujar_timer (UITimer *timer) {
 	
 	g = timer->img_base;
 	/* Dibujar el reloj base */
-	rect.x = TIMER_X;
+	if (timer->color == UI_WATER) {
+		rect.x = TIMER_X;
+	} else if (timer->color == UI_SNOW) {
+		rect.x = TIMER_Y;
+	} else if (timer->color == UI_FIRE) {
+		rect.x = TIMER_Z;
+	}
 	rect.y = -70 + timer->anim;
 	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 	SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	
 	g = timer->img_ring;
 	if (timer->color == UI_WATER) {
-		rect.x = TIMER_X + 26;
+		rect.x = TIMER_X + 30;
 		rect.y = -70 + timer->anim + 13;
 	} else if (timer->color == UI_SNOW) {
-		//i = IMG_UI_SNOW_TIMER_BASE;
+		rect.x = TIMER_Y + 18;
+		rect.y = -70 + timer->anim + 14;
 	} else if (timer->color == UI_FIRE) {
-		//i = IMG_UI_FIRE_TIMER_BASE;
+		rect.x = TIMER_Z + 32;
+		rect.y = -70 + timer->anim + 10;
 	}
+	
 	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 	SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	
@@ -141,6 +220,12 @@ void dibujar_timer (UITimer *timer) {
 	if (timer->color == UI_WATER) {
 		rect.x = TIMER_X + 106;
 		rect.y = -70 + timer->anim + 36;
+	} else if (timer->color == UI_SNOW) {
+		rect.x = TIMER_Y + 95;
+		rect.y = -70 + timer->anim + 38;
+	} else if (timer->color == UI_FIRE) {
+		rect.x = TIMER_Z + 102;
+		rect.y = -70 + timer->anim + 29;
 	}
 	
 	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
