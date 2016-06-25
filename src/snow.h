@@ -51,5 +51,17 @@ enum {
 	UI_WATER
 };
 
+/* Acciones */
+#define ACTION_CLEAR 0x00
+#define ACTION_MOVE 0x01
+#define ACTION_CANT_MOVE 0x02
+
+#define ACTION_ATTACK 0x04
+#define ACTION_HEAL 0x08
+
+#define ACTION_FIRE_MOVE 0x10
+#define ACTION_SNOW_MOVE 0x20
+#define ACTION_WATER_MOVE 0x40
+
 #endif /* __SNOW_H__ */
 

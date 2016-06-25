@@ -150,14 +150,24 @@ static const char *ui_timer_images_names[NUM_UI_TIMER] = {
 	"images/water_timer/tick9.png"
 };
 
+enum {
+	TIMER_SHOW,
+	TIMER_TICKING,
+};
+
 struct _UITimer {
 	int color;
 	int anim;
+	int estado;
 	
+	Uint32 timestamp;
 	int img_base, img_ring, img_button;
 };
 
 static SDL_Texture *ui_timer_images[NUM_UI_TIMER];
+
+/* Constante de los eventos */
+int UI_TIMER_EVENT;
 
 UITimer *crear_timer (int ui) {
 	UITimer *nuevo;
@@ -166,6 +176,7 @@ UITimer *crear_timer (int ui) {
 	
 	nuevo->color = ui;
 	nuevo->anim = 0;
+	nuevo->estado = TIMER_SHOW;
 	
 	if (ui == UI_FIRE) {
 		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
@@ -184,57 +195,129 @@ UITimer *crear_timer (int ui) {
 	return nuevo;
 };
 
+void start_ticking (UITimer *timer) {
+	timer->anim = 0;
+	timer->estado = TIMER_TICKING;
+}
+
 void dibujar_timer (UITimer *timer) {
 	SDL_Rect rect;
 	int g;
+	SDL_Event evento;
+	int ring;
+	Uint32 curtime;
 	
-	g = timer->img_base;
-	/* Dibujar el reloj base */
-	if (timer->color == UI_WATER) {
+	if (timer->estado == TIMER_SHOW) {
+		g = timer->img_base;
+		/* Dibujar el reloj base */
+		if (timer->color == UI_WATER) {
+			rect.x = TIMER_X - 106;
+			rect.y = -70 + timer->anim - 7;
+		} else if (timer->color == UI_SNOW) {
+			rect.x = TIMER_X - 95;
+			rect.y = -70 + timer->anim - 9;
+		} else if (timer->color == UI_FIRE) {
+			rect.x = TIMER_X - 102;
+			rect.y = -70 + timer->anim;
+		}
+	
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	
+		g = timer->img_ring;
+		if (timer->color == UI_WATER) {
+			rect.x = TIMER_X - 76;
+			rect.y = -70 + timer->anim + 6;
+		} else if (timer->color == UI_SNOW) {
+			rect.x = TIMER_X - 77;
+			rect.y = -70 + timer->anim + 5;
+		} else if (timer->color == UI_FIRE) {
+			rect.x = TIMER_X - 70;
+			rect.y = -70 + timer->anim + 10;
+		}
+	
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	
+		g = timer->img_button;
 		rect.x = TIMER_X;
-	} else if (timer->color == UI_SNOW) {
-		rect.x = TIMER_Y;
-	} else if (timer->color == UI_FIRE) {
-		rect.x = TIMER_Z;
-	}
-	rect.y = -70 + timer->anim;
-	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
-	SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
-	
-	g = timer->img_ring;
-	if (timer->color == UI_WATER) {
-		rect.x = TIMER_X + 30;
-		rect.y = -70 + timer->anim + 13;
-	} else if (timer->color == UI_SNOW) {
-		rect.x = TIMER_Y + 18;
-		rect.y = -70 + timer->anim + 14;
-	} else if (timer->color == UI_FIRE) {
-		rect.x = TIMER_Z + 32;
-		rect.y = -70 + timer->anim + 10;
-	}
-	
-	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
-	SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
-	
-	g = timer->img_button;
-	if (timer->color == UI_WATER) {
-		rect.x = TIMER_X + 106;
-		rect.y = -70 + timer->anim + 36;
-	} else if (timer->color == UI_SNOW) {
-		rect.x = TIMER_Y + 95;
-		rect.y = -70 + timer->anim + 38;
-	} else if (timer->color == UI_FIRE) {
-		rect.x = TIMER_Z + 102;
 		rect.y = -70 + timer->anim + 29;
-	}
 	
-	SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
-	SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	
-	timer->anim++;
-	if (timer->anim >= 70) {
-		timer->anim = 70;
-		//ui_estatus = UI_WAIT_INPUT;
+		timer->anim++;
+		if (timer->anim >= 70) {
+			timer->anim = 70;
+		
+			SDL_zero (evento);
+			evento.type = UI_TIMER_EVENT;
+			evento.user.code = UI_TIMER_EVENT_SHOW;
+		
+			SDL_PushEvent (&evento);
+		}
+	} else if (timer->estado == TIMER_TICKING) {
+		if (timer->anim < 8) {
+			/* Cuando el timer se rellena, reservar los cuadros */
+			ring = timer->img_ring;
+			timer->anim++;
+			if (timer->anim == 8) {
+				/* Tomar la hora actual */
+				timer->timestamp = SDL_GetTicks ();
+			}
+		} else {
+			curtime = SDL_GetTicks ();
+			
+			g = (curtime - timer->timestamp) / 3000;
+			if (g >= 9) g = 9;
+			ring = timer->img_ring + 9 - g;
+			if (g == 9) {
+				SDL_zero (evento);
+				evento.type = UI_TIMER_EVENT;
+				evento.user.code = UI_TIMER_EVENT_DONE_TICKS;
+				
+				SDL_PushEvent (&evento);
+			}
+		}
+		
+		g = timer->img_base;
+		/* Dibujar el reloj base */
+		if (timer->color == UI_WATER) {
+			rect.x = TIMER_X - 106;
+			rect.y = -7;
+		} else if (timer->color == UI_SNOW) {
+			rect.x = TIMER_X - 95;
+			rect.y = -9;
+		} else if (timer->color == UI_FIRE) {
+			rect.x = TIMER_X - 102;
+			rect.y = 0;
+		}
+
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+
+		if (timer->color == UI_WATER) {
+			rect.x = TIMER_X - 76;
+			rect.y = 6;
+		} else if (timer->color == UI_SNOW) {
+			rect.x = TIMER_X - 77;
+			rect.y = 5;
+		} else if (timer->color == UI_FIRE) {
+			rect.x = TIMER_X - 70;
+			rect.y = 10;
+		}
+		
+		printf ("Ring: %i, anim: %i\n", ring, timer->anim);
+		printf ("Rect x -> %i, y -> %i, w -> %i, h -> %i\n", rect.x, rect.y, rect.w, rect.h);
+		SDL_QueryTexture (ui_timer_images[ring], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[ring], NULL, &rect);
+
+		g = timer->img_button;
+		rect.x = TIMER_X;
+		rect.y = 29;
+
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	}
 }
 
@@ -263,6 +346,16 @@ void setup_timer (void) {
 		ui_timer_images[g] = texture;
 		SDL_FreeSurface (image);
 		/* TODO: Mostrar la carga de porcentaje */
+	}
+	
+	UI_TIMER_EVENT = SDL_RegisterEvents (1);
+	
+	if (UI_TIMER_EVENT == ((Uint32) -1)) {
+		fprintf (stderr, _("Failed to register custom user events to SDL\n"
+			"The error returned by SDL is:\n"
+				"%s\n"), SDL_GetError());
+		SDL_Quit ();
+		exit (1);
 	}
 }
 

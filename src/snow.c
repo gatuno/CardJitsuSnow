@@ -124,19 +124,6 @@ enum {
 	NUM_OBJECTS
 };
 
-/* Acciones */
-enum {
-	NO_ACTION = 0,
-	MOVE,
-	CANT_MOVE,
-	
-	NINJA_FIRE_MOVE,
-	NINJA_SNOW_MOVE,
-	NINJA_WATER_MOVE,
-	
-	NUM_ACTIONS
-};
-
 /* Estatus de la interfaz */
 enum {
 	UI_SHOW_TIMER,
@@ -325,12 +312,6 @@ int game_loop (void) {
 	water = crear_water_ninja (0, 0);
 	escenario[0][0] = NINJA_WATER;
 	timer = crear_timer (UI_WATER);
-	timer2 = crear_timer (UI_SNOW);
-	timer3 = crear_timer (UI_FIRE);
-	
-	/* Predibujar todo */
-	SDL_RenderClear (renderer);
-	SDL_RenderPresent (renderer);
 	
 	do {
 		last_time = SDL_GetTicks ();
@@ -385,6 +366,18 @@ int game_loop (void) {
 						add_water_offset (water, 1, 0);
 					}
 					break;
+				default:
+					if (event.type == UI_TIMER_EVENT) {
+						switch (event.user.code) {
+							case UI_TIMER_EVENT_SHOW:
+								/* Como el reloj ya se mostró, enviar el evento al servidor de que estamos listos */
+								start_ticking (timer);
+								break;
+							case UI_TIMER_EVENT_DONE_TICKS:
+								break;
+						}
+					}
+					break;
 			}
 		}
 		/* Borrar con el fondo */
@@ -420,8 +413,6 @@ int game_loop (void) {
 		}
 		
 		dibujar_timer (timer);
-		dibujar_timer (timer2);
-		dibujar_timer (timer3);
 		
 		/* Dibujar el frente */
 		if (fondo == 0) {

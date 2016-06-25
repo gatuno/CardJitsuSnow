@@ -23,7 +23,16 @@
 
 typedef struct _UITimer UITimer;
 
+/* Para los eventos */
+extern int UI_TIMER_EVENT;
+
+enum {
+	UI_TIMER_EVENT_SHOW = 0,
+	UI_TIMER_EVENT_DONE_TICKS
+};
+
 UITimer *crear_timer (int ui);
+void start_ticking (UITimer *timer);
 void dibujar_timer (UITimer *timer);
 void setup_timer (void);
 
