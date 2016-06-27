@@ -111,24 +111,10 @@ enum {
 	GAME_QUIT
 };
 
-/* Objetos */
-enum {
-	NONE = 0,
-	
-	NINJA_FIRE,
-	NINJA_SNOW,
-	NINJA_WATER,
-	
-	ROCK,
-	
-	NUM_OBJECTS
-};
-
 /* Estatus de la interfaz */
 enum {
 	UI_SHOW_TIMER,
 	UI_WAIT_INPUT,
-	UI_HIDE_TIMER,
 	UI_WAITING_SERVER,
 	UI_ANIMATE,
 	
@@ -300,6 +286,7 @@ int game_loop (void) {
 	WaterNinja *water;
 	int escenario[5][9];
 	int acciones[5][9];
+	int acciones_server[5][9];
 	
 	int local_ninja = NINJA_WATER;
 	int ui_estatus = UI_SHOW_TIMER;
@@ -324,6 +311,19 @@ int game_loop (void) {
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					/* Tengo un Mouse Down */
+					
+					/* FIXME: Motor de botones primero */
+					if (ui_estatus == UI_WAIT_INPUT &&
+					    event.button.x >= MAP_X && event.button.x < (MAP_X + 70 * 9) &&
+					    event.button.y >= MAP_Y && event.button.y < (MAP_Y + 70 * 5)) {
+						g = (event.button.x - MAP_X) / 70;
+						h = (event.button.y - MAP_Y) / 70;
+						
+						if (acciones[g][h] == ACTION_MOVE) {
+							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
+							move_water (water, g, h);
+						}
+					}
 					break;
 				case SDL_MOUSEBUTTONUP:
 					/* Tengo un mouse Up */
@@ -345,17 +345,17 @@ int game_loop (void) {
 					}
 					
 					if (key == SDLK_a) {
-						attack_water (water);
+						
 					} else if (key == SDLK_s) {
-						celebrate_water (water);
+						
 					} else if (key == SDLK_d) {
-						move_water (water);
+						
 					} else if (key == SDLK_f) {
-						ko_water (water);
+						
 					} else if (key == SDLK_g) {
-						hit_water (water);
+						
 					} else if (key == SDLK_h) {
-						revive_water (water);
+						
 					} else if (key == SDLK_DOWN) {
 						add_water_offset (water, 0, 1);
 					} else if (key == SDLK_UP) {
@@ -371,9 +371,11 @@ int game_loop (void) {
 						switch (event.user.code) {
 							case UI_TIMER_EVENT_SHOW:
 								/* Como el reloj ya se mostró, enviar el evento al servidor de que estamos listos */
+								ui_estatus = UI_WAIT_INPUT;
 								start_ticking (timer);
 								break;
 							case UI_TIMER_EVENT_DONE_TICKS:
+								ui_estatus = UI_WAITING_SERVER;
 								break;
 						}
 					}
@@ -383,10 +385,31 @@ int game_loop (void) {
 		/* Borrar con el fondo */
 		SDL_RenderCopy (renderer, images[IMG_BACKGROUND_1 + fondo], NULL, NULL);
 		
-		rect.x = MAP_X;
-		rect.y = MAP_Y;
-		SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
-		SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
+		if (ui_estatus == UI_WAIT_INPUT) {
+			rect.x = MAP_X;
+			rect.y = MAP_Y;
+			SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
+			
+			/* Dibujar las posibles acciones */
+			memset (acciones, 0, sizeof (acciones));
+			ask_water_actions (water, escenario, acciones);
+			for (g = 0; g < 5; g++) {
+				for (h = 0; h < 9; h++) {
+					if (acciones[g][h] & ACTION_MOVE) {
+						rect.x = MAP_X + (h * 70);
+						rect.y = MAP_Y + (g * 70);
+						SDL_QueryTexture (images[IMG_UI_TILE_MOVE], NULL, NULL, &rect.w, &rect.h);
+						SDL_RenderCopy (renderer, images[IMG_UI_TILE_MOVE], NULL, &rect);
+					} else if (acciones[g][h] & ACTION_CANT_MOVE) {
+						rect.x = MAP_X + (h * 70);
+						rect.y = MAP_Y + (g * 70);
+						SDL_QueryTexture (images[IMG_UI_TILE_NO_MOVE], NULL, NULL, &rect.w, &rect.h);
+						SDL_RenderCopy (renderer, images[IMG_UI_TILE_NO_MOVE], NULL, &rect);
+					}
+				}
+			}
+		}
 		
 		if (fondo == 0) {
 			i = IMG_CRAG_ROCK;
@@ -410,6 +433,10 @@ int game_loop (void) {
 					dibujar_water (water);
 				}
 			}
+		}
+		
+		if (ui_estatus == UI_WAIT_INPUT) {
+			dibujar_ghost_water (water);
 		}
 		
 		dibujar_timer (timer);

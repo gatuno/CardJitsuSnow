@@ -23,13 +23,6 @@
 
 #include <SDL.h>
 
-typedef struct {
-	int orig_x, orig_y;
-	int w, h;
-	int dest_x, dest_y;
-	int rot;
-} SnowSprite;
-
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -40,16 +33,6 @@ typedef struct {
 
 #define MAP_X 90
 #define MAP_Y 80
-
-extern SDL_Renderer *renderer;
-
-extern int use_sound;
-
-enum {
-	UI_FIRE = 0,
-	UI_SNOW,
-	UI_WATER
-};
 
 /* Acciones */
 #define ACTION_CLEAR 0x00
@@ -62,6 +45,37 @@ enum {
 #define ACTION_FIRE_MOVE 0x10
 #define ACTION_SNOW_MOVE 0x20
 #define ACTION_WATER_MOVE 0x40
+
+/* Interfaces */
+enum {
+	UI_FIRE = 0,
+	UI_SNOW,
+	UI_WATER
+};
+
+/* Objetos */
+enum {
+	NONE = 0,
+	
+	NINJA_FIRE,
+	NINJA_SNOW,
+	NINJA_WATER,
+	
+	ROCK,
+	
+	NUM_OBJECTS
+};
+
+typedef struct {
+	int orig_x, orig_y;
+	int w, h;
+	int dest_x, dest_y;
+	int rot;
+} SnowSprite;
+
+extern SDL_Renderer *renderer;
+
+extern int use_sound;
 
 #endif /* __SNOW_H__ */
 

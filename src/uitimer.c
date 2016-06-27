@@ -38,9 +38,7 @@
 
 #include "uitimer.h"
 
-#define TIMER_X 320
-#define TIMER_Y 50
-#define TIMER_Z 600
+#define TIMER_X 420
 
 enum {
 	IMG_UI_TIMER_FIRE_BASE,
@@ -307,8 +305,6 @@ void dibujar_timer (UITimer *timer) {
 			rect.y = 10;
 		}
 		
-		printf ("Ring: %i, anim: %i\n", ring, timer->anim);
-		printf ("Rect x -> %i, y -> %i, w -> %i, h -> %i\n", rect.x, rect.y, rect.w, rect.h);
 		SDL_QueryTexture (ui_timer_images[ring], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[ring], NULL, &rect);
 
