@@ -74,7 +74,67 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/water_timer/tick6.png \
 	images/water_timer/tick7.png \
 	images/water_timer/tick8.png \
-	images/water_timer/tick9.png
+	images/water_timer/tick9.png \
+	images/intro/background.png \
+	images/intro/background_tusk.png \
+	images/intro/fire_normal.png \
+	images/intro/fire_over.png \
+	images/intro/fire_selected_01.png \
+	images/intro/fire_selected_02.png \
+	images/intro/fire_selected_03.png \
+	images/intro/fire_selected_04.png \
+	images/intro/fire_selected_05.png \
+	images/intro/fire_selected_06.png \
+	images/intro/fire_selected_07.png \
+	images/intro/fire_selected_08.png \
+	images/intro/fire_selected_09.png \
+	images/intro/fire_selected_10.png \
+	images/intro/fire_selected_11.png \
+	images/intro/fire_selected_12.png \
+	images/intro/fire_selected_13.png \
+	images/intro/fire_selected_14.png \
+	images/intro/fire_selected_15.png \
+	images/intro/fire_selected_16.png \
+	images/intro/fire_shadow.png \
+	images/intro/snow_normal.png \
+	images/intro/snow_over.png \
+	images/intro/snow_selected_01.png \
+	images/intro/snow_selected_02.png \
+	images/intro/snow_selected_03.png \
+	images/intro/snow_selected_04.png \
+	images/intro/snow_selected_05.png \
+	images/intro/snow_selected_06.png \
+	images/intro/snow_selected_07.png \
+	images/intro/snow_selected_08.png \
+	images/intro/snow_selected_09.png \
+	images/intro/snow_selected_10.png \
+	images/intro/snow_selected_11.png \
+	images/intro/snow_selected_12.png \
+	images/intro/snow_selected_13.png \
+	images/intro/snow_selected_14.png \
+	images/intro/snow_selected_15.png \
+	images/intro/snow_selected_16.png \
+	images/intro/snow_shadow.png \
+	images/intro/water_normal.png \
+	images/intro/water_over.png \
+	images/intro/water_selected_01.png \
+	images/intro/water_selected_02.png \
+	images/intro/water_selected_03.png \
+	images/intro/water_selected_04.png \
+	images/intro/water_selected_05.png \
+	images/intro/water_selected_06.png \
+	images/intro/water_selected_07.png \
+	images/intro/water_selected_08.png \
+	images/intro/water_selected_09.png \
+	images/intro/water_selected_10.png \
+	images/intro/water_selected_11.png \
+	images/intro/water_selected_12.png \
+	images/intro/water_selected_13.png \
+	images/intro/water_selected_14.png \
+	images/intro/water_selected_15.png \
+	images/intro/water_selected_16.png \
+	images/intro/water_shadow.png
+
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

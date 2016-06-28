@@ -48,6 +48,72 @@
 
 /* Enumerar las imágenes */
 enum {
+	IMG_INTRO_BACKGROUND,
+	//IMG_INTRO_BACKGROUND_TUSK,
+	
+	IMG_INTRO_FIRE_NORMAL,
+	IMG_INTRO_FIRE_OVER,
+	IMG_INTRO_FIRE_SHADOW,
+	
+	IMG_INTRO_FIRE_SELECT_1,
+	IMG_INTRO_FIRE_SELECT_2,
+	IMG_INTRO_FIRE_SELECT_3,
+	IMG_INTRO_FIRE_SELECT_4,
+	IMG_INTRO_FIRE_SELECT_5,
+	IMG_INTRO_FIRE_SELECT_6,
+	IMG_INTRO_FIRE_SELECT_7,
+	IMG_INTRO_FIRE_SELECT_8,
+	IMG_INTRO_FIRE_SELECT_9,
+	IMG_INTRO_FIRE_SELECT_10,
+	IMG_INTRO_FIRE_SELECT_11,
+	IMG_INTRO_FIRE_SELECT_12,
+	IMG_INTRO_FIRE_SELECT_13,
+	IMG_INTRO_FIRE_SELECT_14,
+	IMG_INTRO_FIRE_SELECT_15,
+	IMG_INTRO_FIRE_SELECT_16,
+	
+	IMG_INTRO_SNOW_NORMAL,
+	IMG_INTRO_SNOW_OVER,
+	IMG_INTRO_SNOW_SHADOW,
+	
+	IMG_INTRO_SNOW_SELECT_1,
+	IMG_INTRO_SNOW_SELECT_2,
+	IMG_INTRO_SNOW_SELECT_3,
+	IMG_INTRO_SNOW_SELECT_4,
+	IMG_INTRO_SNOW_SELECT_5,
+	IMG_INTRO_SNOW_SELECT_6,
+	IMG_INTRO_SNOW_SELECT_7,
+	IMG_INTRO_SNOW_SELECT_8,
+	IMG_INTRO_SNOW_SELECT_9,
+	IMG_INTRO_SNOW_SELECT_10,
+	IMG_INTRO_SNOW_SELECT_11,
+	IMG_INTRO_SNOW_SELECT_12,
+	IMG_INTRO_SNOW_SELECT_13,
+	IMG_INTRO_SNOW_SELECT_14,
+	IMG_INTRO_SNOW_SELECT_15,
+	IMG_INTRO_SNOW_SELECT_16,
+	
+	IMG_INTRO_WATER_NORMAL,
+	IMG_INTRO_WATER_OVER,
+	IMG_INTRO_WATER_SHADOW,
+	
+	IMG_INTRO_WATER_SELECT_1,
+	IMG_INTRO_WATER_SELECT_2,
+	IMG_INTRO_WATER_SELECT_3,
+	IMG_INTRO_WATER_SELECT_4,
+	IMG_INTRO_WATER_SELECT_5,
+	IMG_INTRO_WATER_SELECT_6,
+	IMG_INTRO_WATER_SELECT_7,
+	IMG_INTRO_WATER_SELECT_8,
+	IMG_INTRO_WATER_SELECT_9,
+	IMG_INTRO_WATER_SELECT_10,
+	IMG_INTRO_WATER_SELECT_11,
+	IMG_INTRO_WATER_SELECT_12,
+	IMG_INTRO_WATER_SELECT_13,
+	IMG_INTRO_WATER_SELECT_14,
+	IMG_INTRO_WATER_SELECT_15,
+	IMG_INTRO_WATER_SELECT_16,
+	
 	IMG_BACKGROUND_1,
 	IMG_BACKGROUND_2,
 	IMG_BACKGROUND_3,
@@ -73,6 +139,72 @@ enum {
 
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
+	"images/intro/background.png",
+	//"images/intro/background_tusk.png",
+	
+	"images/intro/fire_normal.png",
+	"images/intro/fire_over.png",
+	"images/intro/fire_shadow.png",
+	
+	"images/intro/fire_selected_01.png",
+	"images/intro/fire_selected_02.png",
+	"images/intro/fire_selected_03.png",
+	"images/intro/fire_selected_04.png",
+	"images/intro/fire_selected_05.png",
+	"images/intro/fire_selected_06.png",
+	"images/intro/fire_selected_07.png",
+	"images/intro/fire_selected_08.png",
+	"images/intro/fire_selected_09.png",
+	"images/intro/fire_selected_10.png",
+	"images/intro/fire_selected_11.png",
+	"images/intro/fire_selected_12.png",
+	"images/intro/fire_selected_13.png",
+	"images/intro/fire_selected_14.png",
+	"images/intro/fire_selected_15.png",
+	"images/intro/fire_selected_16.png",
+	
+	"images/intro/snow_normal.png",
+	"images/intro/snow_over.png",
+	"images/intro/snow_shadow.png",
+	
+	"images/intro/snow_selected_01.png",
+	"images/intro/snow_selected_02.png",
+	"images/intro/snow_selected_03.png",
+	"images/intro/snow_selected_04.png",
+	"images/intro/snow_selected_05.png",
+	"images/intro/snow_selected_06.png",
+	"images/intro/snow_selected_07.png",
+	"images/intro/snow_selected_08.png",
+	"images/intro/snow_selected_09.png",
+	"images/intro/snow_selected_10.png",
+	"images/intro/snow_selected_11.png",
+	"images/intro/snow_selected_12.png",
+	"images/intro/snow_selected_13.png",
+	"images/intro/snow_selected_14.png",
+	"images/intro/snow_selected_15.png",
+	"images/intro/snow_selected_16.png",
+	
+	"images/intro/water_normal.png",
+	"images/intro/water_over.png",
+	"images/intro/water_shadow.png",
+	
+	"images/intro/water_selected_01.png",
+	"images/intro/water_selected_02.png",
+	"images/intro/water_selected_03.png",
+	"images/intro/water_selected_04.png",
+	"images/intro/water_selected_05.png",
+	"images/intro/water_selected_06.png",
+	"images/intro/water_selected_07.png",
+	"images/intro/water_selected_08.png",
+	"images/intro/water_selected_09.png",
+	"images/intro/water_selected_10.png",
+	"images/intro/water_selected_11.png",
+	"images/intro/water_selected_12.png",
+	"images/intro/water_selected_13.png",
+	"images/intro/water_selected_14.png",
+	"images/intro/water_selected_15.png",
+	"images/intro/water_selected_16.png",
+	
 	"images/background_1.png",
 	"images/background_2.png",
 	"images/background_3.png",
@@ -122,10 +254,12 @@ enum {
 };
 
 /* Prototipos de función */
-int game_intro (void);
+int game_intro (int *ninja);
 int game_loop (void);
 int game_finish (void);
 void setup (void);
+
+int mouse_intro_penguin (int x, int y);
 
 /* Variables globales */
 SDL_Window *ventana;
@@ -134,10 +268,13 @@ int full_screen = 0;
 SDL_Texture * images[NUM_IMAGES];
 int use_sound;
 
+SDL_Surface *penguin[3];
+
 Mix_Chunk * sounds[NUM_SOUNDS];
 Mix_Music * mus_carnie;
 
 int main (int argc, char *argv[]) {
+	int local_ninja;
 	/* Recuperar las rutas del sistema */
 	initSystemPaths (argv[0]);
 	
@@ -149,7 +286,7 @@ int main (int argc, char *argv[]) {
 	
 	setup ();
 	do {
-		//if (game_intro () == GAME_QUIT) break;
+		if (game_intro (&local_ninja) == GAME_QUIT) break;
 		if (game_loop () == GAME_QUIT) break;
 		//if (game_finish () == GAME_QUIT) break;
 	} while (1 == 0);
@@ -158,16 +295,37 @@ int main (int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-#if 0
-int game_intro (void) {
+int game_intro (int *ninja) {
 	int done = 0;
 	SDL_Event event;
 	SDL_Keycode key;
 	SDL_Rect rect;
 	Uint32 last_time, now_time;
+	int selected = -1, over = -1, g;
+	int anim[3];
+	int others[3] = {-1, -1, -1};
 	
 	/* Predibujar todo */
-	SDL_RenderClear (renderer);
+	SDL_RenderCopy (renderer, images[IMG_INTRO_BACKGROUND], NULL, NULL);
+	
+	rect.x = -28;
+	rect.y = 27;
+	
+	SDL_QueryTexture (images[IMG_INTRO_WATER_NORMAL], NULL, NULL, &rect.w, &rect.h);
+	SDL_RenderCopy (renderer, images[IMG_INTRO_WATER_NORMAL], NULL, &rect);
+	
+	rect.x = 484;
+	rect.y = 87;
+	
+	SDL_QueryTexture (images[IMG_INTRO_FIRE_NORMAL], NULL, NULL, &rect.w, &rect.h);
+	SDL_RenderCopy (renderer, images[IMG_INTRO_FIRE_NORMAL], NULL, &rect);
+	
+	rect.x = 241;
+	rect.y = 22;
+	
+	SDL_QueryTexture (images[IMG_INTRO_SNOW_NORMAL], NULL, NULL, &rect.w, &rect.h);
+	SDL_RenderCopy (renderer, images[IMG_INTRO_SNOW_NORMAL], NULL, &rect);
+	
 	SDL_RenderPresent (renderer);
 	
 	do {
@@ -180,10 +338,18 @@ int game_intro (void) {
 					done = GAME_QUIT;
 					break;
 				case SDL_MOUSEMOTION:
+					if (selected == -1) {
+						/* Calcular si el mouse está encima de algún pingüino */
+						over = mouse_intro_penguin (event.motion.x, event.motion.y);
+					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					break;
 				case SDL_MOUSEBUTTONUP:
+					if (selected == -1) {
+						selected = mouse_intro_penguin (event.button.x, event.button.y);
+						anim[selected] = 0;
+					}
 					break;
 				case SDL_KEYDOWN:
 					/* Tengo una tecla presionada */
@@ -204,6 +370,61 @@ int game_intro (void) {
 			}
 		}
 		
+		/* Borrar con el fondo */
+		SDL_RenderCopy (renderer, images[IMG_INTRO_BACKGROUND], NULL, NULL);
+		
+		if (selected == UI_WATER || others[UI_WATER] != -1) {
+			/* Correr la animación */
+			rect.x = 0;
+			rect.y = 0;
+			g = anim[UI_WATER] + IMG_INTRO_WATER_SELECT_1;
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+			
+			if (anim[UI_WATER] < 15) anim[UI_WATER]++;
+		} else {
+			g = (over == UI_WATER) ? IMG_INTRO_WATER_OVER : (selected == -1) ? IMG_INTRO_WATER_NORMAL : IMG_INTRO_WATER_SHADOW;
+			rect.x = -28;
+			rect.y = 27;
+			
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+		}
+		
+		if (selected == UI_FIRE || others[UI_FIRE] != -1) {
+			rect.x = 465;
+			rect.y = 0;
+			g = anim[UI_FIRE] + IMG_INTRO_FIRE_SELECT_1;
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+			
+			if (anim[UI_FIRE] < 15) anim[UI_FIRE]++;
+		} else {
+			g = (over == UI_FIRE) ? IMG_INTRO_FIRE_OVER : (selected == -1) ? IMG_INTRO_FIRE_NORMAL : IMG_INTRO_FIRE_SHADOW;
+			rect.x = 484;
+			rect.y = 87;
+			
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+		}
+		
+		if (selected == UI_SNOW || others[UI_SNOW] != -1) {
+			rect.x = 231;
+			rect.y = 0;
+			g = anim[UI_SNOW] + IMG_INTRO_SNOW_SELECT_1;
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+			
+			if (anim[UI_SNOW] < 15) anim[UI_SNOW]++;
+		} else {
+			g = (over == UI_SNOW) ? IMG_INTRO_SNOW_OVER : (selected == -1) ? IMG_INTRO_SNOW_NORMAL : IMG_INTRO_SNOW_SHADOW;
+			rect.x = 241;
+			rect.y = 22;
+			
+			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
+			SDL_RenderCopy (renderer, images[g], NULL, &rect);
+		}
+	
 		SDL_RenderPresent (renderer);
 		
 		now_time = SDL_GetTicks ();
@@ -211,9 +432,13 @@ int game_intro (void) {
 		
 	} while (!done);
 	
+	SDL_FreeSurface (penguin[0]);
+	SDL_FreeSurface (penguin[1]);
+	SDL_FreeSurface (penguin[2]);
 	return done;
 }
 
+#if 0
 int game_finish (void) {
 	int done = 0;
 	SDL_Event event;
@@ -277,7 +502,6 @@ int game_loop (void) {
 	SDL_Keycode key;
 	Uint32 last_time, now_time;
 	SDL_Rect rect, rect2;
-	Uint32 input_time;
 	
 	int g, h, i;
 	UITimer *timer, *timer2, *timer3;
@@ -465,7 +689,7 @@ void setup (void) {
 	SDL_Surface * image;
 	SDL_Texture * texture;
 	
-	int g;
+	int g, h;
 	char buffer_file[8192];
 	
 	/* Inicializar el Video SDL */
@@ -511,6 +735,7 @@ void setup (void) {
 	}
 	
 	SDL_SetRenderDrawColor (renderer, 0, 0, 0, 255);
+	SDL_RenderSetLogicalSize (renderer, 800, 500);
 	
 	use_sound = 1;
 	if (SDL_InitSubSystem (SDL_INIT_AUDIO) < 0) {
@@ -544,7 +769,12 @@ void setup (void) {
 		}
 		texture = SDL_CreateTextureFromSurface (renderer, image);
 		images[g] = texture;
-		SDL_FreeSurface (image);
+		if (g == IMG_INTRO_FIRE_NORMAL || g == IMG_INTRO_SNOW_NORMAL || g == IMG_INTRO_WATER_NORMAL) {
+			h = (g - IMG_INTRO_FIRE_NORMAL) / (IMG_INTRO_SNOW_NORMAL - IMG_INTRO_FIRE_NORMAL);
+			penguin[h] = image;
+		} else {
+			SDL_FreeSurface (image);
+		}
 		/* TODO: Mostrar la carga de porcentaje */
 	}
 	
@@ -593,5 +823,52 @@ void setup (void) {
 	
 	/* Generador de números aleatorios */
 	srand (SDL_GetTicks ());
+}
+
+int mouse_intro_penguin (int x, int y) {
+	Uint32 pixel;
+	int bpp, pos;
+	Uint8 r, g, b, a;
+	
+	bpp = 4;
+	
+	/* Revisar si el mouse está en el ninja de nieve */
+	if (x >= 241 && x < 241 + penguin[UI_SNOW]->w &&
+	    y >= 22 && y < 22 + penguin[UI_SNOW]->h) {
+		pos = ((y - 22) * penguin[UI_SNOW]->pitch) / bpp + (x - 241);
+		pixel = ((Uint32 *) penguin[UI_SNOW]->pixels)[pos];
+		
+		SDL_GetRGBA (pixel, penguin[UI_SNOW]->format, &r, &g, &b, &a);
+		
+		if (a != 0) {
+			return UI_SNOW;
+		}
+	}
+	
+	if (x >= 484 && x < 484 + penguin[UI_FIRE]->w &&
+	    y >= 87 && y < 87 + penguin[UI_FIRE]->h) {
+		pos = ((y - 87) * penguin[UI_FIRE]->pitch) / bpp + (x - 484);
+		pixel = ((Uint32 *) penguin[UI_FIRE]->pixels)[pos];
+		
+		SDL_GetRGBA (pixel, penguin[UI_FIRE]->format, &r, &g, &b, &a);
+		
+		if (a != 0) {
+			return UI_FIRE;
+		}
+	}
+	
+	if (x >= 0 && x < -28 + penguin[UI_WATER]->w &&
+	    y >= 27 && y < 27 + penguin[UI_WATER]->h) {
+		pos = ((y - 27) * penguin[UI_WATER]->pitch) / bpp + (x + 28);
+		pixel = ((Uint32 *) penguin[UI_WATER]->pixels)[pos];
+		
+		SDL_GetRGBA (pixel, penguin[UI_WATER]->format, &r, &g, &b, &a);
+		
+		if (a != 0) {
+			return UI_WATER;
+		}
+	}
+	
+	return -1;
 }
 
