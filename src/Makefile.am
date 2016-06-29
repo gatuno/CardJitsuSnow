@@ -3,10 +3,12 @@
 gamedatadir = $(pkgdatadir)/data
 
 bin_PROGRAMS = cjsnow
-cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h
+cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h netplay.h netplay.c
+servidor_SOURCES = server.c netplay.c netplay.h snow.h
 
-if MINGW32
-cjsnow_SOURCES += 
+# El servidor sólo funciona en Linux
+if LINUX
+bin_PROGRAMS += servidor
 endif
 
 EXTRA_DIST = snow.rc
@@ -23,11 +25,14 @@ endif
 
 cjsnow_CPPFLAGS = -DGAMEDATA_DIR=\"$(gamedatadir)/\" -DLOCALEDIR=\"$(localedir)\" $(AM_CPPFLAGS)
 cjsnow_CFLAGS = $(SDL_CFLAGS) $(SDL_image_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_ttf_CFLAGS) $(AM_CFLAGS)
+servidor_CPPFLAGS = -DGAMEDATA_DIR=\"$(gamedatadir)/\" -DLOCALEDIR=\"$(localedir)\" $(AM_CPPFLAGS)
+servidor_CFLAGS = $(SDL_CFLAGS) $(SDL_image_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_ttf_CFLAGS) $(AM_CFLAGS)
 if MACOSX
 # En MAC OS X, hay que ligar/compilar contra los frameworks
 cjsnow_LDADD = $(SDL_LIBS)
 else
 cjsnow_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
+servidor_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
 endif
 LDADD = $(LIBINTL)
 

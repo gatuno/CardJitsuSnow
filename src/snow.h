@@ -46,6 +46,8 @@
 #define ACTION_SNOW_MOVE 0x20
 #define ACTION_WATER_MOVE 0x40
 
+#define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
+
 /* Interfaces */
 enum {
 	UI_FIRE = 0,

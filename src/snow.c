@@ -42,9 +42,9 @@
 #include "water_ninja.h"
 #include "uitimer.h"
 
-#define FPS (1000/30)
+#include "netplay.h"
 
-#define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
+#define FPS (1000/30)
 
 /* Enumerar las imágenes */
 enum {
@@ -273,8 +273,13 @@ SDL_Surface *penguin[3];
 Mix_Chunk * sounds[NUM_SOUNDS];
 Mix_Music * mus_carnie;
 
+char nick_global[NICK_SIZE];
+static int nick_default;
+
 int main (int argc, char *argv[]) {
 	int local_ninja;
+	int r;
+	
 	/* Recuperar las rutas del sistema */
 	initSystemPaths (argv[0]);
 	
@@ -285,6 +290,21 @@ int main (int argc, char *argv[]) {
 	textdomain (PACKAGE);
 	
 	setup ();
+	
+	memset (nick_global, 0, sizeof (nick_global));
+	
+	/* Generar o leer el nick del archivo de configuración */
+	r = RANDOM (65536);
+	sprintf (nick_global, "Player%i", r);
+	
+	nick_default = 1;
+	
+	if (setup_netplay ("127.0.0.1", 3301) < 0) {
+		printf ("Falló la inicializar la red\n");
+		SDL_Quit ();
+		return EXIT_FAILURE;
+	}
+	
 	do {
 		if (game_intro (&local_ninja) == GAME_QUIT) break;
 		if (game_loop () == GAME_QUIT) break;
@@ -301,9 +321,10 @@ int game_intro (int *ninja) {
 	SDL_Keycode key;
 	SDL_Rect rect;
 	Uint32 last_time, now_time;
-	int selected = -1, over = -1, g;
+	int selected = -1, over = -1, g, h;
 	int anim[3];
 	int others[3] = {-1, -1, -1};
+	NinjaInfo *info;
 	
 	/* Predibujar todo */
 	SDL_RenderCopy (renderer, images[IMG_INTRO_BACKGROUND], NULL, NULL);
@@ -331,6 +352,8 @@ int game_intro (int *ninja) {
 	do {
 		last_time = SDL_GetTicks ();
 		
+		process_network_events ();
+		
 		while (SDL_PollEvent(&event) > 0) {
 			switch (event.type) {
 				case SDL_QUIT:
@@ -349,6 +372,9 @@ int game_intro (int *ninja) {
 					if (selected == -1) {
 						selected = mouse_intro_penguin (event.button.x, event.button.y);
 						anim[selected] = 0;
+						
+						/* Enviar la selección al servidor */
+						send_join (selected, nick_global);
 					}
 					break;
 				case SDL_KEYDOWN:
@@ -367,6 +393,36 @@ int game_intro (int *ninja) {
 						done = GAME_QUIT;
 					}
 					break;
+				default:
+					if (event.type == NETWORK_EVENT) {
+						switch (event.user.code) {
+							case NETWORK_EVENT_CLOSE:
+								/* TODO: Mostrar mensaje de error */
+								done = GAME_QUIT;
+								break;
+							case NETWORK_EVENT_ACCEPT:
+								/* El servidor nos aceptó, y posiblemente haya información de otros jugadores */
+								h = GPOINTER_TO_INT (event.user.data1);
+								info = (NinjaInfo *) event.user.data2;
+								for (g = 0; g < h; g++) {
+									others[info[g].elemento] = info[g].elemento;
+									anim[info[g].elemento] = 0;
+									
+									/* TODO: Copiar el nick de los otros jugadores */
+								}
+								
+								if (info != NULL) free (event.user.data2);
+								break;
+							case NETWORK_EVENT_JOIN_NINJA:
+								info = (NinjaInfo *) event.user.data1;
+								
+								others[info->elemento] = info->elemento;
+								anim[info->elemento] = 0;
+								
+								free (event.user.data1);
+								break;
+						}
+					}
 			}
 		}
 		

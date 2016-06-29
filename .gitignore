@@ -18,6 +18,7 @@ config.log
 config.status
 .deps
 src/cjsnow
+src/servidor
 *.o
 stamp-h1
 
