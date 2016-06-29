@@ -253,9 +253,19 @@ enum {
 	NUM_UI
 };
 
+typedef struct {
+	int local_ninja;
+	
+	int escenario[5][9];
+	int acciones[5][9];
+	int acciones_server[5][9];
+	
+	/* Poner aquí los ninjas y enemigos */
+} SnowStage;
+
 /* Prototipos de función */
-int game_intro (int *ninja);
-int game_loop (void);
+int game_intro (SnowStage *stage);
+int game_loop (SnowStage *stage);
 int game_finish (void);
 void setup (void);
 
@@ -277,8 +287,8 @@ char nick_global[NICK_SIZE];
 static int nick_default;
 
 int main (int argc, char *argv[]) {
-	int local_ninja;
 	int r;
+	SnowStage stage;
 	
 	/* Recuperar las rutas del sistema */
 	initSystemPaths (argv[0]);
@@ -305,9 +315,10 @@ int main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 	
+	memset (&stage, 0, sizeof (stage));
 	do {
-		if (game_intro (&local_ninja) == GAME_QUIT) break;
-		if (game_loop () == GAME_QUIT) break;
+		if (game_intro (&stage) == GAME_QUIT) break;
+		if (game_loop (&stage) == GAME_QUIT) break;
 		//if (game_finish () == GAME_QUIT) break;
 	} while (1 == 0);
 	
@@ -315,16 +326,19 @@ int main (int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-int game_intro (int *ninja) {
+int game_intro (SnowStage *stage) {
 	int done = 0;
 	SDL_Event event;
 	SDL_Keycode key;
 	SDL_Rect rect;
 	Uint32 last_time, now_time;
-	int selected = -1, over = -1, g, h;
+	int selected = -1, over = -1, g, h, f_anim;
 	int anim[3];
 	int others[3] = {-1, -1, -1};
 	NinjaInfo *info;
+	ObjectPos *objs;
+	
+	int ignore_network = FALSE;
 	
 	/* Predibujar todo */
 	SDL_RenderCopy (renderer, images[IMG_INTRO_BACKGROUND], NULL, NULL);
@@ -352,7 +366,7 @@ int game_intro (int *ninja) {
 	do {
 		last_time = SDL_GetTicks ();
 		
-		process_network_events ();
+		if (!ignore_network) process_network_events ();
 		
 		while (SDL_PollEvent(&event) > 0) {
 			switch (event.type) {
@@ -375,6 +389,8 @@ int game_intro (int *ninja) {
 						
 						/* Enviar la selección al servidor */
 						send_join (selected, nick_global);
+						
+						stage->local_ninja = selected;
 					}
 					break;
 				case SDL_KEYDOWN:
@@ -420,6 +436,18 @@ int game_intro (int *ninja) {
 								anim[info->elemento] = 0;
 								
 								free (event.user.data1);
+								break;
+							case NETWORK_EVENT_START:
+								h = GPOINTER_TO_INT (event.user.data1);
+								objs = (ObjectPos *) event.user.data2;
+								for (g = 0; g < h; g++) {
+									stage->escenario[objs[g].y][objs[g].x] = objs[g].object;
+								}
+								
+								free (objs);
+								
+								ignore_network = TRUE; /* Ya no procesar eventos de red */
+								f_anim = 0;
 								break;
 						}
 					}
@@ -480,7 +508,14 @@ int game_intro (int *ninja) {
 			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 		}
-	
+		
+		if (ignore_network) {
+			/* Presentar la animación final */
+			f_anim++;
+			if (f_anim > 30) {
+				done = GAME_CONTINUE;
+			}
+		}
 		SDL_RenderPresent (renderer);
 		
 		now_time = SDL_GetTicks ();
@@ -552,7 +587,7 @@ int game_finish (void) {
 }
 #endif
 
-int game_loop (void) {
+int game_loop (SnowStage *stage) {
 	int done = 0;
 	SDL_Event event;
 	SDL_Keycode key;
@@ -564,21 +599,13 @@ int game_loop (void) {
 	
 	int fondo;
 	WaterNinja *water;
-	int escenario[5][9];
-	int acciones[5][9];
-	int acciones_server[5][9];
 	
 	int local_ninja = NINJA_WATER;
 	int ui_estatus = UI_SHOW_TIMER;
-	memset (escenario, 0, sizeof (escenario));
-	memset (acciones, 0, sizeof (acciones));
-	
-	escenario[0][2] = escenario[0][6] = escenario[4][2] = escenario[4][6] = ROCK;
 	
 	fondo = RANDOM(3);
 	water = crear_water_ninja (0, 0);
-	escenario[0][0] = NINJA_WATER;
-	timer = crear_timer (UI_WATER);
+	timer = crear_timer (stage->local_ninja);
 	
 	do {
 		last_time = SDL_GetTicks ();
@@ -599,7 +626,7 @@ int game_loop (void) {
 						g = (event.button.x - MAP_X) / 70;
 						h = (event.button.y - MAP_Y) / 70;
 						
-						if (acciones[g][h] == ACTION_MOVE) {
+						if (stage->acciones[g][h] == ACTION_MOVE) {
 							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
 							move_water (water, g, h);
 						}
@@ -672,16 +699,16 @@ int game_loop (void) {
 			SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
 			
 			/* Dibujar las posibles acciones */
-			memset (acciones, 0, sizeof (acciones));
-			ask_water_actions (water, escenario, acciones);
+			memset (stage->acciones, 0, sizeof (stage->acciones));
+			ask_water_actions (water, stage->escenario, stage->acciones);
 			for (g = 0; g < 5; g++) {
 				for (h = 0; h < 9; h++) {
-					if (acciones[g][h] & ACTION_MOVE) {
+					if (stage->acciones[g][h] & ACTION_MOVE) {
 						rect.x = MAP_X + (h * 70);
 						rect.y = MAP_Y + (g * 70);
 						SDL_QueryTexture (images[IMG_UI_TILE_MOVE], NULL, NULL, &rect.w, &rect.h);
 						SDL_RenderCopy (renderer, images[IMG_UI_TILE_MOVE], NULL, &rect);
-					} else if (acciones[g][h] & ACTION_CANT_MOVE) {
+					} else if (stage->acciones[g][h] & ACTION_CANT_MOVE) {
 						rect.x = MAP_X + (h * 70);
 						rect.y = MAP_Y + (g * 70);
 						SDL_QueryTexture (images[IMG_UI_TILE_NO_MOVE], NULL, NULL, &rect.w, &rect.h);
@@ -700,16 +727,16 @@ int game_loop (void) {
 		/* Dibujar todos los objetos */
 		for (g = 0; g < 5; g++) {
 			for (h = 0; h < 9; h++) {
-				if (escenario[g][h] == NONE) continue;
+				if (stage->escenario[g][h] == NONE) continue;
 				
-				if (escenario[g][h] == ROCK) {
+				if (stage->escenario[g][h] == ROCK) {
 					/* Dibujar la piedra */
 					rect.x = MAP_X + (h * 70);
 					rect.y = MAP_Y + (g * 70);
 					SDL_QueryTexture (images[i], NULL, NULL, &rect.w, &rect.h);
 					
 					SDL_RenderCopy (renderer, images[i], NULL, &rect);
-				} else if (escenario[g][h] == NINJA_WATER) {
+				} else if (stage->escenario[g][h] == NINJA_WATER) {
 					dibujar_water (water);
 				}
 			}

@@ -147,6 +147,7 @@ void send_join (int ninja, char *nick) {
 
 int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 	int g, h, e;
+	int real_len;
 	
 	/* Vaciar la estructura */
 	memset (msg, 0, sizeof (NetworkMessage));
@@ -169,7 +170,8 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 	msg->type = buffer[3];
 	
 	if (msg->type == NET_TYPE_JOIN) {
-		if (len < (6 + NICK_SIZE)) return -1; /* Oops, tamaño incorrecto */
+		real_len = (6 + NICK_SIZE);
+		if (len < real_len) return -1; /* Oops, tamaño incorrecto */
 		
 		msg->element = buffer[4];
 		memcpy (msg->nick, &buffer[6], NICK_SIZE);
@@ -178,7 +180,8 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		
 		g = buffer[4];
 		if (g > 2) return -1;
-		if (len < 5 + (NICK_SIZE + 1) * g) return -1;
+		real_len = 5 + (NICK_SIZE + 1) * g;
+		if (len < real_len) return -1;
 		
 		msg->others = g;
 		h = 5;
@@ -196,13 +199,29 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			h += NICK_SIZE + 1;
 		}
 	} else if (msg->type == NET_TYPE_OTHER_JOIN) {
-		if (len < (4 + NICK_SIZE)) return -1;
+		real_len = (5 + NICK_SIZE);
+		if (len < real_len) return -1;
 		
 		msg->element = buffer[4];
 		memcpy (msg->nick, &buffer[5], NICK_SIZE);
+	} else if (msg->type == NET_TYPE_START_INFO) {
+		if (len < 5) return -1;
+		
+		msg->num_objects = e = buffer[4];
+		
+		real_len = 5 + (3 * e);
+		if (len < real_len) return -1; /* Cantidad de bytes menores que la cantidad de objetos */
+		msg->objects = (ObjectPos *) malloc (sizeof (ObjectPos) * e);
+		
+		h = 5;
+		for (g = 0; g < e; g++) {
+			msg->objects[g].object = buffer[h];
+			msg->objects[g].x = buffer[h + 1];
+			msg->objects[g].y = buffer[h + 2];
+		}
 	}
 	
-	return 0;
+	return real_len;
 }
 
 void process_network_events (void) {
@@ -213,8 +232,7 @@ void process_network_events (void) {
 	NinjaInfo *otros_info;
 	
 	do {
-		len = recv (server_fd, buffer, 256, 0);
-		
+		len = recv (server_fd, buffer, 256, MSG_PEEK);
 		if (len < 0 && (errno == EWOULDBLOCK || errno == EAGAIN)) {
 			break;
 		}
@@ -229,10 +247,15 @@ void process_network_events (void) {
 			break;
 		}
 		
-		if (unpack (&msg, buffer, len) < 0) {
+		g = unpack (&msg, buffer, len);
+		if (g < 0) {
+			recv (server_fd, buffer, len, 0);
 			printf ("Recibí un paquete mal estructurado\n");
 			continue;
 		}
+		
+		/* Descartar los bytes reales del paquete */
+		recv (server_fd, buffer, g, 0);
 		
 		if (msg.type == NET_TYPE_ACCEPT) {
 			/* Información del servidor y posibles otros ninjas */
@@ -270,6 +293,17 @@ void process_network_events (void) {
 			evento.user.data1 = otros_info;
 			
 			SDL_PushEvent (&evento);
+		} else if (msg.type == NET_TYPE_START_INFO) {
+			/* La información inicial del juego */
+			SDL_zero (evento);
+			evento.type = NETWORK_EVENT;
+			evento.user.code = NETWORK_EVENT_START;
+			
+			evento.user.data1 = GINT_TO_POINTER (msg.num_objects);
+			evento.user.data2 = msg.objects;
+			
+			SDL_PushEvent (&evento);
+			break; /* Si hay otros eventos, dejarlos para la siguiente lectura */
 		}
 	} while (1);
 }

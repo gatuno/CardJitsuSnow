@@ -29,6 +29,10 @@
 #define GINT_TO_POINTER(i) ((void *) (long) (i))
 
 typedef struct {
+	int object, x, y;
+} ObjectPos;
+
+typedef struct {
 	uint8_t version;
 	uint8_t type;
 	union {
@@ -41,19 +45,27 @@ typedef struct {
 			int element;
 			char nick[NICK_SIZE];
 		};
+		struct {
+			int num_objects;
+			ObjectPos *objects;
+		};
 	};
 } NetworkMessage;
 
 enum {
 	NET_TYPE_JOIN = 1,
 	NET_TYPE_ACCEPT,
-	NET_TYPE_OTHER_JOIN
+	NET_TYPE_OTHER_JOIN,
+	
+	NET_TYPE_START_INFO = 8
 };
 
 enum {
 	NETWORK_EVENT_CLOSE = 0,
 	NETWORK_EVENT_ACCEPT,
-	NETWORK_EVENT_JOIN_NINJA
+	NETWORK_EVENT_JOIN_NINJA,
+	
+	NETWORK_EVENT_START
 };
 
 typedef struct {

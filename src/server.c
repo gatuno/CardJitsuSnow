@@ -53,6 +53,8 @@ typedef struct SnowFight {
 	int fds[3];
 	char nicks[3][NICK_SIZE];
 	
+	int running;
+	
 	/* Otra info aquí */
 	int escenario[5][9];
 	int acciones[5][9];
@@ -69,6 +71,10 @@ typedef struct PendingWrite {
 	
 	struct PendingWrite *next;
 } PendingWrite;
+
+/* Prototipos de función */
+void cancel_writes (int fd);
+void start_tabla (SnowFight *tabla);
 
 static SnowFight *lista_partidas;
 static PendingWrite *writes;
@@ -158,8 +164,6 @@ void agregar_poll (void) {
 	agregar_count = 0;
 }
 
-void cancel_writes (int fd);
-
 void eliminar_poll (void) {
 	int g, h;
 	
@@ -220,7 +224,7 @@ void do_writes (int fd) {
 	}
 	
 	if (pos != NULL) {
-		printf ("Se envia una escritura pendiente para el fd [%i]\n", fd);
+		printf ("Se envia una escritura pendiente para el fd [%i]. Size: %i\n", fd, pos->size);
 		/* Ejecutar el write */
 		write (pos->fd, pos->buffer, pos->size);
 		
@@ -285,7 +289,7 @@ SnowFight *find_by_empty_element (int element) {
 	
 	/* Localizar una partida a la que le falte un ninja del elemento solicitado */
 	while (n != NULL) {
-		if (n->fds[element] == -1 /* FIXME: && n->NOT RUNNING */) {
+		if (n->fds[element] == -1 && !n->running) {
 			return n;
 		}
 		n = n->next;
@@ -309,6 +313,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	new = (SnowFight *) malloc (sizeof (SnowFight));
 	
 	new->next = NULL;
+	new->running = FALSE;
 	if (lista_partidas == NULL) {
 		lista_partidas = new;
 	} else {
@@ -415,12 +420,17 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		}
 	}
 	
-	printf ("El cliente [%i] se unió a la tabla [%i] y se le envió ACCEPTED.\n", fd, new->id);
-	/* TODO: Si ya están los 3 clientes mandar el START */
+	printf ("El cliente [%i] se unió a la tabla [%i] y se le envió ACCEPTED.\n", fd, tabla->id);
+	
+	if (tabla->fds[0] != -1 && tabla->fds[1] != -1 && tabla->fds[2] != -1) {
+		start_tabla (tabla);
+	}
 }
 
 void start_tabla (SnowFight *tabla) {
-	int r;
+	int r, g, h;
+	char buffer_send[128];
+	
 	/* Vaciar el escenario */
 	
 	memset (tabla->escenario, 0, sizeof (tabla->escenario));
@@ -448,6 +458,42 @@ void start_tabla (SnowFight *tabla) {
 	if (tabla->escenario[0][0] == r || tabla->escenario[2][0] == r) r++;
 	
 	tabla->escenario[4][0] = r;
+	
+	/* Preparar el mensaje de start + info de inicio */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+	
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+	
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_START_INFO;
+	
+	/* Cantidad de objetos que vamos a enviar */
+	buffer_send[4] = 4 + 3; /* 4 rocas + 3 ninjas TODO: Enviar los enemigos */
+	
+	/* TODO: Falta enviar el round Info */
+	r = 5;
+	/* Colocar coordenadas iniciales de los objetos */
+	for (g = 0; g < 5; g++) {
+		for (h = 0; h < 9; h++) {
+			if (tabla->escenario[g][h] != NONE) {
+				buffer_send[r] = tabla->escenario[g][h];
+				buffer_send[r + 1] = h;
+				buffer_send[r + 2] = g;
+				
+				r = r + 3;
+			}
+		}
+	}
+	
+	/* Enviar el mensaje de start */
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] != -1) {
+			agregar_write (tabla->fds[g], buffer_send, r, 0);
+		}
+	}
+	tabla->running = TRUE;
 }
 
 #if 0
