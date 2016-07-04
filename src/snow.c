@@ -40,6 +40,7 @@
 #include "snow.h"
 
 #include "water_ninja.h"
+#include "fire_ninja.h"
 #include "uitimer.h"
 
 #include "netplay.h"
@@ -261,6 +262,8 @@ typedef struct {
 	int acciones_server[5][9];
 	
 	/* Poner aquí los ninjas y enemigos */
+	WaterNinja *water;
+	FireNinja *fire;
 } SnowStage;
 
 /* Prototipos de función */
@@ -598,13 +601,31 @@ int game_loop (SnowStage *stage) {
 	UITimer *timer, *timer2, *timer3;
 	
 	int fondo;
-	WaterNinja *water;
 	
 	int local_ninja = NINJA_WATER;
 	int ui_estatus = UI_SHOW_TIMER;
 	
-	fondo = RANDOM(3);
-	water = crear_water_ninja (0, 0);
+	//fondo = RANDOM(3); /* FIXME: El fondo también debe venir desde el server */
+	fondo = 2;
+	/* Crear los 3 ninjas */
+	if (stage->escenario[0][0] == NINJA_WATER) {
+		g = 0;
+	} else if (stage->escenario[2][0] == NINJA_WATER) {
+		g = 2;
+	} else if (stage->escenario[4][0] == NINJA_WATER) {
+		g = 4;
+	}
+	stage->water = create_water_ninja (0, g);
+	
+	if (stage->escenario[0][0] == NINJA_FIRE) {
+		g = 0;
+	} else if (stage->escenario[2][0] == NINJA_FIRE) {
+		g = 2;
+	} else if (stage->escenario[4][0] == NINJA_FIRE) {
+		g = 4;
+	}
+	stage->fire = create_fire_ninja (0, g);
+	
 	timer = crear_timer (stage->local_ninja);
 	
 	do {
@@ -626,9 +647,10 @@ int game_loop (SnowStage *stage) {
 						g = (event.button.x - MAP_X) / 70;
 						h = (event.button.y - MAP_Y) / 70;
 						
-						if (stage->acciones[g][h] == ACTION_MOVE) {
+						if (stage->acciones[h][g] == ACTION_MOVE) {
 							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
-							move_water (water, g, h);
+							//move_water (water, g, h);
+							move_fire (stage->fire, g, h);
 						}
 					}
 					break;
@@ -651,26 +673,28 @@ int game_loop (SnowStage *stage) {
 						done = GAME_QUIT;
 					}
 					
-					if (key == SDLK_a) {
-						
+					if (key == SDLK_z) {
+						put_idle (stage->fire);
+					} else if (key == SDLK_a) {
+						attack_fire (stage->fire);
 					} else if (key == SDLK_s) {
-						
+						celebrate_fire (stage->fire);
 					} else if (key == SDLK_d) {
-						
+						prev_move_fire (stage->fire);
 					} else if (key == SDLK_f) {
-						
+						ko_fire (stage->fire);
 					} else if (key == SDLK_g) {
-						
+						hit_fire (stage->fire);
 					} else if (key == SDLK_h) {
-						
+						revive_fire (stage->fire);
 					} else if (key == SDLK_DOWN) {
-						add_water_offset (water, 0, 1);
+						add_fire_offset (stage->fire, 0, 1);
 					} else if (key == SDLK_UP) {
-						add_water_offset (water, 0, -1);
+						add_fire_offset (stage->fire, 0, -1);
 					} else if (key == SDLK_LEFT) {
-						add_water_offset (water, -1, 0);
+						add_fire_offset (stage->fire, -1, 0);
 					} else if (key == SDLK_RIGHT) {
-						add_water_offset (water, 1, 0);
+						add_fire_offset (stage->fire, 1, 0);
 					}
 					break;
 				default:
@@ -700,7 +724,7 @@ int game_loop (SnowStage *stage) {
 			
 			/* Dibujar las posibles acciones */
 			memset (stage->acciones, 0, sizeof (stage->acciones));
-			ask_water_actions (water, stage->escenario, stage->acciones);
+			ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
 			for (g = 0; g < 5; g++) {
 				for (h = 0; h < 9; h++) {
 					if (stage->acciones[g][h] & ACTION_MOVE) {
@@ -737,13 +761,16 @@ int game_loop (SnowStage *stage) {
 					
 					SDL_RenderCopy (renderer, images[i], NULL, &rect);
 				} else if (stage->escenario[g][h] == NINJA_WATER) {
-					dibujar_water (water);
+					draw_water_ninja (stage->water);
+				} else if (stage->escenario[g][h] == NINJA_FIRE) {
+					draw_fire_ninja (stage->fire);
 				}
 			}
 		}
 		
 		if (ui_estatus == UI_WAIT_INPUT) {
-			dibujar_ghost_water (water);
+			draw_ghost_water_ninja (stage->water);
+			draw_ghost_fire_ninja (stage->fire);
 		}
 		
 		dibujar_timer (timer);
@@ -862,6 +889,7 @@ void setup (void) {
 	}
 	
 	setup_water_ninja ();
+	setup_fire_ninja ();
 	setup_timer ();
 	
 	if (use_sound) {

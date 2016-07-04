@@ -27,6 +27,21 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/water_ninja/revived.png \
 	images/water_ninja/revive_other.png \
 	images/water_ninja/revive_other_loop.png \
+	images/fire_ninja/attack.png \
+	images/fire_ninja/celebrate.png \
+	images/fire_ninja/celebrate_intro.png \
+	images/fire_ninja/ghost.png \
+	images/fire_ninja/hit.png \
+	images/fire_ninja/idle.png \
+	images/fire_ninja/knockout_intro.png \
+	images/fire_ninja/knockout_loop.png \
+	images/fire_ninja/move.png \
+	images/fire_ninja/powercard_bottledrop.png \
+	images/fire_ninja/powercard_fire_loop.png \
+	images/fire_ninja/powercard_summon.png \
+	images/fire_ninja/revived.png \
+	images/fire_ninja/revive_other.png \
+	images/fire_ninja/revive_other_loop.png \
 	images/ui_fire_cards.png \
 	images/ui_snow_cards.png \
 	images/ui_water_cards.png \

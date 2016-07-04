@@ -3,7 +3,7 @@
 gamedatadir = $(pkgdatadir)/data
 
 bin_PROGRAMS = cjsnow
-cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h netplay.h netplay.c
+cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h netplay.h netplay.c fire_ninja.c fire_ninja.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h
 
 # El servidor sólo funciona en Linux
@@ -31,7 +31,7 @@ if MACOSX
 # En MAC OS X, hay que ligar/compilar contra los frameworks
 cjsnow_LDADD = $(SDL_LIBS)
 else
-cjsnow_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
+cjsnow_LDADD = -lm $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
 servidor_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
 endif
 LDADD = $(LIBINTL)

@@ -284,7 +284,7 @@ struct _WaterNinja {
 
 static SDL_Texture *water_ninja_images[NUM_WATER_NINJA_IMAGES];
 
-WaterNinja *crear_water_ninja (int x, int y) {
+WaterNinja *create_water_ninja (int x, int y) {
 	WaterNinja *obj;
 	
 	obj = (WaterNinja *) malloc (sizeof (WaterNinja));
@@ -340,7 +340,7 @@ void add_water_offset (WaterNinja *ninja, int x, int y) {
 	printf ("Water Ninja Offsets: %i, %i\n", ninja->offset_x, ninja->offset_y);
 }
 
-void dibujar_water (WaterNinja *ninja) {
+void draw_water_ninja (WaterNinja *ninja) {
 	SDL_Rect rect, rect2, rect3;
 	int calc;
 	int temp;
@@ -425,7 +425,7 @@ void dibujar_water (WaterNinja *ninja) {
 	ninja->offset_y = sy;
 }
 
-void dibujar_ghost_water (WaterNinja *ninja) {
+void draw_ghost_water_ninja (WaterNinja *ninja) {
 	SDL_Rect rect;
 	if (ninja->x != ninja->next_x || ninja->y != ninja->next_y) {
 		/* Dibujar el ninja fantasma */
@@ -443,36 +443,36 @@ void ask_water_actions (WaterNinja *ninja, int escenario[5][9], int acciones[5][
 	
 	for (g = -2; g < 2; g++) {
 		if (ninja->x + g >= 0 && ninja->x + g < 9) {
-			obj = escenario[ninja->x + g][ninja->y];
+			obj = escenario[ninja->y][ninja->x + g];
 			if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
-				acciones[ninja->x + g][ninja->y] |= ACTION_CANT_MOVE;
+				acciones[ninja->y][ninja->x + g] = ACTION_CANT_MOVE;
 			} else if (obj == NONE) {
-				acciones[ninja->x + g][ninja->y] = ACTION_MOVE;
+				acciones[ninja->y][ninja->x + g] = ACTION_MOVE;
 			}
 		}
 	}
 	
 	for (h = -2; h < 2; h++) {
 		if (ninja->y + h >= 0 && ninja->y + h < 5) {
-			obj = escenario[ninja->x][ninja->y + h];
+			obj = escenario[ninja->y + h][ninja->x];
 			if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
-				acciones[ninja->x][ninja->y + h] |= ACTION_CANT_MOVE;
+				acciones[ninja->y + h][ninja->x] = ACTION_CANT_MOVE;
 			} else if (obj == NONE) {
-				acciones[ninja->x][ninja->y + h] = ACTION_MOVE;
+				acciones[ninja->y + h][ninja->x] = ACTION_MOVE;
 			}
 		}
 	}
 	
 	if (ninja->x - 1 >= 0 && ninja->y - 1 >= 0) {
-		obj = escenario[ninja->x - 1][ninja->y - 1];
+		obj = escenario[ninja->y - 1][ninja->x - 1];
 		if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
-			acciones[ninja->x - 1][ninja->y - 1] |= ACTION_CANT_MOVE;
+			acciones[ninja->y - 1][ninja->x - 1] = ACTION_CANT_MOVE;
 		} else if (obj == NONE) {
-			acciones[ninja->x - 1][ninja->y - 1] = ACTION_MOVE;
+			acciones[ninja->y - 1][ninja->x - 1] = ACTION_MOVE;
 		}
 	}
 	
-	acciones[ninja->x][ninja->y] = ACTION_MOVE;
+	acciones[ninja->y][ninja->x] = ACTION_MOVE;
 }
 
 void setup_water_ninja (void) {

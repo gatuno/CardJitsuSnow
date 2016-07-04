@@ -1,5 +1,5 @@
 /*
- * water_ninja.h
+ * fire_ninja.h
  * This file is part of Card-Jitsu Snow
  *
  * Copyright (C) 2016 - Félix Arreola Rodríguez
@@ -18,24 +18,25 @@
  * along with Card-Jitsu Snow. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __WATER_NINJA_H__
-#define __WATER_NINJA_H__
+#ifndef __FIRE_NINJA_H__
+#define __FIRE_NINJA_H__
 
-typedef struct _WaterNinja WaterNinja;
+typedef struct _FireNinja FireNinja;
 
-void setup_water_ninja (void);
-void draw_water_ninja (WaterNinja *);
-void draw_ghost_water_ninja (WaterNinja *ninja);
-WaterNinja *create_water_ninja (int x, int y);
-void attack_water (WaterNinja *water);
-void celebrate_water (WaterNinja *ninja);
-void move_water (WaterNinja *ninja, int x, int y);
-void ko_water (WaterNinja *ninja);
-void hit_water (WaterNinja *ninja);
-void revive_water (WaterNinja *ninja);
+void setup_fire_ninja (void);
+void draw_fire_ninja (FireNinja *);
+void draw_ghost_fire_ninja (FireNinja *ninja);
+FireNinja *create_fire_ninja (int x, int y);
+void attack_fire (FireNinja *ninja);
+void celebrate_fire (FireNinja *ninja);
+void move_fire (FireNinja *ninja, int x, int y);
+void ko_fire (FireNinja *ninja);
+void hit_fire (FireNinja *ninja);
+void revive_fire (FireNinja *ninja);
 
-void ask_water_actions (WaterNinja *ninja, int escenario[5][9], int acciones[5][9]);
-void add_water_offset (WaterNinja *ninja, int x, int y);
+void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]);
 
-#endif /* __WATER_NINJA_H__ */
+void prev_move_fire (FireNinja *ninja);
+void put_idle_fire (FireNinja *Ninja);
+#endif /* __FIRE_NINJA_H__ */
 
