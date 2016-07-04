@@ -649,8 +649,11 @@ int game_loop (SnowStage *stage) {
 						
 						if (stage->acciones[h][g] == ACTION_MOVE) {
 							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
-							//move_water (water, g, h);
-							move_fire (stage->fire, g, h);
+							if (stage->local_ninja == UI_WATER) {
+								move_water (stage->water, g, h);
+							} else if (stage->local_ninja == UI_FIRE) {
+								move_fire (stage->fire, g, h);
+							}
 						}
 					}
 					break;
@@ -724,7 +727,11 @@ int game_loop (SnowStage *stage) {
 			
 			/* Dibujar las posibles acciones */
 			memset (stage->acciones, 0, sizeof (stage->acciones));
-			ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
+			if (stage->local_ninja == UI_FIRE) {
+				ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
+			} else if (stage->local_ninja == UI_WATER) {
+				ask_water_actions (stage->water, stage->escenario, stage->acciones);
+			}
 			for (g = 0; g < 5; g++) {
 				for (h = 0; h < 9; h++) {
 					if (stage->acciones[g][h] & ACTION_MOVE) {

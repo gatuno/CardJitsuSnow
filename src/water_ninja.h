@@ -35,7 +35,9 @@ void hit_water (WaterNinja *ninja);
 void revive_water (WaterNinja *ninja);
 
 void ask_water_actions (WaterNinja *ninja, int escenario[5][9], int acciones[5][9]);
-void add_water_offset (WaterNinja *ninja, int x, int y);
+
+void put_idle_water (WaterNinja *ninja);
+void prev_move_water (WaterNinja *ninja);
 
 #endif /* __WATER_NINJA_H__ */
 
