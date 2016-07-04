@@ -40,7 +40,7 @@
 
 #include "fire_ninja.h"
 
-/* Listar las imágenes del Ninja de Agua */
+/* Listar las imágenes del Ninja de fuego */
 enum {
 	FIRE_NINJA_IDLE,
 	FIRE_NINJA_ATTACK,

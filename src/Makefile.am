@@ -3,7 +3,12 @@
 gamedatadir = $(pkgdatadir)/data
 
 bin_PROGRAMS = cjsnow
-cjsnow_SOURCES = snow.c path.c path.h water_ninja.c water_ninja.h uitimer.c uitimer.h netplay.h netplay.c fire_ninja.c fire_ninja.h
+cjsnow_SOURCES = snow.c path.c path.h \
+	uitimer.c uitimer.h \
+	netplay.h netplay.c \
+	water_ninja.c water_ninja.h \
+	fire_ninja.c fire_ninja.h \
+	snow_ninja.c snow_ninja.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h
 
 # El servidor sólo funciona en Linux
