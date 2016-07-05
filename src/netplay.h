@@ -33,6 +33,12 @@ typedef struct {
 } ObjectPos;
 
 typedef struct {
+	int num_objects;
+	int background;
+	int bonus_type;
+} StartInfo;
+
+typedef struct {
 	uint8_t version;
 	uint8_t type;
 	union {
@@ -46,7 +52,7 @@ typedef struct {
 			char nick[NICK_SIZE];
 		};
 		struct {
-			int num_objects;
+			StartInfo info;
 			ObjectPos *objects;
 		};
 	};
@@ -57,7 +63,8 @@ enum {
 	NET_TYPE_ACCEPT,
 	NET_TYPE_OTHER_JOIN,
 	
-	NET_TYPE_START_INFO = 8
+	NET_TYPE_START_INFO = 8,
+	NET_TYPE_READY
 };
 
 enum {
@@ -75,6 +82,7 @@ typedef struct {
 
 int setup_netplay (char *server, int puerto);
 void send_join (int ninja, char *nick);
+void send_ready (void);
 void process_network_events (void);
 
 extern int NETWORK_EVENT;

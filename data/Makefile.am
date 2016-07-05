@@ -13,6 +13,9 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/tile_heal.png \
 	images/tile_move.png \
 	images/tile_no_move.png \
+	images/round_1.png \
+	images/round_2.png \
+	images/round_3.png \
 	images/water_ninja/idle.png \
 	images/water_ninja/attack.png \
 	images/water_ninja/celebrate.png \

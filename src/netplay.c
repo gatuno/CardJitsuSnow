@@ -145,6 +145,23 @@ void send_join (int ninja, char *nick) {
 	send (server_fd, buffer_send, 6 + NICK_SIZE, 0);
 }
 
+void send_ready (void) {
+	char buffer_send[128];
+	uint16_t temp;
+	
+	/* Rellenar con la firma del protocolo FF */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+	
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+	
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_READY;
+	
+	send (server_fd, buffer_send, 4, 0);
+}
+
 int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 	int g, h, e;
 	int real_len;
@@ -205,15 +222,18 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		msg->element = buffer[4];
 		memcpy (msg->nick, &buffer[5], NICK_SIZE);
 	} else if (msg->type == NET_TYPE_START_INFO) {
-		if (len < 5) return -1;
+		if (len < 7) return -1;
 		
-		msg->num_objects = e = buffer[4];
+		msg->info.background = buffer[4];
+		msg->info.bonus_type = buffer[5];
 		
-		real_len = 5 + (3 * e);
+		msg->info.num_objects = e = buffer[6];
+		
+		real_len = 7 + (3 * e);
 		if (len < real_len) return -1; /* Cantidad de bytes menores que la cantidad de objetos */
 		msg->objects = (ObjectPos *) malloc (sizeof (ObjectPos) * e);
 		
-		h = 5;
+		h = 7;
 		for (g = 0; g < e; g++) {
 			msg->objects[g].object = buffer[h];
 			msg->objects[g].x = buffer[h + 1];
@@ -230,6 +250,7 @@ void process_network_events (void) {
 	SDL_Event evento;
 	NetworkMessage msg;
 	NinjaInfo *otros_info;
+	StartInfo *start_info;
 	
 	do {
 		len = recv (server_fd, buffer, 256, MSG_PEEK);
@@ -299,7 +320,9 @@ void process_network_events (void) {
 			evento.type = NETWORK_EVENT;
 			evento.user.code = NETWORK_EVENT_START;
 			
-			evento.user.data1 = GINT_TO_POINTER (msg.num_objects);
+			start_info = (StartInfo *) malloc (sizeof (StartInfo));
+			memcpy (start_info, &msg.info, sizeof (StartInfo));
+			evento.user.data1 = start_info;
 			evento.user.data2 = msg.objects;
 			
 			SDL_PushEvent (&evento);

@@ -430,9 +430,10 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 void start_tabla (SnowFight *tabla) {
 	int r, g, h;
 	char buffer_send[128];
+	int enemys;
+	int tipo;
 	
 	/* Vaciar el escenario */
-	
 	memset (tabla->escenario, 0, sizeof (tabla->escenario));
 	memset (tabla->acciones, 0, sizeof (tabla->acciones));
 	
@@ -469,11 +470,18 @@ void start_tabla (SnowFight *tabla) {
 	/* El campo de tipo */
 	buffer_send[3] = NET_TYPE_START_INFO;
 	
-	/* Cantidad de objetos que vamos a enviar */
-	buffer_send[4] = 4 + 3; /* 4 rocas + 3 ninjas TODO: Enviar los enemigos */
+	/* El fondo a usar */
+	buffer_send[4] = RANDOM(3);
 	
-	/* TODO: Falta enviar el round Info */
-	r = 5;
+	/* El tipo de logro para el bonus round */
+	buffer_send[5] = RANDOM(3);
+	
+	enemys = 1 + RANDOM(3);
+	
+	/* Cantidad de objetos que vamos a enviar */
+	buffer_send[6] = 4 + 3 + enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
+	
+	r = 7;
 	/* Colocar coordenadas iniciales de los objetos */
 	for (g = 0; g < 5; g++) {
 		for (h = 0; h < 9; h++) {
@@ -485,6 +493,23 @@ void start_tabla (SnowFight *tabla) {
 				r = r + 3;
 			}
 		}
+	}
+	
+	for (g = 0; g < enemys; g++) {
+		r = RANDOM(3);
+		
+		/* Como es la primera ronda, las posiciones son seguras */
+		do {
+			h = RANDOM(5);
+		} while (tabla->escenario[h][8] != NONE);
+		
+		tabla->escenario[h][8] = r;
+		
+		buffer_send[r] = tabla->escenario[h][8];
+		buffer_send[r + 1] = 8;
+		buffer_send[r + 2] = h;
+		
+		r = r + 3;
 	}
 	
 	/* Enviar el mensaje de start */

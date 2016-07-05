@@ -34,6 +34,7 @@ enum {
 UITimer *crear_timer (int ui);
 void start_ticking (UITimer *timer);
 void dibujar_timer (UITimer *timer);
+void show_timer (UITimer *timer);
 void setup_timer (void);
 
 #endif /* __UITIMER_H__ */

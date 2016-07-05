@@ -149,7 +149,8 @@ static const char *ui_timer_images_names[NUM_UI_TIMER] = {
 };
 
 enum {
-	TIMER_SHOW,
+	TIMER_HIDDEN,
+	TIMER_SHOWING,
 	TIMER_TICKING,
 };
 
@@ -174,7 +175,7 @@ UITimer *crear_timer (int ui) {
 	
 	nuevo->color = ui;
 	nuevo->anim = 0;
-	nuevo->estado = TIMER_SHOW;
+	nuevo->estado = TIMER_HIDDEN;
 	
 	if (ui == UI_FIRE) {
 		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
@@ -193,6 +194,11 @@ UITimer *crear_timer (int ui) {
 	return nuevo;
 };
 
+void show_timer (UITimer *timer) {
+	timer->anim = 0;
+	timer->estado = TIMER_SHOWING;
+}
+
 void start_ticking (UITimer *timer) {
 	timer->anim = 0;
 	timer->estado = TIMER_TICKING;
@@ -205,7 +211,7 @@ void dibujar_timer (UITimer *timer) {
 	int ring;
 	Uint32 curtime;
 	
-	if (timer->estado == TIMER_SHOW) {
+	if (timer->estado == TIMER_SHOWING) {
 		g = timer->img_base;
 		/* Dibujar el reloj base */
 		if (timer->color == UI_WATER) {
@@ -244,7 +250,8 @@ void dibujar_timer (UITimer *timer) {
 		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	
-		timer->anim++;
+		timer->anim += 4;
+		
 		if (timer->anim >= 70) {
 			timer->anim = 70;
 		

@@ -137,6 +137,10 @@ enum {
 	IMG_UI_TILE_MOVE,
 	IMG_UI_TILE_NO_MOVE,
 	
+	IMG_ROUND_1,
+	IMG_ROUND_2,
+	IMG_ROUND_3,
+	
 	NUM_IMAGES
 };
 
@@ -226,7 +230,11 @@ const char *images_names[NUM_IMAGES] = {
 	"images/tile_attack.png",
 	"images/tile_heal.png",
 	"images/tile_move.png",
-	"images/tile_no_move.png"
+	"images/tile_no_move.png",
+	
+	"images/round_1.png",
+	"images/round_2.png",
+	"images/round_3.png"
 };
 
 enum {
@@ -256,8 +264,17 @@ enum {
 	NUM_UI
 };
 
+/* Lista de animaciones */
+enum {
+	UI_ANIM_ROUND,
+	
+	NUM_UI_ANIM
+};
+
 typedef struct {
 	int local_ninja;
+	
+	int background;
 	
 	int escenario[5][9];
 	int acciones[5][9];
@@ -268,6 +285,12 @@ typedef struct {
 	SnowNinja *snow;
 	WaterNinja *water;
 } SnowStage;
+
+typedef struct {
+	int tipo;
+	
+	int round;
+} Animaten;
 
 /* Prototipos de función */
 int game_intro (SnowStage *stage);
@@ -343,6 +366,7 @@ int game_intro (SnowStage *stage) {
 	int others[3] = {-1, -1, -1};
 	NinjaInfo *info;
 	ObjectPos *objs;
+	StartInfo *start_info;
 	
 	int ignore_network = FALSE;
 	
@@ -444,13 +468,16 @@ int game_intro (SnowStage *stage) {
 								free (event.user.data1);
 								break;
 							case NETWORK_EVENT_START:
-								h = GPOINTER_TO_INT (event.user.data1);
+								start_info = (StartInfo *) event.user.data1;
+								h = start_info->num_objects;
 								objs = (ObjectPos *) event.user.data2;
 								for (g = 0; g < h; g++) {
 									stage->escenario[objs[g].y][objs[g].x] = objs[g].object;
 								}
 								
+								stage->background = start_info->background;
 								free (objs);
+								free (start_info);
 								
 								ignore_network = TRUE; /* Ya no procesar eventos de red */
 								f_anim = 0;
@@ -601,15 +628,21 @@ int game_loop (SnowStage *stage) {
 	SDL_Rect rect, rect2;
 	
 	int g, h, i;
-	UITimer *timer, *timer2, *timer3;
+	UITimer *timer;
 	
-	int fondo;
+	int ui_estatus = UI_ANIMATE;
 	
-	int local_ninja = NINJA_WATER;
-	int ui_estatus = UI_SHOW_TIMER;
+	int fondo = stage->background;
+	Animaten animaciones[4];
+	int anims, cont_a;
 	
-	//fondo = RANDOM(3); /* FIXME: El fondo también debe venir desde el server */
 	fondo = 2;
+	
+	anims = 1;
+	animaciones[0].tipo = UI_ANIM_ROUND;
+	animaciones[0].round = 0;
+	cont_a = 0;
+	
 	/* Crear los 3 ninjas */
 	if (stage->escenario[0][0] == NINJA_WATER) {
 		g = 0;
@@ -805,6 +838,23 @@ int game_loop (SnowStage *stage) {
 			SDL_RenderCopy (renderer, images[IMG_FOREGROUND_1], NULL, &rect);
 		} else if (fondo == 1) {
 			SDL_RenderCopy (renderer, images[IMG_FOREGROUND_2], NULL, NULL);
+		}
+		
+		if (ui_estatus == UI_ANIMATE) {
+			if (animaciones[anims - 1].tipo == UI_ANIM_ROUND) {
+				/* Desplegar el round en pantalla */
+				SDL_QueryTexture (images[IMG_ROUND_1 + animaciones[anims - 1].round], NULL, NULL, &rect.w, &rect.h);
+				rect.x = (800 - rect.w) / 2;
+				rect.y = (500 - rect.h) / 2;
+				
+				SDL_RenderCopy (renderer, images[IMG_ROUND_1 + animaciones[anims - 1].round], NULL, &rect);
+				cont_a++;
+				
+				if (cont_a >= 60) {
+					/* Como ya terminó la animación del round, apilar las animaciones para aparecer a los enemigos */
+					anims--;
+				}
+			}
 		}
 		SDL_RenderPresent (renderer);
 		
