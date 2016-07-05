@@ -238,6 +238,7 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			msg->objects[g].object = buffer[h];
 			msg->objects[g].x = buffer[h + 1];
 			msg->objects[g].y = buffer[h + 2];
+			h = h + 3;
 		}
 	}
 	
@@ -255,6 +256,9 @@ void process_network_events (void) {
 	do {
 		len = recv (server_fd, buffer, 256, MSG_PEEK);
 		if (len < 0 && (errno == EWOULDBLOCK || errno == EAGAIN)) {
+			break;
+		} else if (len < 0) {
+			/* Error de lectura */
 			break;
 		}
 		

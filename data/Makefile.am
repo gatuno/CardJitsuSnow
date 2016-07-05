@@ -167,7 +167,14 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/intro/water_selected_14.png \
 	images/intro/water_selected_15.png \
 	images/intro/water_selected_16.png \
-	images/intro/water_shadow.png
+	images/intro/water_shadow.png \
+	images/enemy/snowman_spawn.png \
+	images/enemy/sly_idle.png \
+	images/enemy/sly_attack.png \
+	images/enemy/sly_daze.png \
+	images/enemy/sly_hit.png \
+	images/enemy/sly_move.png \
+	images/enemy/sly_ko.png
 
 
 # Instalar los archivos .desktop e iconos

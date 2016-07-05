@@ -43,6 +43,8 @@
 #include "fire_ninja.h"
 #include "snow_ninja.h"
 
+#include "enemy.h"
+
 #include "uitimer.h"
 
 #include "netplay.h"
@@ -267,6 +269,7 @@ enum {
 /* Lista de animaciones */
 enum {
 	UI_ANIM_ROUND,
+	UI_SHOW_ENEMYS,
 	
 	NUM_UI_ANIM
 };
@@ -280,10 +283,15 @@ typedef struct {
 	int acciones[5][9];
 	int acciones_server[5][9];
 	
+	ObjectPos next_enemys[4];
+	int count_next_enemys;
+	
 	/* Poner aquí los ninjas y enemigos */
 	FireNinja *fire;
 	SnowNinja *snow;
 	WaterNinja *water;
+	
+	Enemy *enemigos[4];
 } SnowStage;
 
 typedef struct {
@@ -297,6 +305,7 @@ int game_intro (SnowStage *stage);
 int game_loop (SnowStage *stage);
 int game_finish (void);
 void setup (void);
+Enemy * get_enemy_for_pos (SnowStage *stage, int x, int y);
 
 int mouse_intro_penguin (int x, int y);
 
@@ -471,8 +480,17 @@ int game_intro (SnowStage *stage) {
 								start_info = (StartInfo *) event.user.data1;
 								h = start_info->num_objects;
 								objs = (ObjectPos *) event.user.data2;
+								stage->count_next_enemys = 0;
 								for (g = 0; g < h; g++) {
-									stage->escenario[objs[g].y][objs[g].x] = objs[g].object;
+									if (objs[g].object >= ENEMY_SLY && objs[g].object <= ENEMY_TANK) {
+										/* Agregar a la lista de enemigos próximos */
+										stage->next_enemys[stage->count_next_enemys].object = objs[g].object;
+										stage->next_enemys[stage->count_next_enemys].x = objs[g].x;
+										stage->next_enemys[stage->count_next_enemys].y = objs[g].y;
+										stage->count_next_enemys++;
+									} else {
+										stage->escenario[objs[g].y][objs[g].x] = objs[g].object;
+									}
 								}
 								
 								stage->background = start_info->background;
@@ -746,8 +764,9 @@ int game_loop (SnowStage *stage) {
 						switch (event.user.code) {
 							case UI_TIMER_EVENT_SHOW:
 								/* Como el reloj ya se mostró, enviar el evento al servidor de que estamos listos */
-								ui_estatus = UI_WAIT_INPUT;
-								start_ticking (timer);
+								send_ready ();
+								/*ui_estatus = UI_WAIT_INPUT;
+								start_ticking (timer);*/
 								break;
 							case UI_TIMER_EVENT_DONE_TICKS:
 								ui_estatus = UI_WAITING_SERVER;
@@ -816,6 +835,8 @@ int game_loop (SnowStage *stage) {
 					draw_fire_ninja (stage->fire);
 				} else if (stage->escenario[g][h] == NINJA_SNOW) {
 					draw_snow_ninja (stage->snow);
+				} else if (stage->escenario[g][h] == ENEMY_SLY) {
+					draw_enemy (get_enemy_for_pos(stage, h, g));
 				}
 			}
 		}
@@ -852,7 +873,21 @@ int game_loop (SnowStage *stage) {
 				
 				if (cont_a >= 60) {
 					/* Como ya terminó la animación del round, apilar las animaciones para aparecer a los enemigos */
+					animaciones[anims - 1].tipo = UI_SHOW_ENEMYS;
+					for (g = 0; g < stage->count_next_enemys; g++) {
+						stage->escenario[stage->next_enemys[g].y][stage->next_enemys[g].x] = stage->next_enemys[g].object;
+						
+						/* Crear los objetos */
+						stage->enemigos[g] = create_enemy (stage->next_enemys[g].x, stage->next_enemys[g].y, stage->next_enemys[g].object);
+					}
+				}
+			} else if (animaciones[anims - 1].tipo == UI_SHOW_ENEMYS) {
+				/* Preguntarle al primer enemigo si está listo */
+				if (is_enemy_ready (stage->enemigos[0])) {
 					anims--;
+					/* Enviar el mensaje de listo y mostrar el reloj */
+					ui_estatus = UI_SHOW_TIMER;
+					show_timer (timer);
 				}
 			}
 		}
@@ -863,6 +898,20 @@ int game_loop (SnowStage *stage) {
 	} while (!done);
 	
 	return done;
+}
+
+Enemy * get_enemy_for_pos (SnowStage *stage, int x, int y) {
+	/* Buscar en los enemigos cuál es el enemigo correspondiente */
+	int g;
+	for (g = 0; g < 4; g++) {
+		if (stage->enemigos[g] != NULL) {
+			if (stage->enemigos[g]->x == x && stage->enemigos[g]->y == y) {
+				return stage->enemigos[g];
+			}
+		}
+	}
+	
+	return NULL;
 }
 
 void setup (void) {
@@ -961,6 +1010,7 @@ void setup (void) {
 	setup_water_ninja ();
 	setup_fire_ninja ();
 	setup_snow_ninja ();
+	setup_enemy ();
 	setup_timer ();
 	
 	if (use_sound) {

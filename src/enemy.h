@@ -1,5 +1,5 @@
 /*
- * snow.h
+ * enemy.h
  * This file is part of Card-Jitsu Snow
  *
  * Copyright (C) 2016 - Félix Arreola Rodríguez
@@ -18,66 +18,21 @@
  * along with Card-Jitsu Snow. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SNOW_H__
-#define __SNOW_H__
-
-#include <SDL.h>
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE !FALSE
-#endif
-
-#define MAP_X 90
-#define MAP_Y 80
-
-/* Acciones */
-#define ACTION_CLEAR 0x00
-#define ACTION_MOVE 0x01
-#define ACTION_CANT_MOVE 0x02
-
-#define ACTION_ATTACK 0x04
-#define ACTION_HEAL 0x08
-
-#define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
-
-/* Interfaces */
-enum {
-	UI_FIRE = 0,
-	UI_SNOW,
-	UI_WATER
-};
-
-/* Objetos */
-enum {
-	NONE = 0,
-	
-	NINJA_FIRE,
-	NINJA_SNOW,
-	NINJA_WATER,
-	
-	ROCK,
-	
-	ENEMY_SLY,
-	ENEMY_SCRAP,
-	ENEMY_TANK,
-	
-	NUM_OBJECTS
-};
+#ifndef __ENEMY_H__
+#define __ENEMY_H__
 
 typedef struct {
-	int orig_x, orig_y;
-	int w, h;
-	int dest_x, dest_y;
-	int rot;
-} SnowSprite;
+	int frame;
+	int x, y;
+	int tipo;
+	int estado;
+	int x_real, y_real;
+} Enemy;
 
-extern SDL_Renderer *renderer;
+Enemy *create_enemy (int x, int y, int tipo);
+void draw_enemy (Enemy *enemy);
+void setup_enemy (void);
+int is_enemy_ready (Enemy *enemy);
 
-extern int use_sound;
-
-#endif /* __SNOW_H__ */
+#endif /* __ENEMY_H__ */
 
