@@ -39,6 +39,12 @@ typedef struct {
 } StartInfo;
 
 typedef struct {
+	int object;
+	int type;
+	int x, y;
+} Action;
+
+typedef struct {
 	uint8_t version;
 	uint8_t type;
 	union {
@@ -55,6 +61,7 @@ typedef struct {
 			StartInfo info;
 			ObjectPos *objects;
 		};
+		Action action;
 	};
 } NetworkMessage;
 
@@ -64,7 +71,9 @@ enum {
 	NET_TYPE_OTHER_JOIN,
 	
 	NET_TYPE_START_INFO = 8,
-	NET_TYPE_READY
+	NET_TYPE_CLIENT_READY,
+	NET_TYPE_ASK_ACTIONS,
+	NET_TYPE_ACTION,
 };
 
 enum {
@@ -72,7 +81,9 @@ enum {
 	NETWORK_EVENT_ACCEPT,
 	NETWORK_EVENT_JOIN_NINJA,
 	
-	NETWORK_EVENT_START
+	NETWORK_EVENT_START,
+	NETWORK_EVENT_SERVER_ASK_ACTIONS,
+	NETOWRK_EVENT_ACTION,
 };
 
 typedef struct {

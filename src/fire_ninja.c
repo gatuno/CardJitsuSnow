@@ -470,7 +470,7 @@ void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]
 	}
 	
 	if (ninja->x - 1 >= 0 && ninja->y + 1 < 5) {
-		obj = escenario[ninja->y - 1][ninja->x - 1];
+		obj = escenario[ninja->y + 1][ninja->x - 1];
 		if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
 			acciones[ninja->y + 1][ninja->x - 1] = ACTION_CANT_MOVE;
 		} else if (obj == NONE) {
@@ -479,7 +479,7 @@ void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]
 	}
 	
 	if (ninja->x + 1 < 9 && ninja->y - 1 >= 0) {
-		obj = escenario[ninja->y - 1][ninja->x - 1];
+		obj = escenario[ninja->y - 1][ninja->x + 1];
 		if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
 			acciones[ninja->y - 1][ninja->x + 1] = ACTION_CANT_MOVE;
 		} else if (obj == NONE) {
@@ -488,7 +488,7 @@ void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]
 	}
 	
 	if (ninja->x + 1 < 9 && ninja->y + 1 < 5) {
-		obj = escenario[ninja->y - 1][ninja->x - 1];
+		obj = escenario[ninja->y + 1][ninja->x + 1];
 		if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
 			acciones[ninja->y + 1][ninja->x + 1] = ACTION_CANT_MOVE;
 		} else if (obj == NONE) {

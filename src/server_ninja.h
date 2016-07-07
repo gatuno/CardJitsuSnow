@@ -1,5 +1,5 @@
 /*
- * enemy.h
+ * server_ninja.h
  * This file is part of Card-Jitsu Snow
  *
  * Copyright (C) 2016 - Félix Arreola Rodríguez
@@ -18,15 +18,29 @@
  * along with Card-Jitsu Snow. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ENEMY_H__
-#define __ENEMY_H__
+#ifndef __SERVER_NINJA_H__
+#define __SERVER_NINJA_H__
 
-typedef struct _Enemy Enemy;
+typedef struct {
+	int x, y;
+	int tipo;
+	int next_x, next_y;
+} ServerNinja;
 
-Enemy *create_enemy (int x, int y, int tipo);
-void draw_enemy (Enemy *enemy);
-void setup_enemy (void);
-int is_enemy_ready (Enemy *enemy);
+ServerNinja *create_server_ninja (int x, int y, int tipo);
 
-#endif /* __ENEMY_H__ */
+void ask_fire_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]);
+void ask_water_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]);
+void ask_snow_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]);
+
+void move_next (ServerNinja *ninja, int x, int y);
+
+typedef struct {
+	int x, y;
+	int tipo;
+} ServerEnemy;
+
+ServerEnemy *create_server_enemy (int x, int y, int tipo);
+
+#endif /* __SERVER_NINJA_H__ */
 

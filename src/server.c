@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 /* Para el manejo de red */
 #include <sys/socket.h>
@@ -41,12 +42,19 @@
 #include <errno.h>
 
 #include "snow.h"
+#include "server_ninja.h"
+
 #include "netplay.h"
 
 #define NICK_SIZE 16
 #define SERV_PORT 3301
 
 #define MAX_FDS 50
+
+enum {
+	WAITING_CLIENTS = 0,
+	WAITING_ACTIONS
+};
 
 typedef struct SnowFight {
 	int id;
@@ -55,9 +63,20 @@ typedef struct SnowFight {
 	
 	int running;
 	
+	int estado;
+	
 	/* Otra info aquí */
 	int escenario[5][9];
 	int acciones[5][9];
+	
+	int ready[3];
+	
+	ServerNinja *water;
+	ServerNinja *fire;
+	ServerNinja *snow;
+	
+	int enemys;
+	ServerEnemy *enemigos[4];
 	
 	struct SnowFight *next;
 } SnowFight;
@@ -312,6 +331,8 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	
 	new = (SnowFight *) malloc (sizeof (SnowFight));
 	
+	memset (new, 0, sizeof (SnowFight));
+	
 	new->next = NULL;
 	new->running = FALSE;
 	if (lista_partidas == NULL) {
@@ -430,7 +451,6 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 void start_tabla (SnowFight *tabla) {
 	int r, g, h, i;
 	char buffer_send[128];
-	int enemys;
 	int tipo;
 	
 	/* Vaciar el escenario */
@@ -446,12 +466,30 @@ void start_tabla (SnowFight *tabla) {
 	
 	tabla->escenario[0][0] = r;
 	
+	/* Crear el objeto correspondiente */
+	if (r == NINJA_FIRE) {
+		tabla->fire = create_server_ninja (0, 0, r);
+	} else if (r == NINJA_WATER) {
+		tabla->water = create_server_ninja (0, 0, r);
+	} else if (r == NINJA_SNOW) {
+		tabla->snow = create_server_ninja (0, 0, r);
+	}
+	
 	/* Sacar otro que no sea el primero para la posición de en medio */
 	do {
 		r = NINJA_FIRE + RANDOM (3);
 	} while (r == tabla->escenario[0][0]);
 	
 	tabla->escenario[2][0] = r;
+	
+	/* Crear el objeto correspondiente */
+	if (r == NINJA_FIRE) {
+		tabla->fire = create_server_ninja (0, 2, r);
+	} else if (r == NINJA_WATER) {
+		tabla->water = create_server_ninja (0, 2, r);
+	} else if (r == NINJA_SNOW) {
+		tabla->snow = create_server_ninja (0, 2, r);
+	}
 	
 	/* Determinar el último ninja */
 	r = NINJA_FIRE;
@@ -460,8 +498,17 @@ void start_tabla (SnowFight *tabla) {
 	
 	tabla->escenario[4][0] = r;
 	
-	enemys = 1 + RANDOM(3);
-	for (g = 0; g < enemys; g++) {
+	/* Crear el objeto correspondiente */
+	if (r == NINJA_FIRE) {
+		tabla->fire = create_server_ninja (0, 4, r);
+	} else if (r == NINJA_WATER) {
+		tabla->water = create_server_ninja (0, 4, r);
+	} else if (r == NINJA_SNOW) {
+		tabla->snow = create_server_ninja (0, 4, r);
+	}
+	
+	tabla->enemys = 1 + RANDOM(3);
+	for (g = 0; g < tabla->enemys; g++) {
 		i = RANDOM(3);
 		i = 0; /* FIXME */
 		/* Como es la primera ronda, las posiciones son seguras */
@@ -470,6 +517,8 @@ void start_tabla (SnowFight *tabla) {
 		} while (tabla->escenario[h][8] != NONE);
 		
 		tabla->escenario[h][8] = i + ENEMY_SLY;
+		
+		tabla->enemigos[g] = create_server_enemy (8, h, i + ENEMY_SLY);
 	}
 	
 	/* Preparar el mensaje de start + info de inicio */
@@ -489,7 +538,7 @@ void start_tabla (SnowFight *tabla) {
 	buffer_send[5] = RANDOM(3);
 	
 	/* Cantidad de objetos que vamos a enviar */
-	buffer_send[6] = 4 + 3 + enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
+	buffer_send[6] = 4 + 3 + tabla->enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
 	
 	r = 7;
 	/* Colocar coordenadas iniciales de los objetos */
@@ -512,6 +561,142 @@ void start_tabla (SnowFight *tabla) {
 		}
 	}
 	tabla->running = TRUE;
+	tabla->estado = WAITING_CLIENTS;
+	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
+	
+	/* Cambiar los ENEMY_SLY por ENEMY_1 */
+	for (g = 0; g < tabla->enemys; g++) {
+		tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x] = ENEMY_1 + g;
+	}
+}
+
+void manage_client_ready (SnowFight *tabla, int fd) {
+	int g;
+	char buffer_send[128];
+	if (!tabla->running || tabla->estado != WAITING_CLIENTS) {
+		printf ("Error en la tabla. El cliente [%i] envió un ready cuando la tabla no está lista\n", fd);
+	}
+	
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] == fd) break;
+	}
+	
+	/* Poner ready a ese cliente */
+	tabla->ready[g] = 1;
+	
+	g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
+	
+	if (g == 3) { /* FIXME: Debe ser igual a la cantidad de clientes conectados en la tabla */
+		/* Enviar el "ASK actions" a los clientes */
+		buffer_send[0] = 'S';
+		buffer_send[1] = 'N';
+	
+		/* Poner el campo de la versión */
+		buffer_send[2] = 0;
+	
+		/* El campo de tipo */
+		buffer_send[3] = NET_TYPE_ASK_ACTIONS;
+		
+		for (g = 0; g < 3; g++) {
+			if (tabla->fds[g] != -1) {
+				agregar_write (tabla->fds[g], buffer_send, 4, 0);
+			}
+		}
+		
+		tabla->estado = WAITING_ACTIONS;
+		tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
+	}
+}
+
+void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
+	int element, g;
+	int acciones[5][9];
+	char buffer_send[128];
+	ServerNinja *ninja;
+	
+	if (!tabla->running || tabla->estado != WAITING_ACTIONS) {
+		printf ("Error en la tabla. El cliente [%i] envió una acción cuando la tabla no está recibiendo acciones\n", fd);
+	}
+	
+	/* Validar la acción */
+	if (msg->action.type == ACTION_MOVE) {
+		for (g = 0; g < 3; g++) {
+			if (tabla->fds[g] == fd) {
+				element = g;
+				break;
+			}
+		}
+		
+		/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */
+		if (msg->action.object != NINJA_FIRE + element) {
+			printf ("Error en la tabla. El cliente [%i] trata de mover un ninja que no es él\n", fd);
+			return;
+		}
+		
+		if (msg->action.x < 0 || msg->action.x > 8 || msg->action.y < 0 || msg->action.y > 4) {
+			printf ("Error en la tabla. El cliente [%i] envió coordenadas inválidas para un movimiento\n", fd);
+			return;
+		}
+		memset (acciones, 0, sizeof (acciones));
+		
+		/* Preguntar las acciones locales */
+		if (msg->action.object == NINJA_FIRE) {
+			ninja = tabla->fire;
+			ask_fire_actions (tabla->fire, tabla->escenario, acciones);
+		} else if (msg->action.object == NINJA_WATER) {
+			ninja = tabla->water;
+			ask_water_actions (tabla->water, tabla->escenario, acciones);
+		} else if (msg->action.object == NINJA_SNOW) {
+			ninja = tabla->snow;
+			ask_snow_actions (tabla->snow, tabla->escenario, acciones);
+		}
+		
+		/* Si un movimiento choca contra el siguiente de otro ninja no es válido */
+		if (tabla->water != NULL) {
+			if (msg->action.y == tabla->water->next_y && msg->action.x == tabla->water->next_x) {
+				return;
+			}
+		}
+		if (tabla->fire != NULL) {
+			if (msg->action.y == tabla->fire->next_y && msg->action.x == tabla->fire->next_x) {
+				return;
+			}
+		}
+		if (tabla->snow != NULL) {
+			if (msg->action.y == tabla->snow->next_y && msg->action.x == tabla->snow->next_x) {
+				return;
+			}
+		}
+		
+		/* Rellenar con la firma del protocolo SN */
+		buffer_send[0] = 'S';
+		buffer_send[1] = 'N';
+	
+		/* Poner el campo de la versión */
+		buffer_send[2] = 0;
+	
+		/* El campo de tipo */
+		buffer_send[3] = NET_TYPE_ACTION;
+	
+		/* El ninja */
+		buffer_send[4] = msg->action.object;
+	
+		/* Tipo de accion */
+		buffer_send[5] = msg->action.type;
+	
+		/* Coordenadas x, y */
+		buffer_send[6] = msg->action.x;
+		buffer_send[7] = msg->action.y;
+		if (acciones[msg->action.y][msg->action.x] & ACTION_MOVE) {
+			move_next (ninja, msg->action.x, msg->action.y);
+			/* Es válido, enviar el movimiento a los otros  */
+			for (g = 0; g < 3; g++) {
+				if (tabla->fds[g] != -1) {
+					agregar_write (tabla->fds[g], buffer_send, 8, 0);
+				}
+			}
+		}
+	}
 }
 
 #if 0
@@ -624,6 +809,7 @@ int main (int argc, char *argv[]) {
 	NetworkMessage message;
 	SnowFight *tabla;
 	
+	srand ((unsigned int) time (NULL));
 	server_fd = inicializar_socket ();
 	
 	if (server_fd < 0) {
@@ -763,6 +949,22 @@ int main (int argc, char *argv[]) {
 							join_tabla (tabla, fd, &message);
 						}
 					}
+				} else if (message.type == NET_TYPE_CLIENT_READY) {
+					/* Debe estar sentado en una tabla */
+					if (tabla == NULL) {
+						printf ("[%i] Error, este cliente envia un ready cuando no está sentado en una tabla\n", fd);
+					} else {
+						manage_client_ready (tabla, fd);
+					}
+				} else if (message.type == NET_TYPE_ACTION) {
+					/* Debe estar sentado en una tabla */
+					if (tabla == NULL) {
+						printf ("[%i] Error, este cliente envia un movimiento cuando no está sentado en una tabla\n", fd);
+					} else {
+						manage_client_actions (tabla, fd, &message);
+					}
+				} else {
+					printf ("[%i] Mensaje desconocido para el servidor\n", fd);
 				}
 				
 				

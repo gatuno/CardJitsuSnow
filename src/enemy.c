@@ -278,6 +278,14 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.5, 0.65625, 195.0, 167.0}
 };
 
+typedef struct _Enemy {
+	int frame;
+	int x, y;
+	int tipo;
+	int estado;
+	int x_real, y_real;
+};
+
 static int enemy_offsets_int[NUM_ENEMY_IMAGES][2];
 
 static SDL_Texture *enemy_images[NUM_ENEMY_IMAGES];

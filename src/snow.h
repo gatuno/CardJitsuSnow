@@ -65,6 +65,11 @@ enum {
 	ENEMY_SCRAP,
 	ENEMY_TANK,
 	
+	ENEMY_1,
+	ENEMY_2,
+	ENEMY_3,
+	ENEMY_4,
+	
 	NUM_OBJECTS
 };
 

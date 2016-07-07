@@ -259,6 +259,7 @@ enum {
 /* Estatus de la interfaz */
 enum {
 	UI_SHOW_TIMER,
+	UI_WAITING_READY,
 	UI_WAIT_INPUT,
 	UI_WAITING_SERVER,
 	UI_ANIMATE,
@@ -305,7 +306,6 @@ int game_intro (SnowStage *stage);
 int game_loop (SnowStage *stage);
 int game_finish (void);
 void setup (void);
-Enemy * get_enemy_for_pos (SnowStage *stage, int x, int y);
 
 int mouse_intro_penguin (int x, int y);
 
@@ -653,6 +653,7 @@ int game_loop (SnowStage *stage) {
 	int fondo = stage->background;
 	Animaten animaciones[4];
 	int anims, cont_a;
+	Action *accion;
 	
 	fondo = 2;
 	
@@ -694,6 +695,8 @@ int game_loop (SnowStage *stage) {
 	do {
 		last_time = SDL_GetTicks ();
 		
+		process_network_events ();
+		
 		while (SDL_PollEvent(&event) > 0) {
 			switch (event.type) {
 				case SDL_QUIT:
@@ -712,13 +715,7 @@ int game_loop (SnowStage *stage) {
 						
 						if (stage->acciones[h][g] == ACTION_MOVE) {
 							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
-							if (stage->local_ninja == UI_WATER) {
-								move_water (stage->water, g, h);
-							} else if (stage->local_ninja == UI_FIRE) {
-								move_fire (stage->fire, g, h);
-							} else if (stage->local_ninja == UI_SNOW) {
-								move_snow (stage->snow, g, h);
-							}
+							send_action (NINJA_FIRE + (stage->local_ninja - UI_FIRE), ACTION_MOVE, g, h);
 						}
 					}
 					break;
@@ -741,23 +738,6 @@ int game_loop (SnowStage *stage) {
 						done = GAME_QUIT;
 					}
 					
-					if (key == SDLK_z) {
-						put_idle_snow (stage->snow);
-					} else if (key == SDLK_a) {
-						attack_snow (stage->snow);
-					} else if (key == SDLK_s) {
-						celebrate_snow (stage->snow);
-					} else if (key == SDLK_d) {
-						prev_move_snow (stage->snow);
-					} else if (key == SDLK_f) {
-						ko_snow (stage->snow);
-					} else if (key == SDLK_g) {
-						hit_snow (stage->snow);
-					} else if (key == SDLK_h) {
-						revive_snow (stage->snow);
-					} else if (key == SDLK_j) {
-						heal_snow (stage->snow);
-					}
 					break;
 				default:
 					if (event.type == UI_TIMER_EVENT) {
@@ -765,12 +745,40 @@ int game_loop (SnowStage *stage) {
 							case UI_TIMER_EVENT_SHOW:
 								/* Como el reloj ya se mostró, enviar el evento al servidor de que estamos listos */
 								send_ready ();
-								/*ui_estatus = UI_WAIT_INPUT;
-								start_ticking (timer);*/
+								ui_estatus = UI_WAITING_READY;
 								break;
 							case UI_TIMER_EVENT_DONE_TICKS:
 								ui_estatus = UI_WAITING_SERVER;
 								break;
+						}
+					} else if (event.type == NETWORK_EVENT) {
+						switch (event.user.code) {
+							case NETWORK_EVENT_SERVER_ASK_ACTIONS:
+								if (ui_estatus != UI_WAITING_READY) {
+									printf ("Error de sincronización, recibí un ask actions cuando aún no envio ready\n");
+									/* FIXME: Hacer algo */
+								} else {
+									ui_estatus = UI_WAIT_INPUT;
+									start_ticking (timer);
+								}
+								break;
+							case NETOWRK_EVENT_ACTION:
+								accion = (Action *) event.user.data1;
+								
+								if (accion->type == ACTION_MOVE) {
+									if (accion->object == NINJA_FIRE) {
+										move_fire (stage->fire, accion->x, accion->y);
+									} else if (accion->object == NINJA_WATER) {
+										move_water (stage->water, accion->x, accion->y);
+									} else if (accion->object == NINJA_SNOW) {
+										move_snow (stage->snow, accion->x, accion->y);
+									}
+								}
+								
+								free (accion);
+								break;
+							//default:
+								//printf ("Recibí un evento de red aún desconocido\n");
 						}
 					}
 					break;
@@ -835,8 +843,8 @@ int game_loop (SnowStage *stage) {
 					draw_fire_ninja (stage->fire);
 				} else if (stage->escenario[g][h] == NINJA_SNOW) {
 					draw_snow_ninja (stage->snow);
-				} else if (stage->escenario[g][h] == ENEMY_SLY) {
-					draw_enemy (get_enemy_for_pos(stage, h, g));
+				} else if (stage->escenario[g][h] >= ENEMY_1 || stage->escenario[g][h] <= ENEMY_4) {
+					draw_enemy (stage->enemigos[stage->escenario[g][h] - ENEMY_1]);
 				}
 			}
 		}
@@ -875,7 +883,7 @@ int game_loop (SnowStage *stage) {
 					/* Como ya terminó la animación del round, apilar las animaciones para aparecer a los enemigos */
 					animaciones[anims - 1].tipo = UI_SHOW_ENEMYS;
 					for (g = 0; g < stage->count_next_enemys; g++) {
-						stage->escenario[stage->next_enemys[g].y][stage->next_enemys[g].x] = stage->next_enemys[g].object;
+						stage->escenario[stage->next_enemys[g].y][stage->next_enemys[g].x] = ENEMY_1 + g;
 						
 						/* Crear los objetos */
 						stage->enemigos[g] = create_enemy (stage->next_enemys[g].x, stage->next_enemys[g].y, stage->next_enemys[g].object);
@@ -898,20 +906,6 @@ int game_loop (SnowStage *stage) {
 	} while (!done);
 	
 	return done;
-}
-
-Enemy * get_enemy_for_pos (SnowStage *stage, int x, int y) {
-	/* Buscar en los enemigos cuál es el enemigo correspondiente */
-	int g;
-	for (g = 0; g < 4; g++) {
-		if (stage->enemigos[g] != NULL) {
-			if (stage->enemigos[g]->x == x && stage->enemigos[g]->y == y) {
-				return stage->enemigos[g];
-			}
-		}
-	}
-	
-	return NULL;
 }
 
 void setup (void) {

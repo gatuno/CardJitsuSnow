@@ -159,6 +159,7 @@ struct _UITimer {
 	int anim;
 	int estado;
 	
+	int event_sent;
 	Uint32 timestamp;
 	int img_base, img_ring, img_button;
 };
@@ -176,7 +177,7 @@ UITimer *crear_timer (int ui) {
 	nuevo->color = ui;
 	nuevo->anim = 0;
 	nuevo->estado = TIMER_HIDDEN;
-	
+	nuevo->event_sent = 0;
 	if (ui == UI_FIRE) {
 		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_FIRE_TICK_0;
@@ -197,11 +198,13 @@ UITimer *crear_timer (int ui) {
 void show_timer (UITimer *timer) {
 	timer->anim = 0;
 	timer->estado = TIMER_SHOWING;
+	timer->event_sent = 0;
 }
 
 void start_ticking (UITimer *timer) {
 	timer->anim = 0;
 	timer->estado = TIMER_TICKING;
+	timer->event_sent = 0;
 }
 
 void dibujar_timer (UITimer *timer) {
@@ -254,12 +257,14 @@ void dibujar_timer (UITimer *timer) {
 		
 		if (timer->anim >= 70) {
 			timer->anim = 70;
+			if (timer->event_sent == 0) {
+				SDL_zero (evento);
+				evento.type = UI_TIMER_EVENT;
+				evento.user.code = UI_TIMER_EVENT_SHOW;
 		
-			SDL_zero (evento);
-			evento.type = UI_TIMER_EVENT;
-			evento.user.code = UI_TIMER_EVENT_SHOW;
-		
-			SDL_PushEvent (&evento);
+				SDL_PushEvent (&evento);
+				timer->event_sent = 1;
+			}
 		}
 	} else if (timer->estado == TIMER_TICKING) {
 		if (timer->anim < 8) {
@@ -276,12 +281,13 @@ void dibujar_timer (UITimer *timer) {
 			g = (curtime - timer->timestamp) / 3000;
 			if (g >= 9) g = 9;
 			ring = timer->img_ring + 9 - g;
-			if (g == 9) {
+			if (g == 9 && timer->event_sent == 0) {
 				SDL_zero (evento);
 				evento.type = UI_TIMER_EVENT;
 				evento.user.code = UI_TIMER_EVENT_DONE_TICKS;
-				
+			
 				SDL_PushEvent (&evento);
+				timer->event_sent = 1;
 			}
 		}
 		

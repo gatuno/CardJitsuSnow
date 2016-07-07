@@ -157,9 +157,35 @@ void send_ready (void) {
 	buffer_send[2] = 0;
 	
 	/* El campo de tipo */
-	buffer_send[3] = NET_TYPE_READY;
+	buffer_send[3] = NET_TYPE_CLIENT_READY;
 	
 	send (server_fd, buffer_send, 4, 0);
+}
+
+void send_action (int ninja, int tipo, int x, int y) {
+	char buffer_send[128];
+	
+	/* Rellenar con la firma del protocolo FF */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+	
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+	
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_ACTION;
+	
+	/* El ninja */
+	buffer_send[4] = ninja;
+	
+	/* Tipo de accion */
+	buffer_send[5] = tipo;
+	
+	/* Coordenadas x, y */
+	buffer_send[6] = x;
+	buffer_send[7] = y;
+	
+	send (server_fd, buffer_send, 8, 0);
 }
 
 int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
@@ -240,6 +266,17 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			msg->objects[g].y = buffer[h + 2];
 			h = h + 3;
 		}
+	} else if (msg->type == NET_TYPE_CLIENT_READY || msg->type == NET_TYPE_ASK_ACTIONS) {
+		real_len = 4;
+	} else if (msg->type == NET_TYPE_ACTION) {
+		if (len < 8) return -1;
+		
+		msg->action.object = buffer[4];
+		msg->action.type = buffer[5];
+		msg->action.x = buffer[6];
+		msg->action.y = buffer[7];
+		
+		real_len = 8;
 	}
 	
 	return real_len;
@@ -252,6 +289,7 @@ void process_network_events (void) {
 	NetworkMessage msg;
 	NinjaInfo *otros_info;
 	StartInfo *start_info;
+	Action *accion;
 	
 	do {
 		len = recv (server_fd, buffer, 256, MSG_PEEK);
@@ -331,6 +369,24 @@ void process_network_events (void) {
 			
 			SDL_PushEvent (&evento);
 			break; /* Si hay otros eventos, dejarlos para la siguiente lectura */
+		} else if (msg.type == NET_TYPE_ASK_ACTIONS) {
+			/* Los clientes pueden empezar a enviar sus acciones */
+			SDL_zero (evento);
+			evento.type = NETWORK_EVENT;
+			evento.user.code = NETWORK_EVENT_SERVER_ASK_ACTIONS;
+			
+			SDL_PushEvent (&evento);
+		} else if (msg.type == NET_TYPE_ACTION) {
+			SDL_zero (evento);
+			
+			evento.type = NETWORK_EVENT;
+			evento.user.code = NETOWRK_EVENT_ACTION;
+			
+			accion = (Action *) malloc (sizeof (Action));
+			memcpy (accion, &msg.action, sizeof (Action));
+			evento.user.data1 = accion;
+			
+			SDL_PushEvent (&evento);
 		}
 	} while (1);
 }
