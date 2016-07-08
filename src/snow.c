@@ -371,8 +371,8 @@ int game_intro (SnowStage *stage) {
 	SDL_Rect rect;
 	Uint32 last_time, now_time;
 	int selected = -1, over = -1, g, h, f_anim;
-	int anim[3];
-	int others[3] = {-1, -1, -1};
+	int anim[4];
+	int others[4] = {-1, -1, -1, -1};
 	NinjaInfo *info;
 	ObjectPos *objs;
 	StartInfo *start_info;
@@ -412,6 +412,7 @@ int game_intro (SnowStage *stage) {
 				case SDL_QUIT:
 					/* Vamos a cerrar la aplicación */
 					done = GAME_QUIT;
+					close_netplay ();
 					break;
 				case SDL_MOUSEMOTION:
 					if (selected == -1) {
@@ -454,6 +455,7 @@ int game_intro (SnowStage *stage) {
 							case NETWORK_EVENT_CLOSE:
 								/* TODO: Mostrar mensaje de error */
 								done = GAME_QUIT;
+								close_netplay ();
 								break;
 							case NETWORK_EVENT_ACCEPT:
 								/* El servidor nos aceptó, y posiblemente haya información de otros jugadores */
@@ -475,6 +477,13 @@ int game_intro (SnowStage *stage) {
 								anim[info->elemento] = 0;
 								
 								free (event.user.data1);
+								break;
+							case NETWORK_EVENT_REMOVE_PLAYER:
+								/* TODO: Borrar el nick de este jugador */
+								h = GPOINTER_TO_INT (event.user.data1);
+								
+								others[h] = -1;
+								anim[h] = 0;
 								break;
 							case NETWORK_EVENT_START:
 								start_info = (StartInfo *) event.user.data1;
@@ -508,17 +517,17 @@ int game_intro (SnowStage *stage) {
 		/* Borrar con el fondo */
 		SDL_RenderCopy (renderer, images[IMG_INTRO_BACKGROUND], NULL, NULL);
 		
-		if (selected == UI_WATER || others[UI_WATER] != -1) {
+		if (selected == NINJA_WATER || others[NINJA_WATER] != -1) {
 			/* Correr la animación */
 			rect.x = 0;
 			rect.y = 0;
-			g = anim[UI_WATER] + IMG_INTRO_WATER_SELECT_1;
+			g = anim[NINJA_WATER] + IMG_INTRO_WATER_SELECT_1;
 			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 			
-			if (anim[UI_WATER] < 15) anim[UI_WATER]++;
+			if (anim[NINJA_WATER] < 15) anim[NINJA_WATER]++;
 		} else {
-			g = (over == UI_WATER) ? IMG_INTRO_WATER_OVER : (selected == -1) ? IMG_INTRO_WATER_NORMAL : IMG_INTRO_WATER_SHADOW;
+			g = (over == NINJA_WATER) ? IMG_INTRO_WATER_OVER : (selected == -1) ? IMG_INTRO_WATER_NORMAL : IMG_INTRO_WATER_SHADOW;
 			rect.x = -28;
 			rect.y = 27;
 			
@@ -526,16 +535,16 @@ int game_intro (SnowStage *stage) {
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 		}
 		
-		if (selected == UI_FIRE || others[UI_FIRE] != -1) {
+		if (selected == NINJA_FIRE || others[NINJA_FIRE] != -1) {
 			rect.x = 465;
 			rect.y = 0;
-			g = anim[UI_FIRE] + IMG_INTRO_FIRE_SELECT_1;
+			g = anim[NINJA_FIRE] + IMG_INTRO_FIRE_SELECT_1;
 			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 			
-			if (anim[UI_FIRE] < 15) anim[UI_FIRE]++;
+			if (anim[NINJA_FIRE] < 15) anim[NINJA_FIRE]++;
 		} else {
-			g = (over == UI_FIRE) ? IMG_INTRO_FIRE_OVER : (selected == -1) ? IMG_INTRO_FIRE_NORMAL : IMG_INTRO_FIRE_SHADOW;
+			g = (over == NINJA_FIRE) ? IMG_INTRO_FIRE_OVER : (selected == -1) ? IMG_INTRO_FIRE_NORMAL : IMG_INTRO_FIRE_SHADOW;
 			rect.x = 484;
 			rect.y = 87;
 			
@@ -543,16 +552,16 @@ int game_intro (SnowStage *stage) {
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 		}
 		
-		if (selected == UI_SNOW || others[UI_SNOW] != -1) {
+		if (selected == NINJA_SNOW || others[NINJA_SNOW] != -1) {
 			rect.x = 231;
 			rect.y = 0;
-			g = anim[UI_SNOW] + IMG_INTRO_SNOW_SELECT_1;
+			g = anim[NINJA_SNOW] + IMG_INTRO_SNOW_SELECT_1;
 			SDL_QueryTexture (images[g], NULL, NULL, &rect.w, &rect.h);
 			SDL_RenderCopy (renderer, images[g], NULL, &rect);
 			
-			if (anim[UI_SNOW] < 15) anim[UI_SNOW]++;
+			if (anim[NINJA_SNOW] < 15) anim[NINJA_SNOW]++;
 		} else {
-			g = (over == UI_SNOW) ? IMG_INTRO_SNOW_OVER : (selected == -1) ? IMG_INTRO_SNOW_NORMAL : IMG_INTRO_SNOW_SHADOW;
+			g = (over == NINJA_SNOW) ? IMG_INTRO_SNOW_OVER : (selected == -1) ? IMG_INTRO_SNOW_NORMAL : IMG_INTRO_SNOW_SHADOW;
 			rect.x = 241;
 			rect.y = 22;
 			
@@ -563,7 +572,7 @@ int game_intro (SnowStage *stage) {
 		if (ignore_network) {
 			/* Presentar la animación final */
 			f_anim++;
-			if (f_anim > 30) {
+			if (f_anim > 30 && done != GAME_QUIT) {
 				done = GAME_CONTINUE;
 			}
 		}
@@ -715,7 +724,7 @@ int game_loop (SnowStage *stage) {
 						
 						if (stage->acciones[h][g] == ACTION_MOVE) {
 							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
-							send_action (NINJA_FIRE + (stage->local_ninja - UI_FIRE), ACTION_MOVE, g, h);
+							send_action (stage->local_ninja, ACTION_MOVE, g, h);
 						}
 					}
 					break;
@@ -795,11 +804,11 @@ int game_loop (SnowStage *stage) {
 			
 			/* Dibujar las posibles acciones */
 			memset (stage->acciones, 0, sizeof (stage->acciones));
-			if (stage->local_ninja == UI_FIRE) {
+			if (stage->local_ninja == NINJA_FIRE) {
 				ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
-			} else if (stage->local_ninja == UI_WATER) {
+			} else if (stage->local_ninja == NINJA_WATER) {
 				ask_water_actions (stage->water, stage->escenario, stage->acciones);
-			} else if (stage->local_ninja == UI_SNOW) {
+			} else if (stage->local_ninja == NINJA_SNOW) {
 				ask_snow_actions (stage->snow, stage->escenario, stage->acciones);
 			}
 			for (g = 0; g < 5; g++) {
@@ -1059,39 +1068,39 @@ int mouse_intro_penguin (int x, int y) {
 	bpp = 4;
 	
 	/* Revisar si el mouse está en el ninja de nieve */
-	if (x >= 241 && x < 241 + penguin[UI_SNOW]->w &&
-	    y >= 22 && y < 22 + penguin[UI_SNOW]->h) {
-		pos = ((y - 22) * penguin[UI_SNOW]->pitch) / bpp + (x - 241);
-		pixel = ((Uint32 *) penguin[UI_SNOW]->pixels)[pos];
+	if (x >= 241 && x < 241 + penguin[NINJA_SNOW - 1]->w &&
+	    y >= 22 && y < 22 + penguin[NINJA_SNOW - 1]->h) {
+		pos = ((y - 22) * penguin[NINJA_SNOW - 1]->pitch) / bpp + (x - 241);
+		pixel = ((Uint32 *) penguin[NINJA_SNOW - 1]->pixels)[pos];
 		
-		SDL_GetRGBA (pixel, penguin[UI_SNOW]->format, &r, &g, &b, &a);
+		SDL_GetRGBA (pixel, penguin[NINJA_SNOW - 1]->format, &r, &g, &b, &a);
 		
 		if (a != 0) {
-			return UI_SNOW;
+			return NINJA_SNOW;
 		}
 	}
 	
-	if (x >= 484 && x < 484 + penguin[UI_FIRE]->w &&
-	    y >= 87 && y < 87 + penguin[UI_FIRE]->h) {
-		pos = ((y - 87) * penguin[UI_FIRE]->pitch) / bpp + (x - 484);
-		pixel = ((Uint32 *) penguin[UI_FIRE]->pixels)[pos];
+	if (x >= 484 && x < 484 + penguin[NINJA_FIRE - 1]->w &&
+	    y >= 87 && y < 87 + penguin[NINJA_FIRE - 1]->h) {
+		pos = ((y - 87) * penguin[NINJA_FIRE - 1]->pitch) / bpp + (x - 484);
+		pixel = ((Uint32 *) penguin[NINJA_FIRE - 1]->pixels)[pos];
 		
-		SDL_GetRGBA (pixel, penguin[UI_FIRE]->format, &r, &g, &b, &a);
+		SDL_GetRGBA (pixel, penguin[NINJA_FIRE - 1]->format, &r, &g, &b, &a);
 		
 		if (a != 0) {
-			return UI_FIRE;
+			return NINJA_FIRE;
 		}
 	}
 	
-	if (x >= 0 && x < -28 + penguin[UI_WATER]->w &&
-	    y >= 27 && y < 27 + penguin[UI_WATER]->h) {
-		pos = ((y - 27) * penguin[UI_WATER]->pitch) / bpp + (x + 28);
-		pixel = ((Uint32 *) penguin[UI_WATER]->pixels)[pos];
+	if (x >= 0 && x < -28 + penguin[NINJA_WATER - 1]->w &&
+	    y >= 27 && y < 27 + penguin[NINJA_WATER - 1]->h) {
+		pos = ((y - 27) * penguin[NINJA_WATER - 1]->pitch) / bpp + (x + 28);
+		pixel = ((Uint32 *) penguin[NINJA_WATER - 1]->pixels)[pos];
 		
-		SDL_GetRGBA (pixel, penguin[UI_WATER]->format, &r, &g, &b, &a);
+		SDL_GetRGBA (pixel, penguin[NINJA_WATER - 1]->format, &r, &g, &b, &a);
 		
 		if (a != 0) {
-			return UI_WATER;
+			return NINJA_WATER;
 		}
 	}
 	

@@ -178,15 +178,15 @@ UITimer *crear_timer (int ui) {
 	nuevo->anim = 0;
 	nuevo->estado = TIMER_HIDDEN;
 	nuevo->event_sent = 0;
-	if (ui == UI_FIRE) {
+	if (ui == NINJA_FIRE) {
 		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_FIRE_TICK_0;
 		nuevo->img_button = IMG_UI_TIMER_FIRE_BUTTON_DEACTIVE;
-	} else if (ui == UI_SNOW) {
+	} else if (ui == NINJA_SNOW) {
 		nuevo->img_base = IMG_UI_TIMER_SNOW_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_SNOW_TICK_0;
 		nuevo->img_button = IMG_UI_TIMER_SNOW_BUTTON_DEACTIVE;
-	} else if (ui == UI_WATER) {
+	} else if (ui == NINJA_WATER) {
 		nuevo->img_base = IMG_UI_TIMER_WATER_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_WATER_TICK_0;
 		nuevo->img_button = IMG_UI_TIMER_WATER_BUTTON_DEACTIVE;
@@ -217,13 +217,13 @@ void dibujar_timer (UITimer *timer) {
 	if (timer->estado == TIMER_SHOWING) {
 		g = timer->img_base;
 		/* Dibujar el reloj base */
-		if (timer->color == UI_WATER) {
+		if (timer->color == NINJA_WATER) {
 			rect.x = TIMER_X - 106;
 			rect.y = -70 + timer->anim - 7;
-		} else if (timer->color == UI_SNOW) {
+		} else if (timer->color == NINJA_SNOW) {
 			rect.x = TIMER_X - 95;
 			rect.y = -70 + timer->anim - 9;
-		} else if (timer->color == UI_FIRE) {
+		} else if (timer->color == NINJA_FIRE) {
 			rect.x = TIMER_X - 102;
 			rect.y = -70 + timer->anim;
 		}
@@ -232,13 +232,13 @@ void dibujar_timer (UITimer *timer) {
 		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	
 		g = timer->img_ring;
-		if (timer->color == UI_WATER) {
+		if (timer->color == NINJA_WATER) {
 			rect.x = TIMER_X - 76;
 			rect.y = -70 + timer->anim + 6;
-		} else if (timer->color == UI_SNOW) {
+		} else if (timer->color == NINJA_SNOW) {
 			rect.x = TIMER_X - 77;
 			rect.y = -70 + timer->anim + 5;
-		} else if (timer->color == UI_FIRE) {
+		} else if (timer->color == NINJA_FIRE) {
 			rect.x = TIMER_X - 70;
 			rect.y = -70 + timer->anim + 10;
 		}
@@ -293,13 +293,13 @@ void dibujar_timer (UITimer *timer) {
 		
 		g = timer->img_base;
 		/* Dibujar el reloj base */
-		if (timer->color == UI_WATER) {
+		if (timer->color == NINJA_WATER) {
 			rect.x = TIMER_X - 106;
 			rect.y = -7;
-		} else if (timer->color == UI_SNOW) {
+		} else if (timer->color == NINJA_SNOW) {
 			rect.x = TIMER_X - 95;
 			rect.y = -9;
-		} else if (timer->color == UI_FIRE) {
+		} else if (timer->color == NINJA_FIRE) {
 			rect.x = TIMER_X - 102;
 			rect.y = 0;
 		}
@@ -307,13 +307,13 @@ void dibujar_timer (UITimer *timer) {
 		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 
-		if (timer->color == UI_WATER) {
+		if (timer->color == NINJA_WATER) {
 			rect.x = TIMER_X - 76;
 			rect.y = 6;
-		} else if (timer->color == UI_SNOW) {
+		} else if (timer->color == NINJA_SNOW) {
 			rect.x = TIMER_X - 77;
 			rect.y = 5;
-		} else if (timer->color == UI_FIRE) {
+		} else if (timer->color == NINJA_FIRE) {
 			rect.x = TIMER_X - 70;
 			rect.y = 10;
 		}

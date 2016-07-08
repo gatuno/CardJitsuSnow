@@ -308,7 +308,7 @@ SnowFight *find_by_empty_element (int element) {
 	
 	/* Localizar una partida a la que le falte un ninja del elemento solicitado */
 	while (n != NULL) {
-		if (n->fds[element] == -1 && !n->running) {
+		if (n->fds[element - 1] == -1 && !n->running) {
 			return n;
 		}
 		n = n->next;
@@ -324,7 +324,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	
 	element = msg->element;
 	
-	if (element < 0 || element > 2) {
+	if (element < NINJA_FIRE || element > NINJA_WATER) {
 		printf ("El elemento que quiere hacer join es inválido\n");
 		return NULL;
 	}
@@ -348,11 +348,11 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	/* Rellenar los FD's */
 	new->fds[1] = new->fds[2] = new->fds[0] = -1;
 	
-	new->fds[element] = fd;
+	new->fds[element - 1] = fd;
 	
 	/* Copiar el nick */
-	strncpy (new->nicks[element], msg->nick, NICK_SIZE - 1);
-	new->nicks[element][NICK_SIZE - 1] = 0;
+	strncpy (new->nicks[element - 1], msg->nick, NICK_SIZE - 1);
+	new->nicks[element - 1][NICK_SIZE - 1] = 0;
 	
 	/* Rellenar con la firma del protocolo SN */
 	buffer_send[0] = 'S';
@@ -379,12 +379,12 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	
 	element = msg->element;
 	
-	if (element < 0 || element > 2) {
+	if (element < NINJA_FIRE || element > NINJA_WATER) {
 		printf ("Intentando hacer JOIN a una tabla con un elemento inválido\n");
 		return;
 	}
 	
-	if (tabla->fds[element] != -1) {
+	if (tabla->fds[element - 1] != -1) {
 		printf ("Error, JOIN a una mesa con un elemento ya ocupado\n");
 		return;
 	}
@@ -405,7 +405,7 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		if (tabla->fds[g] != -1) {
 			otros++;
 			
-			buffer_send[h] = g;
+			buffer_send[h] = NINJA_FIRE + g;
 			memcpy (&buffer_send[h + 1], tabla->nicks[g], NICK_SIZE);
 			h += NICK_SIZE + 1;
 		}
@@ -416,9 +416,9 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	agregar_write (fd, buffer_send, h, 0);
 	
 	/* Meter el cliente en la tabla */
-	tabla->fds[element] = fd;
-	memcpy (tabla->nicks[element], msg->nick, NICK_SIZE);
-	tabla->nicks[element][NICK_SIZE - 1] = 0;
+	tabla->fds[element - 1] = fd;
+	memcpy (tabla->nicks[element - 1], msg->nick, NICK_SIZE);
+	tabla->nicks[element - 1][NICK_SIZE - 1] = 0;
 	
 	/* Enviar join a los otros clientes de la tabla */
 	/* Preparar el mensaje de accepted */
@@ -609,7 +609,7 @@ void manage_client_ready (SnowFight *tabla, int fd) {
 }
 
 void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
-	int element, g;
+	int slot, g;
 	int acciones[5][9];
 	char buffer_send[128];
 	ServerNinja *ninja;
@@ -622,13 +622,13 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	if (msg->action.type == ACTION_MOVE) {
 		for (g = 0; g < 3; g++) {
 			if (tabla->fds[g] == fd) {
-				element = g;
+				slot = g;
 				break;
 			}
 		}
 		
 		/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */
-		if (msg->action.object != NINJA_FIRE + element) {
+		if (msg->action.object != NINJA_FIRE + slot) {
 			printf ("Error en la tabla. El cliente [%i] trata de mover un ninja que no es él\n", fd);
 			return;
 		}
@@ -699,15 +699,14 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	}
 }
 
-#if 0
-void remove_table (GameBoard *tabla) {
-	GameBoard *prev;
+void remove_table (SnowFight *tabla) {
+	SnowFight *prev;
 	/* Localizar la tabla en la lista ligada y eliminarla */
-	if (lista_tablas == tabla) {
+	if (lista_partidas == tabla) {
 		/* Primera de la lista */
-		lista_tablas = lista_tablas->next;
+		lista_partidas = lista_partidas->next;
 	} else {
-		prev = lista_tablas;
+		prev = lista_partidas;
 		
 		while (prev->next != tabla) {
 			prev = prev->next;
@@ -719,81 +718,52 @@ void remove_table (GameBoard *tabla) {
 	free (tabla);
 }
 
-void leave_table_by_close (int fd) {
+void leave_table_by_close (SnowFight *tabla, int fd) {
 	int slot;
 	unsigned char buffer_send[128];
 	int g, h;
-	GameBoard *tabla;
 	
-	tabla = find_table_by_fd (fd);
 	if (tabla == NULL) return;
 	
 	/* Localizar el jugador que se cerró */
-	for (g = 0; g < 4; g++) {
+	for (g = 0; g < 3; g++) {
 		if (tabla->fds[g] == fd) {
 			slot = g;
 			break;
 		}
 	}
 	
-	printf ("Un cliente abandonó la tabla [%i].\n", tabla->id);
-	/* Si la mesa ya tiene a los 4 jugadores completos, cerrar toda la mesa */
-	if (tabla->clientes == 4) {
-		/* TODO: Cerrar esta tabla y enviar a todos los clientes un fin */
-		buffer_send[0] = 'B';
-		buffer_send[1] = 'K';
-
+	printf ("Un cliente [%i] abandonó la tabla [%i].\n", fd, tabla->id);
+	if (tabla->running == FALSE) {
+		/* Como la tabla aún no está completa, puedo eliminar un jugador */
+		/* Rellenar con la firma del protocolo SN */
+		buffer_send[0] = 'S';
+		buffer_send[1] = 'N';
+	
 		/* Poner el campo de la versión */
 		buffer_send[2] = 0;
-
+	
 		/* El campo de tipo */
-		buffer_send[3] = TYPE_FIN;
+		buffer_send[3] = NET_TYPE_REMOVE_PLAYER;
+	
+		/* El ninja */
+		buffer_send[4] = NINJA_FIRE + slot;
 		
-		buffer_send[4] = NET_DISCONNECT_NETERROR;
-		
-		for (g = 0; g < 4; g++) {
-			if (slot == g) continue;
-			
-			agregar_write (tabla->fds[g], buffer_send, 5, 1);
-		}
-		
-		printf ("La tabla [%i] será cerrada porque está a medias de un juego\n", tabla->id);
-		remove_table (tabla);
-	} else {
-		/* Enviar un mensaje de que un cliente se salió, para que otro cliente se pueda unir */
-		buffer_send[0] = 'B';
-		buffer_send[1] = 'K';
-
-		/* Poner el campo de la versión */
-		buffer_send[2] = 0;
-
-		/* El campo de tipo */
-		buffer_send[3] = TYPE_LEAVE_PLAYER;
-
-		/* Color del nuevo jugador */
-		buffer_send[4] = COLOR_AZUL + slot;
-		
-		for (g = 0; g < 4; g++) {
-			if (slot == g || tabla->fds[g] == -1) continue;
-			
+		/* Enviar el remove player a los otros jugadores */
+		for (g = 0; g < 3; g++) {
+			if (g == slot) continue;
 			agregar_write (tabla->fds[g], buffer_send, 5, 0);
 		}
 		
-		/* Eliminar su fd */
 		tabla->fds[slot] = -1;
-		memset (tabla->nicks[slot], 0, NICK_SIZE);
 		
-		tabla->clientes--;
-		
-		printf ("La tabla [%i] se removió un jugador a la espera\n", tabla->id);
-		if (tabla->clientes == 0) {
-			printf ("La tabla [%i] se cerró porque ya no hay más jugadores a la espera\n", tabla->id);
-			
+		if (tabla->fds[0] == -1 && tabla->fds[1] == -1 && tabla->fds[2] == -1) {
+			printf ("Eliminado tabla [%i] por falta de jugadores\n", tabla->id);
 			remove_table (tabla);
 		}
 	}
 }
-#endif
+
 int main (int argc, char *argv[]) {
 	struct sigaction act;
 	sigset_t empty_mask;
@@ -914,13 +884,21 @@ int main (int argc, char *argv[]) {
 					/* Cierre de conexión */
 					eliminar_a_fd (fd);
 					printf ("[%i] Cierre normal\n", vigilar[g].fd);
-					// FIXME: leave_table_by_close (fd);
+					/* Buscar si está sentado en una mesa */
+					tabla = find_table_by_fd (fd);
+					
+					if (tabla != NULL) {
+						leave_table_by_close (tabla, fd);
+					}
 					continue;
 				} else if (res < 0) {
 					perror ("Error en read");
 					eliminar_a_fd (fd);
 					
-					// FIXME: leave_table_by_close (fd);
+					tabla = find_table_by_fd (fd);
+					if (tabla != NULL) {
+						leave_table_by_close (tabla, fd);
+					}
 					
 					continue;
 				}

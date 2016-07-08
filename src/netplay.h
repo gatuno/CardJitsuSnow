@@ -69,6 +69,7 @@ enum {
 	NET_TYPE_JOIN = 1,
 	NET_TYPE_ACCEPT,
 	NET_TYPE_OTHER_JOIN,
+	NET_TYPE_REMOVE_PLAYER,
 	
 	NET_TYPE_START_INFO = 8,
 	NET_TYPE_CLIENT_READY,
@@ -80,6 +81,7 @@ enum {
 	NETWORK_EVENT_CLOSE = 0,
 	NETWORK_EVENT_ACCEPT,
 	NETWORK_EVENT_JOIN_NINJA,
+	NETWORK_EVENT_REMOVE_PLAYER,
 	
 	NETWORK_EVENT_START,
 	NETWORK_EVENT_SERVER_ASK_ACTIONS,
@@ -92,6 +94,7 @@ typedef struct {
 } NinjaInfo;
 
 int setup_netplay (char *server, int puerto);
+void close_netplay (void);
 void send_join (int ninja, char *nick);
 void send_ready (void);
 void process_network_events (void);

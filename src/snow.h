@@ -44,13 +44,6 @@
 
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
 
-/* Interfaces */
-enum {
-	UI_FIRE = 0,
-	UI_SNOW,
-	UI_WATER
-};
-
 /* Objetos */
 enum {
 	NONE = 0,

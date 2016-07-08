@@ -41,6 +41,7 @@
 #define _(string) gettext (string)
 
 #include "netplay.h"
+#include "snow.h"
 
 static int server_fd;
 
@@ -120,6 +121,10 @@ int setup_netplay (char *server, int puerto) {
 	}
 	
 	return 0;
+}
+
+void close_netplay (void) {
+	close (server_fd);
 }
 
 void send_join (int ninja, char *nick) {
@@ -231,7 +236,7 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		for (g = 0; g < msg->others; g++) {
 			e = buffer[h];
 			
-			if (e < 0 || e > 2) {
+			if (e < NINJA_FIRE || e > NINJA_WATER) {
 				printf ("Elemento inválido\n");
 				return -1;
 			}
@@ -246,6 +251,10 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		if (len < real_len) return -1;
 		
 		msg->element = buffer[4];
+		if (msg->element < NINJA_FIRE || msg->element > NINJA_WATER) {
+			printf ("Elemento inválido\n");
+			return -1;
+		}
 		memcpy (msg->nick, &buffer[5], NICK_SIZE);
 	} else if (msg->type == NET_TYPE_START_INFO) {
 		if (len < 7) return -1;
@@ -277,6 +286,12 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		msg->action.y = buffer[7];
 		
 		real_len = 8;
+	} else if (msg->type == NET_TYPE_REMOVE_PLAYER) {
+		if (len < 5) return -1;
+		
+		msg->element = buffer[4];
+		
+		real_len = 5;
 	}
 	
 	return real_len;
@@ -320,11 +335,10 @@ void process_network_events (void) {
 		/* Descartar los bytes reales del paquete */
 		recv (server_fd, buffer, g, 0);
 		
+		SDL_zero (evento);
+		evento.type = NETWORK_EVENT;
 		if (msg.type == NET_TYPE_ACCEPT) {
 			/* Información del servidor y posibles otros ninjas */
-			SDL_zero (evento);
-			
-			evento.type = NETWORK_EVENT;
 			evento.user.code = NETWORK_EVENT_ACCEPT;
 			
 			evento.user.data1 = GINT_TO_POINTER (msg.others);
@@ -344,8 +358,6 @@ void process_network_events (void) {
 			SDL_PushEvent (&evento);
 		} else if (msg.type == NET_TYPE_OTHER_JOIN) {
 			/* Se conectó un nuevo jugador */
-			SDL_zero (evento);
-			evento.type = NETWORK_EVENT;
 			evento.user.code = NETWORK_EVENT_JOIN_NINJA;
 			
 			otros_info = (NinjaInfo *) malloc (sizeof (NinjaInfo));
@@ -358,8 +370,6 @@ void process_network_events (void) {
 			SDL_PushEvent (&evento);
 		} else if (msg.type == NET_TYPE_START_INFO) {
 			/* La información inicial del juego */
-			SDL_zero (evento);
-			evento.type = NETWORK_EVENT;
 			evento.user.code = NETWORK_EVENT_START;
 			
 			start_info = (StartInfo *) malloc (sizeof (StartInfo));
@@ -371,20 +381,20 @@ void process_network_events (void) {
 			break; /* Si hay otros eventos, dejarlos para la siguiente lectura */
 		} else if (msg.type == NET_TYPE_ASK_ACTIONS) {
 			/* Los clientes pueden empezar a enviar sus acciones */
-			SDL_zero (evento);
-			evento.type = NETWORK_EVENT;
 			evento.user.code = NETWORK_EVENT_SERVER_ASK_ACTIONS;
 			
 			SDL_PushEvent (&evento);
 		} else if (msg.type == NET_TYPE_ACTION) {
-			SDL_zero (evento);
-			
-			evento.type = NETWORK_EVENT;
 			evento.user.code = NETOWRK_EVENT_ACTION;
 			
 			accion = (Action *) malloc (sizeof (Action));
 			memcpy (accion, &msg.action, sizeof (Action));
 			evento.user.data1 = accion;
+			
+			SDL_PushEvent (&evento);
+		} else if (msg.type == NET_TYPE_REMOVE_PLAYER) {
+			evento.user.code = NETWORK_EVENT_REMOVE_PLAYER;
+			evento.user.data1 = GINT_TO_POINTER (msg.element);
 			
 			SDL_PushEvent (&evento);
 		}
