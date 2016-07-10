@@ -45,6 +45,7 @@
 #include "server_ninja.h"
 
 #include "netplay.h"
+#include "server_timer.h"
 
 #define NICK_SIZE 16
 #define SERV_PORT 3301
@@ -96,6 +97,7 @@ typedef struct PendingWrite {
 /* Prototipos de función */
 void cancel_writes (int fd);
 void start_tabla (SnowFight *tabla);
+void calculate_actions (SnowFight *tabla);
 
 static SnowFight *lista_partidas;
 static PendingWrite *writes;
@@ -158,6 +160,7 @@ int inicializar_socket (void) {
 	return server;
 }
 
+/* Manejo de sockets */
 void agregar_a_fd (int fd) {
 	agregar_fd[agregar_count] = fd;
 	
@@ -274,18 +277,20 @@ void cancel_writes (int fd) {
 	while (pos != NULL) {
 		if (pos->fd == fd) {
 			/* Eliminar este write pendiente */
-			(*prev)->next = pos->next;
+			(*prev) = pos->next;
 			n = pos->next;
 			
 			free (pos);
 			pos = n;
 			printf ("Se canceló una escritura pendiente para el fd [%i]\n", fd);
 		} else {
+			prev = &(pos->next);
 			pos = pos->next;
-			prev = &((*prev)->next);
 		}
 	}
 }
+
+
 
 /* Manejo de tablas */
 SnowFight *find_table_by_fd (int fd) {
@@ -595,12 +600,21 @@ void send_ask_actions (SnowFight *tabla) {
 	
 	tabla->estado = WAITING_ACTIONS;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
+	
+	/* Instalar un timer para forzar a los clientes a contestar en 10 segundos */
+	agregar_timer (tabla, (Callback) calculate_actions, 11, NULL);
+	printf ("La tabla [%i] instaló un timer para ser llamado en 11 segundos\n", tabla->id);
+}
+
+void calculate_actions (SnowFight *tabla) {
+	printf ("Pendiente enviar acciones para la tabla [%i]\n", tabla->id);
 }
 
 void manage_client_ready (SnowFight *tabla, int fd) {
 	int g;
 	if (!tabla->running || tabla->estado != WAITING_CLIENTS) {
 		printf ("Error en la tabla. El cliente [%i] envió un ready cuando la tabla no está lista\n", fd);
+		return;
 	}
 	
 	for (g = 0; g < 3; g++) {
@@ -612,8 +626,55 @@ void manage_client_ready (SnowFight *tabla, int fd) {
 	
 	g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
 	
-	if (g >= tabla->clientes) { /* FIXME: Debe ser igual a la cantidad de clientes conectados en la tabla */
+	if (g >= tabla->clientes) {
 		send_ask_actions (tabla);
+	}
+}
+
+void manage_client_done_actions (SnowFight *tabla, int fd) {
+	int g, slot;
+	char buffer_send[128];
+	
+	if (!tabla->running || tabla->estado != WAITING_ACTIONS) {
+		printf ("Error en la tabla. El cliente [%i] envió un done actions cuando la tabla no está lista\n", fd);
+		return;
+	}
+	
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] == fd) {
+			slot = g;
+			break;
+		}
+	}
+	
+	/* Poner ready a ese cliente */
+	tabla->ready[slot] = 1;
+	
+	/* Rellenar con la firma del protocolo SN */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_PLAYER_DONE_ACTIONS;
+
+	/* El ninja */
+	buffer_send[4] = NINJA_FIRE + slot;
+	
+	/* Enviar el mensaje a los otros clientes */
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] == -1 || g == slot) continue;
+		agregar_write (tabla->fds[g], buffer_send, 5, 0);
+	}
+	
+	g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
+	
+	if (g >= tabla->clientes) {
+		/* Cancelar el timer */
+		cancel_timer (tabla);
+		calculate_actions (tabla);
 	}
 }
 
@@ -625,6 +686,7 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	
 	if (!tabla->running || tabla->estado != WAITING_ACTIONS) {
 		printf ("Error en la tabla. El cliente [%i] envió una acción cuando la tabla no está recibiendo acciones\n", fd);
+		return;
 	}
 	
 	/* Validar la acción */
@@ -941,7 +1003,11 @@ int main (int argc, char *argv[]) {
 			if (vigilar[g].revents & POLLERR) {
 				/* Error en este socket, marcarlo para eliminación y eliminarlo de la tabla */
 				printf ("[%i] Error en socket por POLLERR\n", vigilar[g].fd);
-				// FIXME: leave_table_by_close (vigilar[g].fd);
+				tabla = find_table_by_fd (fd);
+				
+				if (tabla != NULL) {
+					leave_table_by_close (tabla, fd);
+				}
 				eliminar_a_fd (vigilar[g].fd);
 			} else if ((vigilar[g].revents & POLLIN) || (vigilar[g].revents & POLLHUP)) {
 				fd = vigilar[g].fd;
@@ -1009,6 +1075,13 @@ int main (int argc, char *argv[]) {
 					} else {
 						manage_client_actions (tabla, fd, &message);
 					}
+				} else if (message.type == NET_TYPE_DONE_ACTIONS) {
+					/* Debe estar sentado en una tabla */
+					if (tabla == NULL) {
+						printf ("[%i] Error, este cliente envia un done actions cuando no está sentado en una tabla\n", fd);
+					} else {
+						manage_client_done_actions (tabla, fd);
+					}
 				} else {
 					printf ("[%i] Mensaje desconocido para el servidor\n", fd);
 				}
@@ -1020,6 +1093,8 @@ int main (int argc, char *argv[]) {
 		eliminar_poll ();
 		
 		agregar_poll ();
+		
+		check_timers ();
 	} while (1);
 	
 	/* Ejecutar cierres y limpieza aquí */

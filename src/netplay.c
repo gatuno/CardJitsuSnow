@@ -131,7 +131,7 @@ void send_join (int ninja, char *nick) {
 	char buffer_send[128];
 	uint16_t temp;
 	
-	/* Rellenar con la firma del protocolo FF */
+	/* Rellenar con la firma del protocolo SN */
 	buffer_send[0] = 'S';
 	buffer_send[1] = 'N';
 	
@@ -154,7 +154,7 @@ void send_ready (void) {
 	char buffer_send[128];
 	uint16_t temp;
 	
-	/* Rellenar con la firma del protocolo FF */
+	/* Rellenar con la firma del protocolo SN */
 	buffer_send[0] = 'S';
 	buffer_send[1] = 'N';
 	
@@ -167,10 +167,27 @@ void send_ready (void) {
 	send (server_fd, buffer_send, 4, 0);
 }
 
+void send_actions_done (void) {
+	char buffer_send[128];
+	uint16_t temp;
+	
+	/* Rellenar con la firma del protocolo SN */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+	
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+	
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_DONE_ACTIONS;
+	
+	send (server_fd, buffer_send, 4, 0);
+}
+
 void send_action (int ninja, int tipo, int x, int y) {
 	char buffer_send[128];
 	
-	/* Rellenar con la firma del protocolo FF */
+	/* Rellenar con la firma del protocolo SN */
 	buffer_send[0] = 'S';
 	buffer_send[1] = 'N';
 	
@@ -286,12 +303,19 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		msg->action.y = buffer[7];
 		
 		real_len = 8;
-	} else if (msg->type == NET_TYPE_REMOVE_PLAYER) {
+	} else if (msg->type == NET_TYPE_REMOVE_PLAYER || msg->type == NET_TYPE_PLAYER_DONE_ACTIONS) {
 		if (len < 5) return -1;
 		
 		msg->element = buffer[4];
-		
+		if (msg->element < NINJA_FIRE || msg->element > NINJA_WATER) {
+			printf ("Elemento inválido\n");
+			return -1;
+		}
 		real_len = 5;
+	} else if (msg->type == NET_TYPE_DONE_ACTIONS) {
+		if (len < 4) return -1;
+		
+		real_len = 4;
 	}
 	
 	return real_len;
@@ -394,6 +418,11 @@ void process_network_events (void) {
 			SDL_PushEvent (&evento);
 		} else if (msg.type == NET_TYPE_REMOVE_PLAYER) {
 			evento.user.code = NETWORK_EVENT_REMOVE_PLAYER;
+			evento.user.data1 = GINT_TO_POINTER (msg.element);
+			
+			SDL_PushEvent (&evento);
+		} else if (msg.type == NET_TYPE_PLAYER_DONE_ACTIONS) {
+			evento.user.code = NETWORK_EVENT_PLAYER_DONE_ACTIONS;
 			evento.user.data1 = GINT_TO_POINTER (msg.element);
 			
 			SDL_PushEvent (&evento);

@@ -75,6 +75,8 @@ enum {
 	NET_TYPE_CLIENT_READY,
 	NET_TYPE_ASK_ACTIONS,
 	NET_TYPE_ACTION,
+	NET_TYPE_DONE_ACTIONS,
+	NET_TYPE_PLAYER_DONE_ACTIONS,
 };
 
 enum {
@@ -86,6 +88,7 @@ enum {
 	NETWORK_EVENT_START,
 	NETWORK_EVENT_SERVER_ASK_ACTIONS,
 	NETOWRK_EVENT_ACTION,
+	NETWORK_EVENT_PLAYER_DONE_ACTIONS,
 };
 
 typedef struct {
@@ -97,6 +100,7 @@ int setup_netplay (char *server, int puerto);
 void close_netplay (void);
 void send_join (int ninja, char *nick);
 void send_ready (void);
+void send_actions_done (void);
 void process_network_events (void);
 
 extern int NETWORK_EVENT;

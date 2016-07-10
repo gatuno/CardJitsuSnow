@@ -751,7 +751,7 @@ int game_loop (SnowStage *stage) {
 					switch (map) {
 						case BUTTON_TIMER_DONE:
 							/* Enviar nuestro ready al servidor */
-							printf ("Enviar ready\n");
+							send_actions_done ();
 							timer_button_selected (timer);
 							ui_estatus = UI_WAITING_SERVER;
 							readys[stage->local_ninja] = TRUE;
@@ -834,6 +834,10 @@ int game_loop (SnowStage *stage) {
 									free (stage->water);
 									stage->water = NULL;
 								}
+								break;
+							case NETWORK_EVENT_PLAYER_DONE_ACTIONS:
+								g = GPOINTER_TO_INT (event.user.data1);
+								readys[g] = TRUE;
 								break;
 							//default:
 								//printf ("Recibí un evento de red aún desconocido\n");

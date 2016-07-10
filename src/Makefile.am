@@ -12,7 +12,8 @@ cjsnow_SOURCES = snow.c path.c path.h \
 	enemy.c enemy.h \
 	cp-button.c cp-button.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h \
-	server_ninja.c server_ninja.h
+	server_ninja.c server_ninja.h \
+	server_timer.c server_timer.h
 
 # El servidor sólo funciona en Linux
 if LINUX
