@@ -39,6 +39,7 @@ void ask_snow_actions (SnowNinja *ninja, int escenario[5][9], int acciones[5][9]
 
 void put_idle_snow (SnowNinja *ninja);
 void prev_move_snow (SnowNinja *ninja);
+void ask_snow_coords (SnowNinja *ninja, int *x, int *y);
 
 #endif /* __SNOW_NINJA_H__ */
 

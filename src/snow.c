@@ -44,10 +44,9 @@
 #include "snow_ninja.h"
 
 #include "enemy.h"
-
 #include "uitimer.h"
-
 #include "netplay.h"
+#include "cp-button.h"
 
 #define FPS (1000/30)
 
@@ -143,6 +142,8 @@ enum {
 	IMG_ROUND_2,
 	IMG_ROUND_3,
 	
+	IMG_CHECKMARK,
+	
 	NUM_IMAGES
 };
 
@@ -236,7 +237,9 @@ const char *images_names[NUM_IMAGES] = {
 	
 	"images/round_1.png",
 	"images/round_2.png",
-	"images/round_3.png"
+	"images/round_3.png",
+	
+	"images/checkmark.png"
 };
 
 enum {
@@ -308,6 +311,7 @@ int game_finish (void);
 void setup (void);
 
 int mouse_intro_penguin (int x, int y);
+int map_button_in_game (int x, int y, UITimer *timer);
 
 /* Variables globales */
 SDL_Window *ventana;
@@ -337,8 +341,10 @@ int main (int argc, char *argv[]) {
 	
 	textdomain (PACKAGE);
 	
+	cp_registrar_botones (NUM_BUTTONS);
 	setup ();
 	
+	cp_button_start ();
 	memset (nick_global, 0, sizeof (nick_global));
 	
 	/* Generar o leer el nick del archivo de configuración */
@@ -656,6 +662,7 @@ int game_loop (SnowStage *stage) {
 	
 	int g, h, i;
 	UITimer *timer;
+	int map;
 	
 	int ui_estatus = UI_ANIMATE;
 	
@@ -663,6 +670,7 @@ int game_loop (SnowStage *stage) {
 	Animaten animaciones[4];
 	int anims, cont_a;
 	Action *accion;
+	int readys[4];
 	
 	fondo = 2;
 	
@@ -670,6 +678,8 @@ int game_loop (SnowStage *stage) {
 	animaciones[0].tipo = UI_ANIM_ROUND;
 	animaciones[0].round = 0;
 	cont_a = 0;
+	
+	readys[1] = readys[2] = readys[3] = FALSE;
 	
 	/* Crear los 3 ninjas */
 	if (stage->escenario[0][0] == NINJA_WATER) {
@@ -712,10 +722,15 @@ int game_loop (SnowStage *stage) {
 					/* Vamos a cerrar la aplicación */
 					done = GAME_QUIT;
 					break;
+				case SDL_MOUSEMOTION:
+					map = map_button_in_game (event.motion.x, event.motion.y, timer);
+					cp_button_motion (map);
+					break;
 				case SDL_MOUSEBUTTONDOWN:
 					/* Tengo un Mouse Down */
+					map = map_button_in_game (event.motion.x, event.motion.y, timer);
+					cp_button_down (map);
 					
-					/* FIXME: Motor de botones primero */
 					if (ui_estatus == UI_WAIT_INPUT &&
 					    event.button.x >= MAP_X && event.button.x < (MAP_X + 70 * 9) &&
 					    event.button.y >= MAP_Y && event.button.y < (MAP_Y + 70 * 5)) {
@@ -730,6 +745,18 @@ int game_loop (SnowStage *stage) {
 					break;
 				case SDL_MOUSEBUTTONUP:
 					/* Tengo un mouse Up */
+					map = map_button_in_game (event.motion.x, event.motion.y, timer);
+					map = cp_button_up (map);
+					
+					switch (map) {
+						case BUTTON_TIMER_DONE:
+							/* Enviar nuestro ready al servidor */
+							printf ("Enviar ready\n");
+							timer_button_selected (timer);
+							ui_estatus = UI_WAITING_SERVER;
+							readys[stage->local_ninja] = TRUE;
+							break;
+					}
 					break;
 				case SDL_KEYDOWN:
 					/* Tengo una tecla presionada */
@@ -769,6 +796,7 @@ int game_loop (SnowStage *stage) {
 								} else {
 									ui_estatus = UI_WAIT_INPUT;
 									start_ticking (timer);
+									readys[1] = readys[2] = readys[3] = FALSE;
 								}
 								break;
 							case NETOWRK_EVENT_ACTION:
@@ -786,6 +814,27 @@ int game_loop (SnowStage *stage) {
 								
 								free (accion);
 								break;
+							case NETWORK_EVENT_REMOVE_PLAYER:
+								/* Eliminar a otro jugador */
+								g = GPOINTER_TO_INT (event.user.data1);
+								
+								if (g == NINJA_FIRE) {
+									ask_fire_coords (stage->fire, &h, &i);
+									stage->escenario[i][h] = NONE;
+									free (stage->fire);
+									stage->fire = NULL;
+								} else if (g == NINJA_SNOW) {
+									ask_snow_coords (stage->snow, &h, &i);
+									stage->escenario[i][h] = NONE;
+									free (stage->snow);
+									stage->snow = NULL;
+								} else if (g == NINJA_WATER) {
+									ask_water_coords (stage->water, &h, &i);
+									stage->escenario[i][h] = NONE;
+									free (stage->water);
+									stage->water = NULL;
+								}
+								break;
 							//default:
 								//printf ("Recibí un evento de red aún desconocido\n");
 						}
@@ -796,12 +845,14 @@ int game_loop (SnowStage *stage) {
 		/* Borrar con el fondo */
 		SDL_RenderCopy (renderer, images[IMG_BACKGROUND_1 + fondo], NULL, NULL);
 		
-		if (ui_estatus == UI_WAIT_INPUT) {
+		if (ui_estatus == UI_WAIT_INPUT || ui_estatus == UI_WAITING_SERVER) {
 			rect.x = MAP_X;
 			rect.y = MAP_Y;
 			SDL_QueryTexture (images[IMG_UI_FRAME], NULL, NULL, &rect.w, &rect.h);
 			SDL_RenderCopy (renderer, images[IMG_UI_FRAME], NULL, &rect);
-			
+		}
+		
+		if (ui_estatus == UI_WAIT_INPUT) {
 			/* Dibujar las posibles acciones */
 			memset (stage->acciones, 0, sizeof (stage->acciones));
 			if (stage->local_ninja == NINJA_FIRE) {
@@ -848,20 +899,44 @@ int game_loop (SnowStage *stage) {
 					SDL_RenderCopy (renderer, images[i], NULL, &rect);
 				} else if (stage->escenario[g][h] == NINJA_WATER) {
 					draw_water_ninja (stage->water);
+					if (readys[NINJA_WATER]) {
+						/* Dibuja la palomita de listo */
+						rect.x = MAP_X + (h * 70) + 19;
+						rect.y = MAP_Y + (g * 70) + 20;
+						SDL_QueryTexture (images[IMG_CHECKMARK], NULL, NULL, &rect.w, &rect.h);
+						
+						SDL_RenderCopy (renderer, images[IMG_CHECKMARK], NULL, &rect);
+					}
 				} else if (stage->escenario[g][h] == NINJA_FIRE) {
 					draw_fire_ninja (stage->fire);
+					if (readys[NINJA_FIRE]) {
+						/* Dibuja la palomita de listo */
+						rect.x = MAP_X + (h * 70) + 19;
+						rect.y = MAP_Y + (g * 70) + 20;
+						SDL_QueryTexture (images[IMG_CHECKMARK], NULL, NULL, &rect.w, &rect.h);
+						
+						SDL_RenderCopy (renderer, images[IMG_CHECKMARK], NULL, &rect);
+					}
 				} else if (stage->escenario[g][h] == NINJA_SNOW) {
 					draw_snow_ninja (stage->snow);
+					if (readys[NINJA_SNOW]) {
+						/* Dibuja la palomita de listo */
+						rect.x = MAP_X + (h * 70) + 19;
+						rect.y = MAP_Y + (g * 70) + 20;
+						SDL_QueryTexture (images[IMG_CHECKMARK], NULL, NULL, &rect.w, &rect.h);
+						
+						SDL_RenderCopy (renderer, images[IMG_CHECKMARK], NULL, &rect);
+					}
 				} else if (stage->escenario[g][h] >= ENEMY_1 || stage->escenario[g][h] <= ENEMY_4) {
 					draw_enemy (stage->enemigos[stage->escenario[g][h] - ENEMY_1]);
 				}
 			}
 		}
 		
-		if (ui_estatus == UI_WAIT_INPUT) {
-			draw_ghost_water_ninja (stage->water);
-			draw_ghost_fire_ninja (stage->fire);
-			draw_ghost_snow_ninja (stage->snow);
+		if (ui_estatus == UI_WAIT_INPUT || ui_estatus == UI_WAITING_SERVER) {
+			if (stage->water != NULL) draw_ghost_water_ninja (stage->water);
+			if (stage->fire != NULL) draw_ghost_fire_ninja (stage->fire);
+			if (stage->snow != NULL) draw_ghost_snow_ninja (stage->snow);
 		}
 		
 		dibujar_timer (timer);
@@ -1107,3 +1182,9 @@ int mouse_intro_penguin (int x, int y) {
 	return -1;
 }
 
+int map_button_in_game (int x, int y, UITimer *timer) {
+	if (timer_accepts_input (timer)) {
+		if (x >= TIMER_X && x < TIMER_X + 36 && y >= 29 && y < 66) return BUTTON_TIMER_DONE;
+	}
+	return BUTTON_NONE;
+}

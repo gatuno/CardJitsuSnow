@@ -38,5 +38,7 @@ void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]
 
 void prev_move_fire (FireNinja *ninja);
 void put_idle_fire (FireNinja *Ninja);
+void ask_fire_coords (FireNinja *ninja, int *x, int *y);
+
 #endif /* __FIRE_NINJA_H__ */
 

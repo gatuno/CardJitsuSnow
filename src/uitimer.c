@@ -37,8 +37,7 @@
 #include "snow.h"
 
 #include "uitimer.h"
-
-#define TIMER_X 420
+#include "cp-button.h"
 
 enum {
 	IMG_UI_TIMER_FIRE_BASE,
@@ -46,6 +45,7 @@ enum {
 	IMG_UI_TIMER_FIRE_BUTTON_UP,
 	IMG_UI_TIMER_FIRE_BUTTON_OVER,
 	IMG_UI_TIMER_FIRE_BUTTON_DOWN,
+	IMG_UI_TIMER_FIRE_BUTTON_SELECTED,
 	
 	IMG_UI_TIMER_FIRE_TICK_0,
 	IMG_UI_TIMER_FIRE_TICK_1,
@@ -63,6 +63,7 @@ enum {
 	IMG_UI_TIMER_SNOW_BUTTON_UP,
 	IMG_UI_TIMER_SNOW_BUTTON_OVER,
 	IMG_UI_TIMER_SNOW_BUTTON_DOWN,
+	IMG_UI_TIMER_SNOW_BUTTON_SELECTED,
 	
 	IMG_UI_TIMER_SNOW_TICK_0,
 	IMG_UI_TIMER_SNOW_TICK_1,
@@ -80,6 +81,7 @@ enum {
 	IMG_UI_TIMER_WATER_BUTTON_UP,
 	IMG_UI_TIMER_WATER_BUTTON_OVER,
 	IMG_UI_TIMER_WATER_BUTTON_DOWN,
+	IMG_UI_TIMER_WATER_BUTTON_SELECTED,
 	
 	IMG_UI_TIMER_WATER_TICK_0,
 	IMG_UI_TIMER_WATER_TICK_1,
@@ -101,6 +103,7 @@ static const char *ui_timer_images_names[NUM_UI_TIMER] = {
 	"images/fire_timer/button_up.png",
 	"images/fire_timer/button_over.png",
 	"images/fire_timer/button_down.png",
+	"images/fire_timer/button_selected.png",
 	
 	"images/fire_timer/tick0.png",
 	"images/fire_timer/tick1.png",
@@ -118,6 +121,7 @@ static const char *ui_timer_images_names[NUM_UI_TIMER] = {
 	"images/snow_timer/button_up.png",
 	"images/snow_timer/button_over.png",
 	"images/snow_timer/button_down.png",
+	"images/snow_timer/button_selected.png",
 	
 	"images/snow_timer/tick0.png",
 	"images/snow_timer/tick1.png",
@@ -135,6 +139,7 @@ static const char *ui_timer_images_names[NUM_UI_TIMER] = {
 	"images/water_timer/button_up.png",
 	"images/water_timer/button_over.png",
 	"images/water_timer/button_down.png",
+	"images/water_timer/button_selected.png",
 	
 	"images/water_timer/tick0.png",
 	"images/water_timer/tick1.png",
@@ -152,6 +157,7 @@ enum {
 	TIMER_HIDDEN,
 	TIMER_SHOWING,
 	TIMER_TICKING,
+	TIMER_HIDDING,
 };
 
 struct _UITimer {
@@ -162,6 +168,8 @@ struct _UITimer {
 	int event_sent;
 	Uint32 timestamp;
 	int img_base, img_ring, img_button;
+	int accept_input;
+	int last_ring, button_selected;
 };
 
 static SDL_Texture *ui_timer_images[NUM_UI_TIMER];
@@ -178,6 +186,7 @@ UITimer *crear_timer (int ui) {
 	nuevo->anim = 0;
 	nuevo->estado = TIMER_HIDDEN;
 	nuevo->event_sent = 0;
+	nuevo->accept_input = FALSE;
 	if (ui == NINJA_FIRE) {
 		nuevo->img_base = IMG_UI_TIMER_FIRE_BASE;
 		nuevo->img_ring = IMG_UI_TIMER_FIRE_TICK_0;
@@ -192,6 +201,7 @@ UITimer *crear_timer (int ui) {
 		nuevo->img_button = IMG_UI_TIMER_WATER_BUTTON_DEACTIVE;
 	}
 	
+	cp_registrar_boton (BUTTON_TIMER_DONE, nuevo->img_button + 1);
 	return nuevo;
 };
 
@@ -205,6 +215,24 @@ void start_ticking (UITimer *timer) {
 	timer->anim = 0;
 	timer->estado = TIMER_TICKING;
 	timer->event_sent = 0;
+}
+
+void hide_timer (UITimer *timer) {
+	Uint32 curtime;
+	int g;
+	timer->estado = TIMER_HIDDING;
+	
+	curtime = SDL_GetTicks ();
+			
+	g = (curtime - timer->timestamp) / 8000;
+	if (g >= 9) g = 9;
+	timer->last_ring = timer->img_ring + 9 - g;
+	timer->accept_input = FALSE;
+}
+
+void timer_button_selected (UITimer *timer) {
+	timer->accept_input = FALSE;
+	timer->button_selected = 1;
 }
 
 void dibujar_timer (UITimer *timer) {
@@ -264,6 +292,7 @@ void dibujar_timer (UITimer *timer) {
 		
 				SDL_PushEvent (&evento);
 				timer->event_sent = 1;
+				timer->accept_input = TRUE;
 			}
 		}
 	} else if (timer->estado == TIMER_TICKING) {
@@ -320,14 +349,22 @@ void dibujar_timer (UITimer *timer) {
 		
 		SDL_QueryTexture (ui_timer_images[ring], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[ring], NULL, &rect);
-
-		g = timer->img_button;
+		
+		if (timer->accept_input) {
+			g = cp_button_frames[BUTTON_TIMER_DONE];
+		} else {
+			g = timer->img_button + 4;
+		}
 		rect.x = TIMER_X;
 		rect.y = 29;
 
 		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
 	}
+}
+
+int timer_accepts_input (UITimer *timer) {
+	return timer->accept_input;
 }
 
 void setup_timer (void) {

@@ -66,6 +66,13 @@ enum {
 	NUM_OBJECTS
 };
 
+enum {
+	BUTTON_NONE = 0,
+	BUTTON_TIMER_DONE,
+	
+	NUM_BUTTONS
+};
+
 typedef struct {
 	int orig_x, orig_y;
 	int w, h;

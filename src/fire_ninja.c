@@ -329,6 +329,16 @@ FireNinja *create_fire_ninja (int x, int y) {
 	return obj;
 }
 
+void ask_fire_coords (FireNinja *ninja, int *x, int *y) {
+	if (x != NULL) {
+		*x = ninja->x;
+	}
+	
+	if (y != NULL) {
+		*y = ninja->y;
+	}
+}
+
 void put_idle_fire (FireNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = FIRE_NINJA_IDLE;

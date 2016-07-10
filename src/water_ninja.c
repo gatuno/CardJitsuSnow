@@ -312,6 +312,16 @@ WaterNinja *create_water_ninja (int x, int y) {
 	return obj;
 }
 
+void ask_water_coords (WaterNinja *ninja, int *x, int *y) {
+	if (x != NULL) {
+		*x = ninja->x;
+	}
+	
+	if (y != NULL) {
+		*y = ninja->y;
+	}
+}
+
 void put_idle_water (WaterNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = WATER_NINJA_IDLE;

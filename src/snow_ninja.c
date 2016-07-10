@@ -331,6 +331,16 @@ SnowNinja *create_snow_ninja (int x, int y) {
 	return obj;
 }
 
+void ask_snow_coords (SnowNinja *ninja, int *x, int *y) {
+	if (x != NULL) {
+		*x = ninja->x;
+	}
+	
+	if (y != NULL) {
+		*y = ninja->y;
+	}
+}
+
 void put_idle_snow (SnowNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = SNOW_NINJA_IDLE;
@@ -453,7 +463,7 @@ void ask_snow_actions (SnowNinja *ninja, int escenario[5][9], int acciones[5][9]
 			if (s > 3) continue;
 			if (ninja->x + g >= 0 && ninja->x + g < 9 && ninja->y + h >= 0 && ninja->y + h < 5) {
 				obj = escenario[ninja->y + h][ninja->x + g];
-				if (obj == ROCK || obj == NINJA_SNOW || obj == NINJA_FIRE || obj == NINJA_SNOW) {
+				if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
 					acciones[ninja->y + h][ninja->x + g] = ACTION_CANT_MOVE;
 				} else if (obj == NONE) {
 					acciones[ninja->y + h][ninja->x + g] = ACTION_MOVE;

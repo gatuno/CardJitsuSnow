@@ -65,6 +65,8 @@ typedef struct SnowFight {
 	
 	int estado;
 	
+	int clientes;
+	
 	/* Otra info aquí */
 	int escenario[5][9];
 	int acciones[5][9];
@@ -562,6 +564,7 @@ void start_tabla (SnowFight *tabla) {
 	}
 	tabla->running = TRUE;
 	tabla->estado = WAITING_CLIENTS;
+	tabla->clientes = 3;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
 	
 	/* Cambiar los ENEMY_SLY por ENEMY_1 */
@@ -570,9 +573,32 @@ void start_tabla (SnowFight *tabla) {
 	}
 }
 
-void manage_client_ready (SnowFight *tabla, int fd) {
+void send_ask_actions (SnowFight *tabla) {
 	int g;
 	char buffer_send[128];
+	
+	/* Enviar el "ASK actions" a los clientes */
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_ASK_ACTIONS;
+	
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] != -1) {
+			agregar_write (tabla->fds[g], buffer_send, 4, 0);
+		}
+	}
+	
+	tabla->estado = WAITING_ACTIONS;
+	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
+}
+
+void manage_client_ready (SnowFight *tabla, int fd) {
+	int g;
 	if (!tabla->running || tabla->estado != WAITING_CLIENTS) {
 		printf ("Error en la tabla. El cliente [%i] envió un ready cuando la tabla no está lista\n", fd);
 	}
@@ -586,25 +612,8 @@ void manage_client_ready (SnowFight *tabla, int fd) {
 	
 	g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
 	
-	if (g == 3) { /* FIXME: Debe ser igual a la cantidad de clientes conectados en la tabla */
-		/* Enviar el "ASK actions" a los clientes */
-		buffer_send[0] = 'S';
-		buffer_send[1] = 'N';
-	
-		/* Poner el campo de la versión */
-		buffer_send[2] = 0;
-	
-		/* El campo de tipo */
-		buffer_send[3] = NET_TYPE_ASK_ACTIONS;
-		
-		for (g = 0; g < 3; g++) {
-			if (tabla->fds[g] != -1) {
-				agregar_write (tabla->fds[g], buffer_send, 4, 0);
-			}
-		}
-		
-		tabla->estado = WAITING_ACTIONS;
-		tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
+	if (g >= tabla->clientes) { /* FIXME: Debe ser igual a la cantidad de clientes conectados en la tabla */
+		send_ask_actions (tabla);
 	}
 }
 
@@ -722,6 +731,8 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 	int slot;
 	unsigned char buffer_send[128];
 	int g, h;
+	ServerNinja *ninja;
+	int elemento;
 	
 	if (tabla == NULL) return;
 	
@@ -760,6 +771,63 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		if (tabla->fds[0] == -1 && tabla->fds[1] == -1 && tabla->fds[2] == -1) {
 			printf ("Eliminado tabla [%i] por falta de jugadores\n", tabla->id);
 			remove_table (tabla);
+		}
+	} else {
+		/* Un ninja se perdió en media partida, mandar el mensaje de eliminar */
+		if (tabla->clientes == 1) {
+			/* Último cliente, nada que mandar */
+			printf ("Eliminando tabla [%i]\n", tabla->id);
+			remove_table (tabla);
+			return;
+		}
+		
+		/* Rellenar con la firma del protocolo SN */
+		buffer_send[0] = 'S';
+		buffer_send[1] = 'N';
+	
+		/* Poner el campo de la versión */
+		buffer_send[2] = 0;
+	
+		/* El campo de tipo */
+		buffer_send[3] = NET_TYPE_REMOVE_PLAYER;
+	
+		/* El ninja */
+		buffer_send[4] = NINJA_FIRE + slot;
+		
+		/* Enviar el remove player a los otros jugadores */
+		for (g = 0; g < 3; g++) {
+			if (g == slot) continue;
+			agregar_write (tabla->fds[g], buffer_send, 5, 0);
+		}
+		
+		tabla->fds[slot] = -1;
+		tabla->clientes--;
+		
+		/* Quitar el jugador del mapa */
+		elemento = NINJA_FIRE + slot;
+		
+		if (elemento == NINJA_FIRE) {
+			ninja = tabla->fire;
+			tabla->fire = NULL;
+		} else if (elemento == NINJA_SNOW) {
+			ninja = tabla->snow;
+			tabla->snow = NULL;
+		} else if (elemento == NINJA_WATER) {
+			ninja = tabla->water;
+			tabla->water = NULL;
+		}
+		
+		tabla->escenario[ninja->y][ninja->x] = NONE;
+		
+		free (ninja);
+		
+		if (tabla->estado == WAITING_CLIENTS) {
+			/* Si estabamos esperando por un cliente, revisar si después de su salida ya podemos continuar */
+			g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
+		
+			if (g >= tabla->clientes) {
+				send_ask_actions (tabla);
+			}
 		}
 	}
 }

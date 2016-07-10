@@ -16,6 +16,7 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/round_1.png \
 	images/round_2.png \
 	images/round_3.png \
+	images/checkmark.png \
 	images/water_ninja/idle.png \
 	images/water_ninja/attack.png \
 	images/water_ninja/celebrate.png \
@@ -69,6 +70,7 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/fire_timer/button_down.png \
 	images/fire_timer/button_over.png \
 	images/fire_timer/button_up.png \
+	images/fire_timer/button_selected.png \
 	images/fire_timer/tick0.png \
 	images/fire_timer/tick1.png \
 	images/fire_timer/tick2.png \
@@ -84,6 +86,7 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/snow_timer/button_down.png \
 	images/snow_timer/button_over.png \
 	images/snow_timer/button_up.png \
+	images/snow_timer/button_selected.png \
 	images/snow_timer/tick0.png \
 	images/snow_timer/tick1.png \
 	images/snow_timer/tick2.png \
@@ -99,6 +102,7 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/water_timer/button_down.png \
 	images/water_timer/button_over.png \
 	images/water_timer/button_up.png \
+	images/water_timer/button_selected.png \
 	images/water_timer/tick0.png \
 	images/water_timer/tick1.png \
 	images/water_timer/tick2.png \

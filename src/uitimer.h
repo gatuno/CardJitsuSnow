@@ -21,6 +21,8 @@
 #ifndef __UITIMER_H__
 #define __UITIMER_H__
 
+#define TIMER_X 420
+
 typedef struct _UITimer UITimer;
 
 /* Para los eventos */
@@ -35,6 +37,8 @@ UITimer *crear_timer (int ui);
 void start_ticking (UITimer *timer);
 void dibujar_timer (UITimer *timer);
 void show_timer (UITimer *timer);
+int timer_accepts_input (UITimer *timer);
+void timer_button_selected (UITimer *timer);
 void setup_timer (void);
 
 #endif /* __UITIMER_H__ */
