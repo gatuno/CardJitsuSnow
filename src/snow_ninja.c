@@ -309,6 +309,8 @@ struct _SnowNinja {
 	int next_x, next_y;
 	int estado;
 	int x_real, y_real;
+	int next_x_real, next_y_real;
+	int sum_x, sum_y;
 };
 
 static SDL_Texture *snow_ninja_images[NUM_SNOW_NINJA_IMAGES];
@@ -362,13 +364,23 @@ void celebrate_snow (SnowNinja *ninja) {
 }
 
 void move_snow (SnowNinja *ninja, int x, int y) {
-	ninja->next_x = x;
-	ninja->next_y = y;
-}
-
-void prev_move_snow (SnowNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = SNOW_NINJA_MOVE;
+	
+	ninja->x = ninja->next_x = x;
+	ninja->y = ninja->next_y = y;
+	
+	/* Calcular las siguientes coordenadas reales */
+	ninja->next_x_real = MAP_X + (x * 70) + 35;
+	ninja->next_y_real = MAP_Y + (y * 70) + 70;
+	
+	ninja->sum_x = (ninja->next_x_real - ninja->x_real) / 35;
+	ninja->sum_y = (ninja->next_y_real - ninja->y_real) / 35;
+}
+
+void ghost_move_snow (SnowNinja *ninja, int x, int y) {
+	ninja->next_x = x;
+	ninja->next_y = y;
 }
 
 void ko_snow (SnowNinja *ninja) {
@@ -401,6 +413,11 @@ void draw_snow_ninja (SnowNinja *ninja) {
 	rect2.y = snow_animations[est][calc].orig_y;
 	rect.w = rect2.w = snow_animations[est][calc].w;
 	rect.h = rect2.h = snow_animations[est][calc].h;
+	
+	if (ninja->estado == SNOW_NINJA_MOVE) {
+		ninja->x_real += ninja->sum_x;
+		ninja->y_real += ninja->sum_y;
+	}
 	
 	rect.x = ninja->x_real - snow_ninja_offsets_int[est][0] + snow_animations[est][calc].dest_x;
 	rect.y = ninja->y_real - snow_ninja_offsets_int[est][1] + snow_animations[est][calc].dest_y;
@@ -437,6 +454,15 @@ void draw_snow_ninja (SnowNinja *ninja) {
 			ninja->estado = SNOW_NINJA_IDLE;
 		} else if (ninja->estado == SNOW_NINJA_HEAL) {
 			ninja->estado = SNOW_NINJA_IDLE;
+		} else if (ninja->estado == SNOW_NINJA_MOVE) {
+			ninja->estado = SNOW_NINJA_MOVE;
+		}
+	}
+	if (ninja->estado == SNOW_NINJA_MOVE) {
+		if (ninja->x_real == ninja->next_x_real) {
+			/* Llegamos al destino */
+			ninja->estado = SNOW_NINJA_IDLE;
+			ninja->frame = 0;
 		}
 	}
 }

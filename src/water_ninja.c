@@ -290,6 +290,8 @@ struct _WaterNinja {
 	int next_x, next_y;
 	int estado;
 	int x_real, y_real;
+	int next_x_real, next_y_real;
+	int sum_x, sum_y;
 };
 
 static SDL_Texture *water_ninja_images[NUM_WATER_NINJA_IMAGES];
@@ -338,13 +340,23 @@ void celebrate_water (WaterNinja *ninja) {
 }
 
 void move_water (WaterNinja *ninja, int x, int y) {
-	ninja->next_x = x;
-	ninja->next_y = y;
-}
-
-void prev_move_water (WaterNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = WATER_NINJA_MOVE;
+	
+	ninja->x = ninja->next_x = x;
+	ninja->y = ninja->next_y = y;
+	
+	/* Calcular las siguientes coordenadas reales */
+	ninja->next_x_real = MAP_X + (x * 70) + 35;
+	ninja->next_y_real = MAP_Y + (y * 70) + 70;
+	
+	ninja->sum_x = (ninja->next_x_real - ninja->x_real) / 35;
+	ninja->sum_y = (ninja->next_y_real - ninja->y_real) / 35;
+}
+
+void ghost_move_water (WaterNinja *ninja, int x, int y) {
+	ninja->next_x = x;
+	ninja->next_y = y;
 }
 
 void ko_water (WaterNinja *ninja) {
@@ -378,6 +390,10 @@ void draw_water_ninja (WaterNinja *ninja) {
 	rect.w = rect2.w = water_animations[est][calc].w;
 	rect.h = rect2.h = water_animations[est][calc].h;
 	
+	if (ninja->estado == WATER_NINJA_MOVE) {
+		ninja->x_real += ninja->sum_x;
+		ninja->y_real += ninja->sum_y;
+	}
 	rect.x = ninja->x_real - water_ninja_offsets_int[est][0] + water_animations[est][calc].dest_x;
 	rect.y = ninja->y_real - water_ninja_offsets_int[est][1] + water_animations[est][calc].dest_y;
 	
@@ -390,7 +406,7 @@ void draw_water_ninja (WaterNinja *ninja) {
 		SDL_Point p;
 		p.y = 0;
 		p.x = rect.w;
-		rect.x = ninja->x_real - water_ninja_offsets_int[est][0] - rect.w + water_animations[est][calc].dest_x;
+		rect.x = rect.x - rect.w;
 		
 		SDL_RenderCopyEx (renderer, water_ninja_images[est], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
 	} else {
@@ -411,6 +427,16 @@ void draw_water_ninja (WaterNinja *ninja) {
 			ninja->estado = WATER_NINJA_IDLE;
 		} else if (ninja->estado == WATER_NINJA_REVIVED) {
 			ninja->estado = WATER_NINJA_IDLE;
+		} else if (ninja->estado == WATER_NINJA_MOVE) {
+			ninja->estado = WATER_NINJA_MOVE;
+		}
+	}
+	
+	if (ninja->estado == WATER_NINJA_MOVE) {
+		if (ninja->x_real == ninja->next_x_real) {
+			/* Llegamos al destino */
+			ninja->estado = WATER_NINJA_IDLE;
+			ninja->frame = 0;
 		}
 	}
 }

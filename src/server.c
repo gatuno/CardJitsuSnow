@@ -607,7 +607,76 @@ void send_ask_actions (SnowFight *tabla) {
 }
 
 void calculate_actions (SnowFight *tabla) {
-	printf ("Pendiente enviar acciones para la tabla [%i]\n", tabla->id);
+	char buffer_send[128];
+	int pos;
+	int g;
+	/* Ejecutar todas las acciones */
+	
+	buffer_send[0] = 'S';
+	buffer_send[1] = 'N';
+
+	/* Poner el campo de la versión */
+	buffer_send[2] = 0;
+
+	/* El campo de tipo */
+	buffer_send[3] = NET_TYPE_SERVER_ACTIONS;
+	
+	pos = 5;
+	g = 0;
+	/* Primero los movimientos de los ninjas */
+	if (tabla->water != NULL) {
+		if (tabla->water->next_x != tabla->water->x || tabla->water->next_y != tabla->water->y) {
+			g++;
+			buffer_send[pos] = NINJA_WATER;
+			buffer_send[pos + 1] = tabla->water->next_x;
+			buffer_send[pos + 2] = tabla->water->next_y;
+			
+			pos = pos + 3;
+			/* Mover al ninja */
+			tabla->water->x = tabla->water->next_x;
+			tabla->water->y = tabla->water->next_y;
+		}
+	}
+	
+	if (tabla->fire != NULL) {
+		if (tabla->fire->next_x != tabla->fire->x || tabla->fire->next_y != tabla->fire->y) {
+			g++;
+			buffer_send[pos] = NINJA_FIRE;
+			buffer_send[pos + 1] = tabla->fire->next_x;
+			buffer_send[pos + 2] = tabla->fire->next_y;
+			
+			pos = pos + 3;
+			/* Mover al ninja */
+			tabla->fire->x = tabla->fire->next_x;
+			tabla->fire->y = tabla->fire->next_y;
+		}
+	}
+	
+	if (tabla->snow != NULL) {
+		if (tabla->snow->next_x != tabla->snow->x || tabla->snow->next_y != tabla->snow->y) {
+			g++;
+			buffer_send[pos] = NINJA_SNOW;
+			buffer_send[pos + 1] = tabla->snow->next_x;
+			buffer_send[pos + 2] = tabla->snow->next_y;
+			
+			pos = pos + 3;
+			/* Mover al ninja */
+			tabla->snow->x = tabla->snow->next_x;
+			tabla->snow->y = tabla->snow->next_y;
+		}
+	}
+	
+	buffer_send[4] = g;
+	
+	/* Por el momento, enviar sólo los movimientos */
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] != -1) {
+			agregar_write (tabla->fds[g], buffer_send, pos, 0);
+		}
+	}
+	
+	tabla->estado = WAITING_CLIENTS;
+	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
 }
 
 void manage_client_ready (SnowFight *tabla, int fd) {
@@ -673,6 +742,7 @@ void manage_client_done_actions (SnowFight *tabla, int fd) {
 	
 	if (g >= tabla->clientes) {
 		/* Cancelar el timer */
+		printf ("Done actions, ejecutando calculate\n");
 		cancel_timer (tabla);
 		calculate_actions (tabla);
 	}
@@ -890,6 +960,15 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 			if (g >= tabla->clientes) {
 				send_ask_actions (tabla);
 			}
+		} else if (tabla->estado == WAITING_ACTIONS) {
+			/* Si estabamos esperando por un cliente y se cerró, ya podemos continuar sin él */
+			g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
+		
+			if (g >= tabla->clientes) {
+				printf ("Done actions, ejecutando calculate\n");
+				cancel_timer (tabla);
+				calculate_actions (tabla);
+			}
 		}
 	}
 }
@@ -967,7 +1046,9 @@ int main (int argc, char *argv[]) {
 			break;
 		}
 		
-		if (res == 0) continue; /* Nada que vigilar */
+		if (res == 0) {
+			goto continue_mainloop; /* Nada que vigilar */
+		}
 		
 		if (vigilar[0].revents & POLLIN) {
 			/* Evento en el servidor */
@@ -1090,6 +1171,7 @@ int main (int argc, char *argv[]) {
 			}
 		}
 		
+		continue_mainloop:
 		eliminar_poll ();
 		
 		agregar_poll ();

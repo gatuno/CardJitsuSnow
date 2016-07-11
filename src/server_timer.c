@@ -92,12 +92,11 @@ void check_timers (void) {
 	pos = timers_funcs;
 	
 	gettimeofday (&now, NULL);
-	
 	while (pos != NULL) {
 		dif = timevaldiff (&pos->inicio, &now);
-		
-		if (dif > pos->interval) {
+		if (dif >= (pos->interval * 1000)) {
 			/* Llamar esta función */
+			printf ("Llamando la funcion por timer\n");
 			pos->func (pos->tabla, pos->user_data);
 			
 			/* Eliminar la función */

@@ -31,6 +31,7 @@ void attack_snow (SnowNinja *snow);
 void heal_snow (SnowNinja *ninja);
 void celebrate_snow (SnowNinja *ninja);
 void move_snow (SnowNinja *ninja, int x, int y);
+void ghost_move_snow (SnowNinja *ninja, int x, int y);
 void ko_snow (SnowNinja *ninja);
 void hit_snow (SnowNinja *ninja);
 void revive_snow (SnowNinja *ninja);
@@ -38,7 +39,6 @@ void revive_snow (SnowNinja *ninja);
 void ask_snow_actions (SnowNinja *ninja, int escenario[5][9], int acciones[5][9]);
 
 void put_idle_snow (SnowNinja *ninja);
-void prev_move_snow (SnowNinja *ninja);
 void ask_snow_coords (SnowNinja *ninja, int *x, int *y);
 
 #endif /* __SNOW_NINJA_H__ */

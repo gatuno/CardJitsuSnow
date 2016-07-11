@@ -45,6 +45,11 @@ typedef struct {
 } Action;
 
 typedef struct {
+	int movs;
+	Action movs_coords[3];
+} ServerActions;
+
+typedef struct {
 	uint8_t version;
 	uint8_t type;
 	union {
@@ -62,6 +67,7 @@ typedef struct {
 			ObjectPos *objects;
 		};
 		Action action;
+		ServerActions server;
 	};
 } NetworkMessage;
 
@@ -77,6 +83,7 @@ enum {
 	NET_TYPE_ACTION,
 	NET_TYPE_DONE_ACTIONS,
 	NET_TYPE_PLAYER_DONE_ACTIONS,
+	NET_TYPE_SERVER_ACTIONS,
 };
 
 enum {
@@ -89,6 +96,7 @@ enum {
 	NETWORK_EVENT_SERVER_ASK_ACTIONS,
 	NETOWRK_EVENT_ACTION,
 	NETWORK_EVENT_PLAYER_DONE_ACTIONS,
+	NETWORK_EVENT_SERVER_ACTIONS,
 };
 
 typedef struct {

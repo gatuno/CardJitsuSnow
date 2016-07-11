@@ -275,6 +275,8 @@ enum {
 	UI_ANIM_ROUND,
 	UI_SHOW_ENEMYS,
 	
+	UI_MOVE_NINJAS,
+	
 	NUM_UI_ANIM
 };
 
@@ -310,6 +312,7 @@ int game_loop (SnowStage *stage);
 int game_finish (void);
 void setup (void);
 
+void do_moves_ninjas (SnowStage *stage, ServerActions *server);
 int mouse_intro_penguin (int x, int y);
 int map_button_in_game (int x, int y, UITimer *timer);
 
@@ -431,12 +434,14 @@ int game_intro (SnowStage *stage) {
 				case SDL_MOUSEBUTTONUP:
 					if (selected == -1) {
 						selected = mouse_intro_penguin (event.button.x, event.button.y);
-						anim[selected] = 0;
+						if (selected != -1) {
+							anim[selected] = 0;
 						
-						/* Enviar la selección al servidor */
-						send_join (selected, nick_global);
+							/* Enviar la selección al servidor */
+							send_join (selected, nick_global);
 						
-						stage->local_ninja = selected;
+							stage->local_ninja = selected;
+						}
 					}
 					break;
 				case SDL_KEYDOWN:
@@ -670,6 +675,7 @@ int game_loop (SnowStage *stage) {
 	Animaten animaciones[4];
 	int anims, cont_a;
 	Action *accion;
+	ServerActions *server;
 	int readys[4];
 	
 	fondo = 2;
@@ -784,6 +790,7 @@ int game_loop (SnowStage *stage) {
 								ui_estatus = UI_WAITING_READY;
 								break;
 							case UI_TIMER_EVENT_DONE_TICKS:
+								timer_no_more_actions (timer);
 								ui_estatus = UI_WAITING_SERVER;
 								break;
 						}
@@ -804,11 +811,11 @@ int game_loop (SnowStage *stage) {
 								
 								if (accion->type == ACTION_MOVE) {
 									if (accion->object == NINJA_FIRE) {
-										move_fire (stage->fire, accion->x, accion->y);
+										ghost_move_fire (stage->fire, accion->x, accion->y);
 									} else if (accion->object == NINJA_WATER) {
-										move_water (stage->water, accion->x, accion->y);
+										ghost_move_water (stage->water, accion->x, accion->y);
 									} else if (accion->object == NINJA_SNOW) {
-										move_snow (stage->snow, accion->x, accion->y);
+										ghost_move_snow (stage->snow, accion->x, accion->y);
 									}
 								}
 								
@@ -838,6 +845,24 @@ int game_loop (SnowStage *stage) {
 							case NETWORK_EVENT_PLAYER_DONE_ACTIONS:
 								g = GPOINTER_TO_INT (event.user.data1);
 								readys[g] = TRUE;
+								break;
+							case NETWORK_EVENT_SERVER_ACTIONS:
+								server = (ServerActions *) event.user.data1;
+								
+								/* Ocultar el reloj */
+								hide_timer (timer);
+								
+								anims = 0;
+								/* Anexar todas las animaciones */
+								if (server->movs != 0) {
+									animaciones[anims].tipo = UI_MOVE_NINJAS;
+									
+									do_moves_ninjas (stage, server);
+									anims++;
+								}
+								
+								ui_estatus = UI_ANIMATE;
+								free (server);
 								break;
 							//default:
 								//printf ("Recibí un evento de red aún desconocido\n");
@@ -903,7 +928,7 @@ int game_loop (SnowStage *stage) {
 					SDL_RenderCopy (renderer, images[i], NULL, &rect);
 				} else if (stage->escenario[g][h] == NINJA_WATER) {
 					draw_water_ninja (stage->water);
-					if (readys[NINJA_WATER]) {
+					if (readys[NINJA_WATER] && (ui_estatus == UI_WAIT_INPUT || ui_estatus == UI_WAITING_SERVER)) {
 						/* Dibuja la palomita de listo */
 						rect.x = MAP_X + (h * 70) + 19;
 						rect.y = MAP_Y + (g * 70) + 20;
@@ -913,7 +938,7 @@ int game_loop (SnowStage *stage) {
 					}
 				} else if (stage->escenario[g][h] == NINJA_FIRE) {
 					draw_fire_ninja (stage->fire);
-					if (readys[NINJA_FIRE]) {
+					if (readys[NINJA_FIRE] && (ui_estatus == UI_WAIT_INPUT || ui_estatus == UI_WAITING_SERVER)) {
 						/* Dibuja la palomita de listo */
 						rect.x = MAP_X + (h * 70) + 19;
 						rect.y = MAP_Y + (g * 70) + 20;
@@ -923,7 +948,7 @@ int game_loop (SnowStage *stage) {
 					}
 				} else if (stage->escenario[g][h] == NINJA_SNOW) {
 					draw_snow_ninja (stage->snow);
-					if (readys[NINJA_SNOW]) {
+					if (readys[NINJA_SNOW] && (ui_estatus == UI_WAIT_INPUT || ui_estatus == UI_WAITING_SERVER)) {
 						/* Dibuja la palomita de listo */
 						rect.x = MAP_X + (h * 70) + 19;
 						rect.y = MAP_Y + (g * 70) + 20;
@@ -1137,6 +1162,39 @@ void setup (void) {
 	
 	/* Generador de números aleatorios */
 	srand (SDL_GetTicks ());
+}
+
+void do_moves_ninjas (SnowStage *stage, ServerActions *server) {
+	int g, h;
+	/* Quitar del escenario en la viejas posiciones */
+	if (stage->water != NULL) {
+		ask_water_coords (stage->water, &g, &h);
+		stage->escenario[h][g] = NONE;
+	}
+	
+	if (stage->fire != NULL) {
+		ask_fire_coords (stage->fire, &g, &h);
+		stage->escenario[h][g] = NONE;
+	}
+	
+	if (stage->snow != NULL) {
+		ask_snow_coords (stage->snow, &g, &h);
+		stage->escenario[h][g] = NONE;
+	}
+	
+	/* Solicitar los movimientos a los ninjas */
+	for (g = 0; g < server->movs; g++) {
+		if (server->movs_coords[g].object == NINJA_FIRE) {
+			move_fire (stage->fire, server->movs_coords[g].x, server->movs_coords[g].y);
+			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_FIRE;
+		} else if (server->movs_coords[g].object == NINJA_WATER) {
+			move_water (stage->water, server->movs_coords[g].x, server->movs_coords[g].y);
+			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_WATER;
+		} else if (server->movs_coords[g].object == NINJA_SNOW) {
+			move_snow (stage->snow, server->movs_coords[g].x, server->movs_coords[g].y);
+			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_SNOW;
+		}
+	}
 }
 
 int mouse_intro_penguin (int x, int y) {

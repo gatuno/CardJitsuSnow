@@ -30,13 +30,13 @@ FireNinja *create_fire_ninja (int x, int y);
 void attack_fire (FireNinja *ninja);
 void celebrate_fire (FireNinja *ninja);
 void move_fire (FireNinja *ninja, int x, int y);
+void ghost_move_fire (FireNinja *ninja, int x, int y);
 void ko_fire (FireNinja *ninja);
 void hit_fire (FireNinja *ninja);
 void revive_fire (FireNinja *ninja);
 
 void ask_fire_actions (FireNinja *ninja, int escenario[5][9], int acciones[5][9]);
 
-void prev_move_fire (FireNinja *ninja);
 void put_idle_fire (FireNinja *Ninja);
 void ask_fire_coords (FireNinja *ninja, int *x, int *y);
 

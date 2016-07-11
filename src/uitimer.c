@@ -224,7 +224,7 @@ void hide_timer (UITimer *timer) {
 	
 	curtime = SDL_GetTicks ();
 			
-	g = (curtime - timer->timestamp) / 8000;
+	g = (curtime - timer->timestamp) / 1000;
 	if (g >= 9) g = 9;
 	timer->last_ring = timer->img_ring + 9 - g;
 	timer->accept_input = FALSE;
@@ -233,6 +233,10 @@ void hide_timer (UITimer *timer) {
 void timer_button_selected (UITimer *timer) {
 	timer->accept_input = FALSE;
 	timer->button_selected = 1;
+}
+
+void timer_no_more_actions (UITimer *timer) {
+	timer->accept_input = FALSE;
 }
 
 void dibujar_timer (UITimer *timer) {
@@ -307,7 +311,7 @@ void dibujar_timer (UITimer *timer) {
 		} else {
 			curtime = SDL_GetTicks ();
 			
-			g = (curtime - timer->timestamp) / 3000;
+			g = (curtime - timer->timestamp) / 1000;
 			if (g >= 9) g = 9;
 			ring = timer->img_ring + 9 - g;
 			if (g == 9 && timer->event_sent == 0) {
@@ -353,7 +357,11 @@ void dibujar_timer (UITimer *timer) {
 		if (timer->accept_input) {
 			g = cp_button_frames[BUTTON_TIMER_DONE];
 		} else {
-			g = timer->img_button + 4;
+			if (timer->button_selected == 1) {
+				g = timer->img_button + 4;
+			} else {
+				g = timer->img_button;
+			}
 		}
 		rect.x = TIMER_X;
 		rect.y = 29;

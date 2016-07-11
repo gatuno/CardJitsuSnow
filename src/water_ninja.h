@@ -30,6 +30,7 @@ WaterNinja *create_water_ninja (int x, int y);
 void attack_water (WaterNinja *water);
 void celebrate_water (WaterNinja *ninja);
 void move_water (WaterNinja *ninja, int x, int y);
+void ghost_move_water (WaterNinja *ninja, int x, int y);
 void ko_water (WaterNinja *ninja);
 void hit_water (WaterNinja *ninja);
 void revive_water (WaterNinja *ninja);
@@ -37,7 +38,6 @@ void revive_water (WaterNinja *ninja);
 void ask_water_actions (WaterNinja *ninja, int escenario[5][9], int acciones[5][9]);
 
 void put_idle_water (WaterNinja *ninja);
-void prev_move_water (WaterNinja *ninja);
 void ask_water_coords (WaterNinja *ninja, int *x, int *y);
 
 #endif /* __WATER_NINJA_H__ */

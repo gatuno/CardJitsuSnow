@@ -313,9 +313,29 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		}
 		real_len = 5;
 	} else if (msg->type == NET_TYPE_DONE_ACTIONS) {
-		if (len < 4) return -1;
-		
 		real_len = 4;
+	} else if (msg->type == NET_TYPE_SERVER_ACTIONS) {
+		/* Validación por partes */
+		if (len < 5) return -1;
+		
+		/* Primero, la cantidad de movimientos */
+		msg->server.movs = buffer[4];
+		
+		if (msg->server.movs > 3 || msg->server.movs < 0) {
+			printf ("Cantidad de movimientos inválidos\n");
+			return -1;
+		}
+		
+		if (len < 5 + (3 * msg->server.movs)) return -1;
+		for (g = 0; g < msg->server.movs; g++) {
+			msg->server.movs_coords[g].object = buffer[5 + (g * 3)];
+			msg->server.movs_coords[g].x = buffer[6 + (g * 3)];
+			msg->server.movs_coords[g].y = buffer[7 + (g * 3)];
+			
+			/* TODO: Validar que estos datos sean válidos */
+		}
+		
+		real_len = 5 + (3 * msg->server.movs);
 	}
 	
 	return real_len;
@@ -329,6 +349,7 @@ void process_network_events (void) {
 	NinjaInfo *otros_info;
 	StartInfo *start_info;
 	Action *accion;
+	ServerActions *server;
 	
 	do {
 		len = recv (server_fd, buffer, 256, MSG_PEEK);
@@ -424,6 +445,14 @@ void process_network_events (void) {
 		} else if (msg.type == NET_TYPE_PLAYER_DONE_ACTIONS) {
 			evento.user.code = NETWORK_EVENT_PLAYER_DONE_ACTIONS;
 			evento.user.data1 = GINT_TO_POINTER (msg.element);
+			
+			SDL_PushEvent (&evento);
+		} else if (msg.type == NET_TYPE_SERVER_ACTIONS) {
+			evento.user.code = NETWORK_EVENT_SERVER_ACTIONS;
+			
+			server = (ServerActions *) malloc (sizeof (ServerActions));
+			memcpy (server, &msg.server, sizeof (ServerActions));
+			evento.user.data1 = server;
 			
 			SDL_PushEvent (&evento);
 		}
