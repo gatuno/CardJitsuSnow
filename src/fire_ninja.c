@@ -341,6 +341,12 @@ void ask_fire_coords (FireNinja *ninja, int *x, int *y) {
 	}
 }
 
+int is_fire_done (FireNinja *ninja) {
+	if (ninja->estado == FIRE_NINJA_IDLE) return TRUE;
+	
+	return FALSE;
+}
+
 void put_idle_fire (FireNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = FIRE_NINJA_IDLE;
@@ -451,7 +457,7 @@ void draw_fire_ninja (FireNinja *ninja) {
 	}
 	
 	if (ninja->estado == FIRE_NINJA_MOVE) {
-		if (ninja->x_real == ninja->next_x_real) {
+		if (ninja->x_real == ninja->next_x_real && ninja->y_real == ninja->next_y_real) {
 			/* Llegamos al destino */
 			ninja->estado = FIRE_NINJA_IDLE;
 			ninja->frame = 0;

@@ -343,6 +343,12 @@ void ask_snow_coords (SnowNinja *ninja, int *x, int *y) {
 	}
 }
 
+int is_snow_done (SnowNinja *ninja) {
+	if (ninja->estado == SNOW_NINJA_IDLE) return TRUE;
+	
+	return FALSE;
+}
+
 void put_idle_snow (SnowNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = SNOW_NINJA_IDLE;
@@ -459,7 +465,7 @@ void draw_snow_ninja (SnowNinja *ninja) {
 		}
 	}
 	if (ninja->estado == SNOW_NINJA_MOVE) {
-		if (ninja->x_real == ninja->next_x_real) {
+		if (ninja->x_real == ninja->next_x_real && ninja->y_real == ninja->next_y_real) {
 			/* Llegamos al destino */
 			ninja->estado = SNOW_NINJA_IDLE;
 			ninja->frame = 0;

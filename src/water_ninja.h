@@ -39,6 +39,7 @@ void ask_water_actions (WaterNinja *ninja, int escenario[5][9], int acciones[5][
 
 void put_idle_water (WaterNinja *ninja);
 void ask_water_coords (WaterNinja *ninja, int *x, int *y);
+int is_water_done (WaterNinja *ninja);
 
 #endif /* __WATER_NINJA_H__ */
 

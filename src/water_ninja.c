@@ -324,6 +324,12 @@ void ask_water_coords (WaterNinja *ninja, int *x, int *y) {
 	}
 }
 
+int is_water_done (WaterNinja *ninja) {
+	if (ninja->estado == WATER_NINJA_IDLE) return TRUE;
+	
+	return FALSE;
+}
+
 void put_idle_water (WaterNinja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = WATER_NINJA_IDLE;
@@ -433,7 +439,7 @@ void draw_water_ninja (WaterNinja *ninja) {
 	}
 	
 	if (ninja->estado == WATER_NINJA_MOVE) {
-		if (ninja->x_real == ninja->next_x_real) {
+		if (ninja->x_real == ninja->next_x_real && ninja->y_real == ninja->next_y_real) {
 			/* Llegamos al destino */
 			ninja->estado = WATER_NINJA_IDLE;
 			ninja->frame = 0;

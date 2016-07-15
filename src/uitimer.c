@@ -228,6 +228,7 @@ void hide_timer (UITimer *timer) {
 	if (g >= 9) g = 9;
 	timer->last_ring = timer->img_ring + 9 - g;
 	timer->accept_input = FALSE;
+	timer->anim = 0;
 }
 
 void timer_button_selected (UITimer *timer) {
@@ -368,6 +369,58 @@ void dibujar_timer (UITimer *timer) {
 
 		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
 		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	} else if (timer->estado == TIMER_HIDDING) {
+		g = timer->img_base;
+		/* Dibujar el reloj base */
+		if (timer->color == NINJA_WATER) {
+			rect.x = TIMER_X - 106;
+			rect.y = -timer->anim - 7;
+		} else if (timer->color == NINJA_SNOW) {
+			rect.x = TIMER_X - 95;
+			rect.y = -timer->anim - 9;
+		} else if (timer->color == NINJA_FIRE) {
+			rect.x = TIMER_X - 102;
+			rect.y = -timer->anim;
+		}
+	
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	
+		g = timer->last_ring;
+		if (timer->color == NINJA_WATER) {
+			rect.x = TIMER_X - 76;
+			rect.y = -timer->anim + 6;
+		} else if (timer->color == NINJA_SNOW) {
+			rect.x = TIMER_X - 77;
+			rect.y = -timer->anim + 5;
+		} else if (timer->color == NINJA_FIRE) {
+			rect.x = TIMER_X - 70;
+			rect.y = -timer->anim + 10;
+		}
+	
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	
+		if (timer->accept_input) {
+			g = cp_button_frames[BUTTON_TIMER_DONE];
+		} else {
+			if (timer->button_selected == 1) {
+				g = timer->img_button + 4;
+			} else {
+				g = timer->img_button;
+			}
+		}
+		rect.x = TIMER_X;
+		rect.y = -timer->anim + 29;
+	
+		SDL_QueryTexture (ui_timer_images[g], NULL, NULL, &rect.w, &rect.h);
+		SDL_RenderCopy (renderer, ui_timer_images[g], NULL, &rect);
+	
+		timer->anim += 4;
+		
+		if (timer->anim >= 80) {
+			timer->anim = 80;
+		}
 	}
 }
 

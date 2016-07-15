@@ -983,7 +983,10 @@ int game_loop (SnowStage *stage) {
 		}
 		
 		if (ui_estatus == UI_ANIMATE) {
-			if (animaciones[anims - 1].tipo == UI_ANIM_ROUND) {
+			if (anims == 0) {
+				/* Nada que animar, que raro */
+				
+			} else if (animaciones[anims - 1].tipo == UI_ANIM_ROUND) {
 				/* Desplegar el round en pantalla */
 				SDL_QueryTexture (images[IMG_ROUND_1 + animaciones[anims - 1].round], NULL, NULL, &rect.w, &rect.h);
 				rect.x = (800 - rect.w) / 2;
@@ -1006,10 +1009,38 @@ int game_loop (SnowStage *stage) {
 				/* Preguntarle al primer enemigo si está listo */
 				if (is_enemy_ready (stage->enemigos[0])) {
 					anims--;
-					/* Enviar el mensaje de listo y mostrar el reloj */
-					ui_estatus = UI_SHOW_TIMER;
-					show_timer (timer);
 				}
+			} else if (animaciones[anims - 1].tipo == UI_MOVE_NINJAS) {
+				/* Preguntarle al primer ninja si ya terminó */
+				g = 0;
+				h = 0;
+				if (stage->water != NULL) {
+					g++;
+					if (is_water_done (stage->water)) {
+						h++;
+					}
+				}
+				if (stage->fire != NULL) {
+					g++;
+					if (is_fire_done (stage->fire)) {
+						h++;
+					}
+				}
+				if (stage->snow != NULL) {
+					g++;
+					if (is_snow_done (stage->snow)) {
+						h++;
+					}
+				}
+				
+				if (h == g) {
+					anims--;
+				}
+			}
+			if (anims == 0) {
+				/* Enviar el mensaje de listo y mostrar el reloj */
+				ui_estatus = UI_SHOW_TIMER;
+				show_timer (timer);
 			}
 		}
 		SDL_RenderPresent (renderer);
@@ -1165,34 +1196,25 @@ void setup (void) {
 }
 
 void do_moves_ninjas (SnowStage *stage, ServerActions *server) {
-	int g, h;
+	int g, h, i;
 	/* Quitar del escenario en la viejas posiciones */
-	if (stage->water != NULL) {
-		ask_water_coords (stage->water, &g, &h);
-		stage->escenario[h][g] = NONE;
-	}
-	
-	if (stage->fire != NULL) {
-		ask_fire_coords (stage->fire, &g, &h);
-		stage->escenario[h][g] = NONE;
-	}
-	
-	if (stage->snow != NULL) {
-		ask_snow_coords (stage->snow, &g, &h);
-		stage->escenario[h][g] = NONE;
-	}
-	
 	/* Solicitar los movimientos a los ninjas */
-	for (g = 0; g < server->movs; g++) {
-		if (server->movs_coords[g].object == NINJA_FIRE) {
-			move_fire (stage->fire, server->movs_coords[g].x, server->movs_coords[g].y);
-			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_FIRE;
-		} else if (server->movs_coords[g].object == NINJA_WATER) {
-			move_water (stage->water, server->movs_coords[g].x, server->movs_coords[g].y);
-			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_WATER;
-		} else if (server->movs_coords[g].object == NINJA_SNOW) {
-			move_snow (stage->snow, server->movs_coords[g].x, server->movs_coords[g].y);
-			stage->escenario[server->movs_coords[g].y][server->movs_coords[g].x] = NINJA_SNOW;
+	for (i = 0; i < server->movs; i++) {
+		if (server->movs_coords[i].object == NINJA_FIRE) {
+			ask_fire_coords (stage->fire, &g, &h);
+			stage->escenario[h][g] = NONE;
+			move_fire (stage->fire, server->movs_coords[i].x, server->movs_coords[i].y);
+			stage->escenario[server->movs_coords[i].y][server->movs_coords[i].x] = NINJA_FIRE;
+		} else if (server->movs_coords[i].object == NINJA_WATER) {
+			ask_water_coords (stage->water, &g, &h);
+			stage->escenario[h][g] = NONE;
+			move_water (stage->water, server->movs_coords[i].x, server->movs_coords[i].y);
+			stage->escenario[server->movs_coords[i].y][server->movs_coords[i].x] = NINJA_WATER;
+		} else if (server->movs_coords[i].object == NINJA_SNOW) {
+			ask_snow_coords (stage->snow, &g, &h);
+			stage->escenario[h][g] = NONE;
+			move_snow (stage->snow, server->movs_coords[i].x, server->movs_coords[i].y);
+			stage->escenario[server->movs_coords[i].y][server->movs_coords[i].x] = NINJA_SNOW;
 		}
 	}
 }
