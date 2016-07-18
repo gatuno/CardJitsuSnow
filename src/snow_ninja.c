@@ -505,6 +505,20 @@ void ask_snow_actions (SnowNinja *ninja, int escenario[5][9], int acciones[5][9]
 	}
 	
 	acciones[ninja->y][ninja->x] = ACTION_MOVE;
+	
+	for (g = -3; g <= 3; g++) {
+		for (h = -3; h <= 3; h++) {
+			s = ((g < 0) ? -g : g) + ((h < 0) ? -h : h);
+			
+			if (s > 3) continue;
+			if (ninja->next_x + g >= 0 && ninja->next_x + g < 9 && ninja->next_y + h >= 0 && ninja->next_y + h < 5) {
+				obj = escenario[ninja->next_y + h][ninja->next_x + g];
+				if (obj >= ENEMY_1 && obj <= ENEMY_4) {
+					acciones[ninja->next_y + h][ninja->next_x + g] |= ACTION_ATTACK;
+				}
+			}
+		}
+	}
 }
 
 void setup_snow_ninja (void) {

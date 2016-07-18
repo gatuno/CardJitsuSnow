@@ -73,6 +73,12 @@ enum {
 	NUM_BUTTONS
 };
 
+enum {
+	SHARED_IMG_HEALTHBAR,
+	
+	NUM_SHARED_IMGS
+};
+
 typedef struct {
 	int orig_x, orig_y;
 	int w, h;
@@ -81,6 +87,9 @@ typedef struct {
 } SnowSprite;
 
 extern SDL_Renderer *renderer;
+
+extern SnowSprite *shared_sprites[NUM_SHARED_IMGS];
+extern SDL_Texture * shared_images[NUM_SHARED_IMGS];
 
 extern int use_sound;
 

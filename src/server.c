@@ -909,6 +909,7 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		if (tabla->clientes == 1) {
 			/* Último cliente, nada que mandar */
 			printf ("Eliminando tabla [%i]\n", tabla->id);
+			cancel_timer (tabla);
 			remove_table (tabla);
 			return;
 		}

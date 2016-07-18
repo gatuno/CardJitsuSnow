@@ -284,6 +284,8 @@ typedef struct _Enemy {
 	int tipo;
 	int estado;
 	int x_real, y_real;
+	int vida;
+	int max_life;
 };
 
 static int enemy_offsets_int[NUM_ENEMY_IMAGES][2];
@@ -304,6 +306,9 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	obj->estado = SNOWMAN_SPAWN;
 	obj->frame = 0;
 	
+	if (obj->tipo == ENEMY_SLY) {
+		obj->vida = obj->max_life = 30;
+	}
 	return obj;
 }
 
@@ -346,6 +351,35 @@ void draw_enemy (Enemy *enemy) {
 		SDL_RenderCopyEx (renderer, enemy_images[est], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
 	} else {
 		SDL_RenderCopy (renderer, enemy_images[est], &rect2, &rect);
+	}
+	
+	if (est != SNOWMAN_SPAWN) {
+		/* Dibujar la barra de vida */
+		temp = 59 - (59 * enemy->max_life) / enemy->vida;
+		
+		rect2.x = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_x;
+		rect2.y = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_y;
+		rect.w = rect2.w = shared_sprites[SHARED_IMG_HEALTHBAR][temp].w;
+		rect.h = rect2.h = shared_sprites[SHARED_IMG_HEALTHBAR][temp].h;
+		
+		rect.x = enemy->x_real + shared_sprites[SHARED_IMG_HEALTHBAR][temp].dest_x - 29;
+		rect.y = enemy->y_real + shared_sprites[SHARED_IMG_HEALTHBAR][temp].dest_y - 8;
+		
+		if (shared_sprites[SHARED_IMG_HEALTHBAR][temp].rot) {
+			rect2.w = rect.h;
+			rect2.h = rect.w;
+		
+			rect.h = rect2.h;
+			rect.w = rect2.w;
+			SDL_Point p;
+			p.y = 0;
+			p.x = rect.w;
+			rect.x -= rect.w;
+		
+			SDL_RenderCopyEx (renderer, shared_images[SHARED_IMG_HEALTHBAR], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
+		} else {
+			SDL_RenderCopy (renderer, shared_images[SHARED_IMG_HEALTHBAR], &rect2, &rect);
+		}
 	}
 	
 	enemy->frame++;

@@ -144,6 +144,14 @@ enum {
 	
 	IMG_CHECKMARK,
 	
+	IMG_HEALTHBAR,
+	
+	IMG_TARGET_RED_ATTACK_INTRO,
+	IMG_TARGET_RED_ATTACK_IDLE,
+	
+	IMG_TARGET_GREEN_ATTACK_INTRO,
+	IMG_TARGET_GREEN_ATTACK_IDLE,
+	
 	NUM_IMAGES
 };
 
@@ -239,7 +247,14 @@ const char *images_names[NUM_IMAGES] = {
 	"images/round_2.png",
 	"images/round_3.png",
 	
-	"images/checkmark.png"
+	"images/checkmark.png",
+	
+	"images/healthbar.png",
+	
+	"images/target_red_attack_intro.png",
+	"images/target_red_attack_idle.png",
+	"images/target_green_attack_selected_intro.png",
+	"images/target_green_attack_selected.png",
 };
 
 enum {
@@ -287,7 +302,8 @@ typedef struct {
 	
 	int escenario[5][9];
 	int acciones[5][9];
-	int acciones_server[5][9];
+	int acciones_anim[5][9];
+	int acciones_frame[5][9];
 	
 	ObjectPos next_enemys[4];
 	int count_next_enemys;
@@ -313,6 +329,7 @@ int game_finish (void);
 void setup (void);
 
 void do_moves_ninjas (SnowStage *stage, ServerActions *server);
+void update_target_actions (SnowStage *stage);
 int mouse_intro_penguin (int x, int y);
 int map_button_in_game (int x, int y, UITimer *timer);
 
@@ -321,6 +338,7 @@ SDL_Window *ventana;
 SDL_Renderer *renderer;
 int full_screen = 0;
 SDL_Texture * images[NUM_IMAGES];
+SDL_Texture * shared_images[NUM_SHARED_IMGS];
 int use_sound;
 
 SDL_Surface *penguin[3];
@@ -330,6 +348,155 @@ Mix_Music * mus_carnie;
 
 char nick_global[NICK_SIZE];
 static int nick_default;
+
+/* Los Snow Sprites compartidos */
+static SnowSprite health_bar[] = {
+	{57,155,53,7,0,0,FALSE},
+	{2,155,53,7,0,0,FALSE},
+	{57,146,53,7,0,0,FALSE},
+	{2,146,53,7,0,0,FALSE},
+	{57,137,53,7,0,0,FALSE},
+	{2,137,53,7,0,0,FALSE},
+	{57,128,53,7,0,0,FALSE},
+	{2,128,53,7,0,0,FALSE},
+	{57,119,53,7,0,0,FALSE},
+	{2,119,53,7,0,0,FALSE},
+	{2,240,53,7,0,0,FALSE},
+	{2,231,53,7,0,0,FALSE},
+	{119,194,53,7,0,0,TRUE},
+	{110,194,53,7,0,0,TRUE},
+	{101,194,53,7,0,0,TRUE},
+	{92,194,53,7,0,0,TRUE},
+	{83,194,53,7,0,0,TRUE},
+	{74,194,53,7,0,0,TRUE},
+	{65,194,53,7,0,0,TRUE},
+	{65,185,53,7,0,0,FALSE},
+	{65,185,53,7,0,0,FALSE},
+	{65,176,53,7,0,0,FALSE},
+	{65,167,53,7,0,0,FALSE},
+	{56,167,53,7,0,0,TRUE},
+	{47,167,53,7,0,0,TRUE},
+	{38,167,53,7,0,0,TRUE},
+	{29,167,53,7,0,0,TRUE},
+	{20,167,53,7,0,0,TRUE},
+	{11,167,53,7,0,0,TRUE},
+	{2,222,53,7,0,0,FALSE},
+	{2,167,53,7,0,0,TRUE},
+	{112,112,53,7,0,0,TRUE},
+	{57,110,53,7,0,0,FALSE},
+	{2,110,53,7,0,0,FALSE},
+	{57,101,53,7,0,0,FALSE},
+	{2,101,53,7,0,0,FALSE},
+	{57,92,53,7,0,0,FALSE},
+	{2,92,53,7,0,0,FALSE},
+	{57,83,53,7,0,0,FALSE},
+	{2,83,53,7,0,0,FALSE},
+	{57,74,53,7,0,0,FALSE},
+	{2,74,53,7,0,0,FALSE},
+	{57,65,53,7,0,0,FALSE},
+	{2,65,53,7,0,0,FALSE},
+	{112,57,53,7,0,0,TRUE},
+	{57,56,53,7,0,0,FALSE},
+	{2,56,53,7,0,0,FALSE},
+	{57,47,53,7,0,0,FALSE},
+	{2,47,53,7,0,0,FALSE},
+	{57,38,53,7,0,0,FALSE},
+	{2,38,53,7,0,0,FALSE},
+	{57,29,53,7,0,0,FALSE},
+	{2,29,53,7,0,0,FALSE},
+	{57,20,53,7,0,0,FALSE},
+	{2,20,53,7,0,0,FALSE},
+	{57,11,53,7,0,0,FALSE},
+	{2,11,53,7,0,0,FALSE},
+	{112,2,53,7,0,0,TRUE},
+	{57,2,53,7,0,0,FALSE},
+	{2,2,53,7,0,0,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+SnowSprite *shared_sprites[NUM_SHARED_IMGS] = {
+	health_bar
+};
+
+/* Los targets */
+static SnowSprite sprite_target_red_intro[] = {
+	{65,65,59,59,0,0,FALSE},
+	{2,65,61,61,0,0,FALSE},
+	{65,2,61,61,0,0,FALSE},
+	{2,2,61,61,0,0,FALSE},
+	{65,126,47,47,6,6,FALSE},
+	{2,128,39,39,10,10,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_target_red_idle[] = {
+	{44,86,40,40,6,6,FALSE},
+	{2,86,40,40,6,6,FALSE},
+	{212,44,40,40,6,6,FALSE},
+	{170,44,40,40,6,6,FALSE},
+	{128,44,40,40,6,6,FALSE},
+	{86,44,40,40,6,6,FALSE},
+	{44,44,40,40,6,6,FALSE},
+	{86,126,40,38,6,8,FALSE},
+	{212,86,40,38,6,8,FALSE},
+	{202,166,38,38,8,8,FALSE},
+	{162,166,38,38,8,8,FALSE},
+	{122,166,38,38,8,7,FALSE},
+	{42,168,38,38,7,7,FALSE},
+	{2,168,38,38,7,7,FALSE},
+	{82,166,38,38,7,7,FALSE},
+	{40,398,36,36,9,9,FALSE},
+	{40,360,36,36,9,9,FALSE},
+	{2,474,36,36,8,8,FALSE},
+	{2,436,36,36,8,8,FALSE},
+	{2,398,36,36,8,8,FALSE},
+	{2,360,36,36,8,8,FALSE},
+	{192,320,36,36,8,8,FALSE},
+	{154,320,36,36,8,8,FALSE},
+	{116,320,36,36,8,8,FALSE},
+	{40,322,36,36,8,8,FALSE},
+	{2,322,36,36,8,8,FALSE},
+	{78,320,36,36,8,8,FALSE},
+	{192,282,36,36,8,8,FALSE},
+	{154,282,36,36,8,8,FALSE},
+	{116,282,36,36,8,8,FALSE},
+	{40,284,36,36,8,8,FALSE},
+	{2,284,36,36,8,8,FALSE},
+	{78,282,36,36,8,8,FALSE},
+	{192,244,36,36,8,8,FALSE},
+	{154,244,36,36,8,8,FALSE},
+	{116,244,36,36,8,8,FALSE},
+	{40,246,36,36,8,8,FALSE},
+	{2,246,36,36,8,8,FALSE},
+	{78,244,36,36,8,8,FALSE},
+	{198,206,36,36,8,8,FALSE},
+	{160,206,36,36,8,8,FALSE},
+	{122,206,36,36,8,8,FALSE},
+	{40,208,36,36,8,8,FALSE},
+	{2,208,36,36,9,8,FALSE},
+	{82,206,38,36,7,9,FALSE},
+	{208,126,38,38,7,7,FALSE},
+	{168,126,38,38,7,7,FALSE},
+	{128,126,38,38,7,7,FALSE},
+	{42,128,38,38,7,7,FALSE},
+	{2,128,38,38,8,7,FALSE},
+	{170,86,40,38,6,8,FALSE},
+	{128,86,40,38,6,8,FALSE},
+	{86,86,40,38,6,8,FALSE},
+	{2,44,40,40,6,6,FALSE},
+	{212,2,40,40,6,6,FALSE},
+	{170,2,40,40,6,6,FALSE},
+	{128,2,40,40,6,6,FALSE},
+	{86,2,40,40,6,6,FALSE},
+	{44,2,40,40,6,6,FALSE},
+	{2,2,40,40,6,6,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+SnowSprite *sprite_target_red[2] = {
+	sprite_target_red_intro,
+	sprite_target_red_idle
+};
 
 int main (int argc, char *argv[]) {
 	int r;
@@ -665,7 +832,7 @@ int game_loop (SnowStage *stage) {
 	Uint32 last_time, now_time;
 	SDL_Rect rect, rect2;
 	
-	int g, h, i;
+	int g, h, i, j;
 	UITimer *timer;
 	int map;
 	
@@ -743,8 +910,8 @@ int game_loop (SnowStage *stage) {
 						g = (event.button.x - MAP_X) / 70;
 						h = (event.button.y - MAP_Y) / 70;
 						
+						// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
 						if (stage->acciones[h][g] == ACTION_MOVE) {
-							// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
 							send_action (stage->local_ninja, ACTION_MOVE, g, h);
 						}
 					}
@@ -804,6 +971,17 @@ int game_loop (SnowStage *stage) {
 									ui_estatus = UI_WAIT_INPUT;
 									start_ticking (timer);
 									readys[1] = readys[2] = readys[3] = FALSE;
+									
+									memset (stage->acciones, 0, sizeof (stage->acciones));
+									if (stage->local_ninja == NINJA_FIRE) {
+										ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
+									} else if (stage->local_ninja == NINJA_WATER) {
+										ask_water_actions (stage->water, stage->escenario, stage->acciones);
+									} else if (stage->local_ninja == NINJA_SNOW) {
+										ask_snow_actions (stage->snow, stage->escenario, stage->acciones);
+									}
+									
+									update_target_actions (stage);
 								}
 								break;
 							case NETOWRK_EVENT_ACTION:
@@ -816,6 +994,20 @@ int game_loop (SnowStage *stage) {
 										ghost_move_water (stage->water, accion->x, accion->y);
 									} else if (accion->object == NINJA_SNOW) {
 										ghost_move_snow (stage->snow, accion->x, accion->y);
+									}
+									
+									if (accion->object == stage->local_ninja) {
+										/* Si nuestra posición cambió, actualizar las acciones */
+										memset (stage->acciones, 0, sizeof (stage->acciones));
+										if (stage->local_ninja == NINJA_FIRE) {
+											ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
+										} else if (stage->local_ninja == NINJA_WATER) {
+											ask_water_actions (stage->water, stage->escenario, stage->acciones);
+										} else if (stage->local_ninja == NINJA_SNOW) {
+											ask_snow_actions (stage->snow, stage->escenario, stage->acciones);
+										}
+									
+										update_target_actions (stage);
 									}
 								}
 								
@@ -883,14 +1075,6 @@ int game_loop (SnowStage *stage) {
 		
 		if (ui_estatus == UI_WAIT_INPUT) {
 			/* Dibujar las posibles acciones */
-			memset (stage->acciones, 0, sizeof (stage->acciones));
-			if (stage->local_ninja == NINJA_FIRE) {
-				ask_fire_actions (stage->fire, stage->escenario, stage->acciones);
-			} else if (stage->local_ninja == NINJA_WATER) {
-				ask_water_actions (stage->water, stage->escenario, stage->acciones);
-			} else if (stage->local_ninja == NINJA_SNOW) {
-				ask_snow_actions (stage->snow, stage->escenario, stage->acciones);
-			}
 			for (g = 0; g < 5; g++) {
 				for (h = 0; h < 9; h++) {
 					if (stage->acciones[g][h] & ACTION_MOVE) {
@@ -908,12 +1092,6 @@ int game_loop (SnowStage *stage) {
 			}
 		}
 		
-		if (fondo == 0) {
-			i = IMG_CRAG_ROCK;
-		} else {
-			i = IMG_ROCK;
-		}
-		
 		/* Dibujar todos los objetos */
 		for (g = 0; g < 5; g++) {
 			for (h = 0; h < 9; h++) {
@@ -923,6 +1101,7 @@ int game_loop (SnowStage *stage) {
 					/* Dibujar la piedra */
 					rect.x = MAP_X + (h * 70);
 					rect.y = MAP_Y + (g * 70);
+					i = (fondo == 0) ? IMG_CRAG_ROCK : IMG_ROCK;
 					SDL_QueryTexture (images[i], NULL, NULL, &rect.w, &rect.h);
 					
 					SDL_RenderCopy (renderer, images[i], NULL, &rect);
@@ -958,6 +1137,31 @@ int game_loop (SnowStage *stage) {
 					}
 				} else if (stage->escenario[g][h] >= ENEMY_1 || stage->escenario[g][h] <= ENEMY_4) {
 					draw_enemy (stage->enemigos[stage->escenario[g][h] - ENEMY_1]);
+				}
+				
+				if (ui_estatus == UI_WAIT_INPUT && (stage->acciones[g][h] & ACTION_ATTACK)) {
+					/* Dibujar el target */
+					i = stage->acciones_frame[g][h];
+					j = stage->acciones_anim[g][h] - IMG_TARGET_RED_ATTACK_INTRO;
+					
+					rect2.x = sprite_target_red[j][i].orig_x;
+					rect2.y = sprite_target_red[j][i].orig_y;
+					rect.w = rect2.w = sprite_target_red[j][i].w;
+					rect.h = rect2.h = sprite_target_red[j][i].h;
+					
+					rect.x = MAP_X + (h * 70) + 6 + sprite_target_red[j][i].dest_x;
+					rect.y = MAP_Y + (g * 70) + 6 + sprite_target_red[j][i].dest_y;
+					
+					SDL_RenderCopy (renderer, images[stage->acciones_anim[g][h]], &rect2, &rect);
+					i = ++stage->acciones_frame[g][h];
+					
+					/* Avanzar la animación */
+					if (sprite_target_red[j][i].w == -1 && sprite_target_red[j][i].h == -1) {
+						stage->acciones_frame[g][h] = 0;
+						if (stage->acciones_anim[g][h] == IMG_TARGET_RED_ATTACK_INTRO) {
+							stage->acciones_anim[g][h] = IMG_TARGET_RED_ATTACK_IDLE;
+						}
+					}
 				}
 			}
 		}
@@ -1191,6 +1395,8 @@ void setup (void) {
 		exit (1);
 	}
 	
+	shared_images [SHARED_IMG_HEALTHBAR] = images [IMG_HEALTHBAR];
+	
 	/* Generador de números aleatorios */
 	srand (SDL_GetTicks ());
 }
@@ -1215,6 +1421,20 @@ void do_moves_ninjas (SnowStage *stage, ServerActions *server) {
 			stage->escenario[h][g] = NONE;
 			move_snow (stage->snow, server->movs_coords[i].x, server->movs_coords[i].y);
 			stage->escenario[server->movs_coords[i].y][server->movs_coords[i].x] = NINJA_SNOW;
+		}
+	}
+}
+
+void update_target_actions (SnowStage *stage) {
+	int g, h;
+	
+	memset (stage->acciones_anim, 0, sizeof (stage->acciones_anim));
+	memset (stage->acciones_frame, 0, sizeof (stage->acciones_frame));
+	for (g = 0; g < 5; g++) {
+		for (h = 0; h < 9; h++) {
+			if (stage->acciones[g][h] & ACTION_ATTACK) {
+				stage->acciones_anim[g][h] = IMG_TARGET_RED_ATTACK_INTRO;
+			}
 		}
 	}
 }

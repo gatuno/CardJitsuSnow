@@ -178,7 +178,12 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/enemy/sly_daze.png \
 	images/enemy/sly_hit.png \
 	images/enemy/sly_move.png \
-	images/enemy/sly_ko.png
+	images/enemy/sly_ko.png \
+	images/healthbar.png \
+	images/target_green_attack_selected.png \
+	images/target_green_attack_selected_intro.png \
+	images/target_red_attack_idle.png \
+	images/target_red_attack_intro.png
 
 
 # Instalar los archivos .desktop e iconos
