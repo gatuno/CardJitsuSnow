@@ -608,8 +608,8 @@ void send_ask_actions (SnowFight *tabla) {
 
 void calculate_actions (SnowFight *tabla) {
 	char buffer_send[128];
-	int pos;
-	int g;
+	int pos, pos_attack;
+	int g, s;
 	/* Ejecutar todas las acciones */
 	
 	buffer_send[0] = 'S';
@@ -665,10 +665,68 @@ void calculate_actions (SnowFight *tabla) {
 			tabla->snow->y = tabla->snow->next_y;
 		}
 	}
-	
 	buffer_send[4] = g;
 	
-	/* Por el momento, enviar sólo los movimientos */
+	pos_attack = pos++;
+	g = 0;
+	/* Enviar los ataques */
+	if (tabla->water != NULL) {
+		if (tabla->water->attack_x != -1 && tabla->water->attack_y != -1) {
+			/* Ataque del ninja de agua */
+			g++;
+			buffer_send[pos] = NINJA_WATER;
+			buffer_send[pos + 1] = tabla->water->attack_x;
+			buffer_send[pos + 2] = tabla->water->attack_y;
+		
+			pos = pos + 3;
+		
+			/* Ejecutar el daño */
+			s = tabla->escenario[tabla->water->attack_y][tabla->water->attack_x] - ENEMY_1;
+		
+			tabla->enemigos[s]->vida -= 10;
+			tabla->water->attack_x = tabla->water->attack_y = -1;
+		}
+	}
+	
+	if (tabla->fire != NULL) {
+		if (tabla->fire->attack_x != -1 && tabla->fire->attack_x != -1) {
+			/* Ataque del ninja de fuego */
+			g++;
+			buffer_send[pos] = NINJA_FIRE;
+			buffer_send[pos + 1] = tabla->fire->attack_x;
+			buffer_send[pos + 2] = tabla->fire->attack_y;
+		
+			pos = pos + 3;
+		
+			/* Ejecutar el daño */
+			s = tabla->escenario[tabla->fire->attack_y][tabla->fire->attack_x] - ENEMY_1;
+		
+			tabla->enemigos[s]->vida -= 8;
+			tabla->water->attack_x = tabla->water->attack_y = -1;
+		}
+	}
+	
+	if (tabla->snow != NULL) {
+		if (tabla->snow->attack_x != -1 && tabla->snow->attack_x != -1) {
+			/* Ataque del ninja de nieve */
+			g++;
+			buffer_send[pos] = NINJA_SNOW;
+			buffer_send[pos + 1] = tabla->snow->attack_x;
+			buffer_send[pos + 2] = tabla->snow->attack_y;
+		
+			pos = pos + 3;
+		
+			/* Ejecutar el daño */
+			s = tabla->escenario[tabla->snow->attack_y][tabla->snow->attack_x] - ENEMY_1;
+		
+			tabla->enemigos[s]->vida -= 6;
+			tabla->water->attack_x = tabla->water->attack_y = -1;
+		}
+	}
+	
+	buffer_send[pos_attack] = g;
+	
+	/* Enviar todo */
 	for (g = 0; g < 3; g++) {
 		if (tabla->fds[g] != -1) {
 			agregar_write (tabla->fds[g], buffer_send, pos, 0);
@@ -755,41 +813,42 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	ServerNinja *ninja;
 	
 	if (!tabla->running || tabla->estado != WAITING_ACTIONS) {
-		printf ("Error en la tabla. El cliente [%i] envió una acción cuando la tabla no está recibiendo acciones\n", fd);
+		printf ("Warning. El cliente [%i] envió una acción cuando la tabla no está recibiendo acciones\n", fd);
 		return;
+	}
+	
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] == fd) {
+			slot = g;
+			break;
+		}
+	}
+	
+	/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */
+	if (msg->action.object != NINJA_FIRE + slot) {
+		printf ("Error en la tabla. El cliente [%i] trata de mover un ninja que no es él\n", fd);
+		return;
+	}
+	
+	memset (acciones, 0, sizeof (acciones));
+	
+	/* Preguntar las acciones locales */
+	if (msg->action.object == NINJA_FIRE) {
+		ninja = tabla->fire;
+		ask_fire_actions (tabla->fire, tabla->escenario, acciones);
+	} else if (msg->action.object == NINJA_WATER) {
+		ninja = tabla->water;
+		ask_water_actions (tabla->water, tabla->escenario, acciones);
+	} else if (msg->action.object == NINJA_SNOW) {
+		ninja = tabla->snow;
+		ask_snow_actions (tabla->snow, tabla->escenario, acciones);
 	}
 	
 	/* Validar la acción */
 	if (msg->action.type == ACTION_MOVE) {
-		for (g = 0; g < 3; g++) {
-			if (tabla->fds[g] == fd) {
-				slot = g;
-				break;
-			}
-		}
-		
-		/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */
-		if (msg->action.object != NINJA_FIRE + slot) {
-			printf ("Error en la tabla. El cliente [%i] trata de mover un ninja que no es él\n", fd);
-			return;
-		}
-		
 		if (msg->action.x < 0 || msg->action.x > 8 || msg->action.y < 0 || msg->action.y > 4) {
 			printf ("Error en la tabla. El cliente [%i] envió coordenadas inválidas para un movimiento\n", fd);
 			return;
-		}
-		memset (acciones, 0, sizeof (acciones));
-		
-		/* Preguntar las acciones locales */
-		if (msg->action.object == NINJA_FIRE) {
-			ninja = tabla->fire;
-			ask_fire_actions (tabla->fire, tabla->escenario, acciones);
-		} else if (msg->action.object == NINJA_WATER) {
-			ninja = tabla->water;
-			ask_water_actions (tabla->water, tabla->escenario, acciones);
-		} else if (msg->action.object == NINJA_SNOW) {
-			ninja = tabla->snow;
-			ask_snow_actions (tabla->snow, tabla->escenario, acciones);
 		}
 		
 		/* Si un movimiento choca contra el siguiente de otro ninja no es válido */
@@ -836,6 +895,38 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 					agregar_write (tabla->fds[g], buffer_send, 8, 0);
 				}
 			}
+		}
+	} else if (msg->action.type == ACTION_ATTACK) {
+		if (msg->action.x < 0 || msg->action.x > 8 || msg->action.y < 0 || msg->action.y > 4) {
+			printf ("Error en la tabla. El cliente [%i] envió coordenadas inválidas para un movimiento\n", fd);
+			return;
+		}
+		
+		if (acciones[msg->action.y][msg->action.x] & ACTION_ATTACK) {
+			attack_next (ninja, msg->action.x, msg->action.y);
+			
+			/* Enviar el movimiento de regreso al cliente */
+			/* Rellenar con la firma del protocolo SN */
+			buffer_send[0] = 'S';
+			buffer_send[1] = 'N';
+	
+			/* Poner el campo de la versión */
+			buffer_send[2] = 0;
+	
+			/* El campo de tipo */
+			buffer_send[3] = NET_TYPE_ACTION;
+	
+			/* El ninja */
+			buffer_send[4] = msg->action.object;
+	
+			/* Tipo de accion */
+			buffer_send[5] = msg->action.type;
+	
+			/* Coordenadas x, y */
+			buffer_send[6] = msg->action.x;
+			buffer_send[7] = msg->action.y;
+			
+			agregar_write (tabla->fds[slot], buffer_send, 8, 0);
 		}
 	}
 }

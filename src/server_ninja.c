@@ -37,16 +37,26 @@ ServerNinja *create_server_ninja (int x, int y, int tipo) {
 	obj->next_y = obj->y;
 	
 	obj->tipo = tipo;
+	obj->attack_x = obj->attack_y = -1;
 	return obj;
 }
 
 void move_next (ServerNinja *ninja, int x, int y) {
+	if (ninja->next_x != x || ninja->next_y != y) {
+		/* Resetear el ataque */
+		ninja->attack_x = ninja->attack_y = -1;
+	}
 	ninja->next_x = x;
 	ninja->next_y = y;
 }
 
+void attack_next (ServerNinja *ninja, int x, int y) {
+	ninja->attack_x = x;
+	ninja->attack_y = y;
+}
+
 void ask_fire_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]) {
-	int g, h;
+	int g, h, s;
 	int obj;
 	
 	for (g = -2; g <= 2; g++) {
@@ -108,6 +118,20 @@ void ask_fire_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][
 	}
 	
 	acciones[ninja->y][ninja->x] = ACTION_MOVE;
+	
+	for (g = -2; g <= 2; g++) {
+		for (h = -2; h <= 2; h++) {
+			s = ((g < 0) ? -g : g) + ((h < 0) ? -h : h);
+			
+			if (s > 2) continue;
+			if (ninja->next_x + g >= 0 && ninja->next_x + g < 9 && ninja->next_y + h >= 0 && ninja->next_y + h < 5) {
+				obj = escenario[ninja->next_y + h][ninja->next_x + g];
+				if (obj >= ENEMY_1 && obj <= ENEMY_4) {
+					acciones[ninja->next_y + h][ninja->next_x + g] |= ACTION_ATTACK;
+				}
+			}
+		}
+	}
 }
 
 void ask_snow_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]) {
@@ -130,10 +154,24 @@ void ask_snow_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][
 	}
 	
 	acciones[ninja->y][ninja->x] = ACTION_MOVE;
+	
+	for (g = -3; g <= 3; g++) {
+		for (h = -3; h <= 3; h++) {
+			s = ((g < 0) ? -g : g) + ((h < 0) ? -h : h);
+			
+			if (s > 3) continue;
+			if (ninja->next_x + g >= 0 && ninja->next_x + g < 9 && ninja->next_y + h >= 0 && ninja->next_y + h < 5) {
+				obj = escenario[ninja->next_y + h][ninja->next_x + g];
+				if (obj >= ENEMY_1 && obj <= ENEMY_4) {
+					acciones[ninja->next_y + h][ninja->next_x + g] |= ACTION_ATTACK;
+				}
+			}
+		}
+	}
 }
 
 void ask_water_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]) {
-	int g, h;
+	int g, h, s;
 	int obj;
 	
 	for (g = -2; g <= 2; g++) {
@@ -195,6 +233,20 @@ void ask_water_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5]
 	}
 	
 	acciones[ninja->y][ninja->x] = ACTION_MOVE;
+	
+	for (g = -1; g <= 1; g++) {
+		for (h = -1; h <= 1; h++) {
+			s = ((g < 0) ? -g : g) + ((h < 0) ? -h : h);
+			
+			if (s > 1) continue;
+			if (ninja->next_x + g >= 0 && ninja->next_x + g < 9 && ninja->next_y + h >= 0 && ninja->next_y + h < 5) {
+				obj = escenario[ninja->next_y + h][ninja->next_x + g];
+				if (obj >= ENEMY_1 && obj <= ENEMY_4) {
+					acciones[ninja->next_y + h][ninja->next_x + g] |= ACTION_ATTACK;
+				}
+			}
+		}
+	}
 }
 
 ServerEnemy *create_server_enemy (int x, int y, int tipo) {
@@ -206,6 +258,10 @@ ServerEnemy *create_server_enemy (int x, int y, int tipo) {
 	obj->y = y;
 	
 	obj->tipo = tipo;
+	
+	if (tipo == ENEMY_SLY) {
+		obj->vida = 30;
+	}
 	return obj;
 }
 

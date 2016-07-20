@@ -47,6 +47,8 @@ typedef struct {
 typedef struct {
 	int movs;
 	Action movs_coords[3];
+	int attacks;
+	Action attack_coords[3];
 } ServerActions;
 
 typedef struct {

@@ -36,6 +36,7 @@
 
 #include "path.h"
 #include "snow.h"
+#include "enemy.h"
 
 #include "snow_ninja.h"
 
@@ -311,6 +312,8 @@ struct _SnowNinja {
 	int x_real, y_real;
 	int next_x_real, next_y_real;
 	int sum_x, sum_y;
+	
+	Enemy *dest_attack;
 };
 
 static SDL_Texture *snow_ninja_images[NUM_SNOW_NINJA_IMAGES];
@@ -354,9 +357,11 @@ void put_idle_snow (SnowNinja *ninja) {
 	ninja->estado = SNOW_NINJA_IDLE;
 }
 
-void attack_snow (SnowNinja *ninja) {
+void attack_snow (SnowNinja *ninja, Enemy *enemy) {
 	ninja->frame = 0;
 	ninja->estado = SNOW_NINJA_ATTACK;
+	
+	ninja->dest_attack = enemy;
 }
 
 void heal_snow (SnowNinja *ninja) {
@@ -442,6 +447,11 @@ void draw_snow_ninja (SnowNinja *ninja) {
 		SDL_RenderCopyEx (renderer, snow_ninja_images[est], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
 	} else {
 		SDL_RenderCopy (renderer, snow_ninja_images[est], &rect2, &rect);
+	}
+	
+	if (ninja->frame == 26 && est == SNOW_NINJA_ATTACK) {
+		/* Golpear al enemigo */
+		enemy_hit (ninja->dest_attack, 6);
 	}
 	
 	ninja->frame++;

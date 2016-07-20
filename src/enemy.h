@@ -27,6 +27,8 @@ Enemy *create_enemy (int x, int y, int tipo);
 void draw_enemy (Enemy *enemy);
 void setup_enemy (void);
 int is_enemy_ready (Enemy *enemy);
+void add_enemy_ref (Enemy *enemy);
+void enemy_hit (Enemy *enemy, int damage);
 
 #endif /* __ENEMY_H__ */
 

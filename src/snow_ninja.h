@@ -21,13 +21,14 @@
 #ifndef __SNOW_NINJA_H__
 #define __SNOW_NINJA_H__
 
+#include "enemy.h"
+
 typedef struct _SnowNinja SnowNinja;
 
 void setup_snow_ninja (void);
 void draw_snow_ninja (SnowNinja *);
 void draw_ghost_snow_ninja (SnowNinja *ninja);
 SnowNinja *create_snow_ninja (int x, int y);
-void attack_snow (SnowNinja *snow);
 void heal_snow (SnowNinja *ninja);
 void celebrate_snow (SnowNinja *ninja);
 void move_snow (SnowNinja *ninja, int x, int y);
@@ -41,6 +42,7 @@ void ask_snow_actions (SnowNinja *ninja, int escenario[5][9], int acciones[5][9]
 void put_idle_snow (SnowNinja *ninja);
 void ask_snow_coords (SnowNinja *ninja, int *x, int *y);
 int is_snow_done (SnowNinja *ninja);
+void attack_snow (SnowNinja *ninja, Enemy *enemy);
 
 #endif /* __SNOW_NINJA_H__ */
 

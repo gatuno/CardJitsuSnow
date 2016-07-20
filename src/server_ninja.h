@@ -25,6 +25,7 @@ typedef struct {
 	int x, y;
 	int tipo;
 	int next_x, next_y;
+	int attack_x, attack_y;
 } ServerNinja;
 
 ServerNinja *create_server_ninja (int x, int y, int tipo);
@@ -34,10 +35,12 @@ void ask_water_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5]
 void ask_snow_actions (ServerNinja *ninja, int escenario[5][9], int acciones[5][9]);
 
 void move_next (ServerNinja *ninja, int x, int y);
+void attack_next (ServerNinja *ninja, int x, int y);
 
 typedef struct {
 	int x, y;
 	int tipo;
+	int vida;
 } ServerEnemy;
 
 ServerEnemy *create_server_enemy (int x, int y, int tipo);

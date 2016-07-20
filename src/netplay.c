@@ -211,7 +211,7 @@ void send_action (int ninja, int tipo, int x, int y) {
 }
 
 int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
-	int g, h, e;
+	int g, h, e, pos;
 	int real_len;
 	
 	/* Vaciar la estructura */
@@ -335,7 +335,24 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			/* TODO: Validar que estos datos sean válidos */
 		}
 		
-		real_len = 5 + (3 * msg->server.movs);
+		pos = 5 + (3 * msg->server.movs);
+		
+		if (len < pos + 1) return -1;
+		
+		msg->server.attacks = buffer[pos];
+		pos++;
+		
+		if (len < pos + (3 * msg->server.attacks)) return -1;
+		for (g = 0; g < msg->server.attacks; g++) {
+			msg->server.attack_coords[g].object = buffer[pos];
+			msg->server.attack_coords[g].x = buffer[pos + 1];
+			msg->server.attack_coords[g].y = buffer[pos + 2];
+			
+			/* TODO: Validar que estos datos sean válidos */
+			pos = pos + 3;
+		}
+		
+		real_len = 5 + (3 * msg->server.movs) + 1 + (3 * msg->server.attacks);
 	}
 	
 	return real_len;

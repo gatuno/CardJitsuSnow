@@ -262,8 +262,8 @@ SnowSprite *enemy_sly_animations[6] = {
 	sprite_sly_idle,
 	sprite_sly_attack,
 	sprite_sly_daze,
-	sprite_sly_move,
 	sprite_sly_hit,
+	sprite_sly_move,
 	sprite_sly_ko
 };
 
@@ -273,8 +273,8 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.53125, 1.0625, 63.0, 60.0},
 	{0.46875, 1.0, 152.0, 106.0},
 	{0.625, 1.0625, 74.0, 83.0},
-	{0.53125, 1.03125, 68.0, 64.0},
 	{0.53125, 0.875, 115.0, 112.0},
+	{0.53125, 1.03125, 68.0, 64.0},
 	{0.5, 0.65625, 195.0, 167.0}
 };
 
@@ -286,6 +286,8 @@ typedef struct _Enemy {
 	int x_real, y_real;
 	int vida;
 	int max_life;
+	
+	int ref; /* Contador de referencias para saber si un enemigo se murió */
 };
 
 static int enemy_offsets_int[NUM_ENEMY_IMAGES][2];
@@ -309,6 +311,8 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	if (obj->tipo == ENEMY_SLY) {
 		obj->vida = obj->max_life = 30;
 	}
+	
+	obj->ref = 0;
 	return obj;
 }
 
@@ -355,7 +359,7 @@ void draw_enemy (Enemy *enemy) {
 	
 	if (est != SNOWMAN_SPAWN) {
 		/* Dibujar la barra de vida */
-		temp = 59 - (59 * enemy->max_life) / enemy->vida;
+		temp = 59 - (59 * enemy->vida) / enemy->max_life;
 		
 		rect2.x = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_x;
 		rect2.y = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_y;
@@ -390,6 +394,8 @@ void draw_enemy (Enemy *enemy) {
 			if (enemy->tipo == ENEMY_SLY) {
 				enemy->estado = SLY_IDLE;
 			} /* TODO: Los otros enemigos aquí */
+		} else if (est == SLY_HIT) {
+			enemy->estado = SLY_IDLE;
 		}
 	}
 }
@@ -400,6 +406,28 @@ int is_enemy_ready (Enemy *enemy) {
 	}
 	
 	return FALSE;
+}
+
+void add_enemy_ref (Enemy *enemy) {
+	enemy->ref++;
+}
+
+void enemy_hit (Enemy *enemy, int damage) {
+	enemy->vida = enemy->vida - damage;
+	
+	if (enemy->vida < 0) {
+		enemy->vida = 0;
+	}
+	
+	enemy->ref--;
+	
+	if (enemy->ref == 0 && enemy->vida == 0) {
+		enemy->estado = SLY_KO;
+	} else {
+		enemy->estado = SLY_HIT;
+	}
+	
+	enemy->frame = 0;
 }
 
 void setup_enemy (void) {
