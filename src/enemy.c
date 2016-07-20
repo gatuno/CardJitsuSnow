@@ -322,7 +322,6 @@ void draw_enemy (Enemy *enemy) {
 	int temp;
 	int est;
 	SnowSprite *animation;
-	int *animation_offsets;
 	
 	est = enemy->estado;
 	calc = enemy->frame / 2;

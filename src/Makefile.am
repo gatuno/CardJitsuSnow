@@ -6,9 +6,7 @@ bin_PROGRAMS = cjsnow
 cjsnow_SOURCES = snow.c path.c path.h \
 	uitimer.c uitimer.h \
 	netplay.h netplay.c \
-	water_ninja.c water_ninja.h \
-	fire_ninja.c fire_ninja.h \
-	snow_ninja.c snow_ninja.h \
+	ninja.c ninja.h \
 	enemy.c enemy.h \
 	cp-button.c cp-button.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h \

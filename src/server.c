@@ -248,7 +248,7 @@ void do_writes (int fd) {
 	}
 	
 	if (pos != NULL) {
-		printf ("Se envia una escritura pendiente para el fd [%i]. Size: %i\n", fd, pos->size);
+		//printf ("Se envia una escritura pendiente para el fd [%i].\n", fd);
 		/* Ejecutar el write */
 		write (pos->fd, pos->buffer, pos->size);
 		
