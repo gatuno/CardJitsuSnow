@@ -31,7 +31,7 @@
 #define TRUE !FALSE
 #endif
 
-#define MAP_X 90
+#define MAP_X 88
 #define MAP_Y 80
 
 /* Acciones */

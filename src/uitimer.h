@@ -30,7 +30,8 @@ extern int UI_TIMER_EVENT;
 
 enum {
 	UI_TIMER_EVENT_SHOW = 0,
-	UI_TIMER_EVENT_DONE_TICKS
+	UI_TIMER_EVENT_DONE_TICKS,
+	UI_TIMER_EVENT_HIDE,
 };
 
 UITimer *crear_timer (int ui);

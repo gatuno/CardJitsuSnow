@@ -28,7 +28,7 @@ void draw_enemy (Enemy *enemy);
 void setup_enemy (void);
 int is_enemy_ready (Enemy *enemy);
 void add_enemy_ref (Enemy *enemy);
-void enemy_hit (Enemy *enemy, int damage);
+void enemy_hit_delayed (Enemy *enemy, int damage, int delay);
 
 #endif /* __ENEMY_H__ */
 

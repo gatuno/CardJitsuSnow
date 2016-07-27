@@ -288,6 +288,8 @@ typedef struct _Enemy {
 	int max_life;
 	
 	int ref; /* Contador de referencias para saber si un enemigo se murió */
+	int delay;
+	int damage;
 };
 
 static int enemy_offsets_int[NUM_ENEMY_IMAGES][2];
@@ -313,6 +315,8 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	}
 	
 	obj->ref = 0;
+	obj->damage = 0;
+	obj->delay = 0;
 	return obj;
 }
 
@@ -322,6 +326,28 @@ void draw_enemy (Enemy *enemy) {
 	int temp;
 	int est;
 	SnowSprite *animation;
+	
+	/* Si estamos esperando un golpe, calcular si ya llegó */
+	if (enemy->damage != 0 && enemy->delay > 0) enemy->delay--;
+	
+	if (enemy->damage != 0 && enemy->delay == 0) {
+		/* Delay de golpe */
+		enemy->vida = enemy->vida - enemy->damage;
+		
+		if (enemy->vida < 0) {
+			enemy->vida = 0;
+		}
+		
+		if (enemy->ref == 0 && enemy->vida == 0) {
+			enemy->estado = SLY_KO; // FIXME: ¿Y los otros?
+		} else {
+			enemy->estado = SLY_HIT;
+		}
+		
+		enemy->frame = 0;
+		enemy->damage = 0;
+		enemy->delay = 0;
+	}
 	
 	est = enemy->estado;
 	calc = enemy->frame / 2;
@@ -411,22 +437,10 @@ void add_enemy_ref (Enemy *enemy) {
 	enemy->ref++;
 }
 
-void enemy_hit (Enemy *enemy, int damage) {
-	enemy->vida = enemy->vida - damage;
-	
-	if (enemy->vida < 0) {
-		enemy->vida = 0;
-	}
-	
+void enemy_hit_delayed (Enemy *enemy, int damage, int delay) {
 	enemy->ref--;
-	
-	if (enemy->ref == 0 && enemy->vida == 0) {
-		enemy->estado = SLY_KO;
-	} else {
-		enemy->estado = SLY_HIT;
-	}
-	
-	enemy->frame = 0;
+	enemy->delay = delay;
+	enemy->damage = damage;
 }
 
 void setup_enemy (void) {

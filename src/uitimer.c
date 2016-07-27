@@ -229,6 +229,7 @@ void hide_timer (UITimer *timer) {
 	timer->last_ring = timer->img_ring + 9 - g;
 	timer->accept_input = FALSE;
 	timer->anim = 0;
+	timer->event_sent = 0;
 }
 
 void timer_button_selected (UITimer *timer) {
@@ -298,6 +299,7 @@ void dibujar_timer (UITimer *timer) {
 				SDL_PushEvent (&evento);
 				timer->event_sent = 1;
 				timer->accept_input = TRUE;
+				timer->button_selected = 0;
 			}
 		}
 	} else if (timer->estado == TIMER_TICKING) {
@@ -420,6 +422,14 @@ void dibujar_timer (UITimer *timer) {
 		
 		if (timer->anim >= 80) {
 			timer->anim = 80;
+			if (timer->event_sent == 0) {
+				SDL_zero (evento);
+				evento.type = UI_TIMER_EVENT;
+				evento.user.code = UI_TIMER_EVENT_HIDE;
+		
+				SDL_PushEvent (&evento);
+				timer->event_sent = 1;
+			}
 		}
 	}
 }

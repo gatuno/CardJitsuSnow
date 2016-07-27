@@ -702,7 +702,7 @@ void calculate_actions (SnowFight *tabla) {
 			s = tabla->escenario[tabla->fire->attack_y][tabla->fire->attack_x] - ENEMY_1;
 		
 			tabla->enemigos[s]->vida -= 8;
-			tabla->water->attack_x = tabla->water->attack_y = -1;
+			tabla->fire->attack_x = tabla->fire->attack_y = -1;
 		}
 	}
 	
@@ -720,7 +720,7 @@ void calculate_actions (SnowFight *tabla) {
 			s = tabla->escenario[tabla->snow->attack_y][tabla->snow->attack_x] - ENEMY_1;
 		
 			tabla->enemigos[s]->vida -= 6;
-			tabla->water->attack_x = tabla->water->attack_y = -1;
+			tabla->snow->attack_x = tabla->snow->attack_y = -1;
 		}
 	}
 	

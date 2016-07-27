@@ -36,7 +36,6 @@
 
 #include "ninja.h"
 #include "snow.h"
-#include "enemy.h"
 
 /* Listar todas las imágenes */
 enum {
@@ -800,8 +799,6 @@ struct _Ninja {
 	int x_real, y_real;
 	int next_x_real, next_y_real;
 	int sum_x, sum_y;
-	
-	Enemy *dest_attack;
 };
 
 Ninja *create_ninja (int tipo, int x, int y) {
@@ -853,7 +850,7 @@ int ninja_is_done (Ninja *ninja) {
 	return FALSE;
 }
 
-void ninja_attack (Ninja *ninja, Enemy *enemy) {
+void ninja_attack (Ninja *ninja) {
 	ninja->frame = 0;
 	ninja->estado = NINJA_ATTACK;
 	
@@ -864,8 +861,6 @@ void ninja_attack (Ninja *ninja, Enemy *enemy) {
 	} else if (ninja->tipo == NINJA_WATER) {
 		ninja->image = IMG_WATER_NINJA_ATTACK;
 	}
-	
-	ninja->dest_attack = enemy;
 }
 
 void ninja_move (Ninja *ninja, int x, int y) {
@@ -939,11 +934,6 @@ void ninja_draw (Ninja *ninja) {
 		SDL_RenderCopyEx (renderer, ninja_images[ninja->image], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
 	} else {
 		SDL_RenderCopy (renderer, ninja_images[ninja->image], &rect2, &rect);
-	}
-	
-	if (ninja->tipo == NINJA_SNOW && ninja->estado == NINJA_ATTACK && ninja->frame == 26) {
-		/* Golpear al enemigo */
-		enemy_hit (ninja->dest_attack, 6);
 	}
 	
 	ninja->frame++;
@@ -1071,6 +1061,30 @@ void ninja_ask_actions (Ninja *ninja, int escenario[5][9], int acciones[5][9]) {
 	}
 }
 
+int ninja_get_hit_delay (Ninja *ninja) {
+	if (ninja->tipo == NINJA_SNOW) {
+		return 20;
+	} else if (ninja->tipo == NINJA_WATER) {
+		return 14;
+	} else if (ninja->tipo == NINJA_FIRE) {
+		return 50;
+	}
+	
+	return 0;
+}
+
+int ninja_get_attack (Ninja *ninja) {
+	if (ninja->tipo == NINJA_SNOW) {
+		return 6;
+	} else if (ninja->tipo == NINJA_WATER) {
+		return 10;
+	} else if (ninja->tipo == NINJA_FIRE) {
+		return 8;
+	}
+	
+	return 0;
+}
+
 void setup_ninja (void) {
 	SDL_Surface * image;
 	SDL_Texture * texture;
@@ -1102,5 +1116,4 @@ void setup_ninja (void) {
 		ninja_offsets_int[g][1] = (int) roundf (ninja_offsets[g][1] * ninja_offsets[g][3]);
 	}
 }
-
 
