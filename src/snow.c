@@ -277,7 +277,6 @@ enum {
 	UI_WAITING_READY,
 	UI_WAIT_INPUT,
 	UI_WAITING_SERVER,
-	UI_HIDE_TIMER,
 	UI_ANIMATE,
 	
 	NUM_UI
@@ -290,6 +289,7 @@ enum {
 	
 	ANIM_MOVE_NINJAS,
 	ANIM_ATTACK,
+	ANIM_HIT_ENEMY,
 	
 	NUM_UI_ANIM
 };
@@ -929,9 +929,9 @@ int game_loop (SnowStage *stage) {
 						h = (event.button.y - MAP_Y) / 70;
 						
 						// Enviar el evento al servidor y esperar a que llegue para mostrarlo */
-						if (stage->acciones[h][g] == ACTION_MOVE) {
+						if (stage->acciones[h][g] & ACTION_MOVE) {
 							send_action (stage->local_ui, ACTION_MOVE, g, h);
-						} else if (stage->acciones[h][g] == ACTION_ATTACK) {
+						} else if (stage->acciones[h][g] & ACTION_ATTACK) {
 							send_action (stage->local_ui, ACTION_ATTACK, g, h);
 						}
 					}
@@ -979,10 +979,6 @@ int game_loop (SnowStage *stage) {
 							case UI_TIMER_EVENT_DONE_TICKS:
 								timer_no_more_actions (timer);
 								ui_estatus = UI_WAITING_SERVER;
-								break;
-							case UI_TIMER_EVENT_HIDE:
-								/* Como el reloj ya se ocultó, continuar con las animaciones */
-								ui_estatus = UI_ANIMATE;
 								break;
 						}
 					} else if (event.type == NETWORK_EVENT) {
@@ -1085,7 +1081,7 @@ int game_loop (SnowStage *stage) {
 								}
 								
 								reverse_animations (animaciones, anims);
-								ui_estatus = UI_HIDE_TIMER;
+								ui_estatus = UI_ANIMATE;
 								free (server);
 								break;
 							//default:
@@ -1261,7 +1257,22 @@ int game_loop (SnowStage *stage) {
 						anims--;
 					}
 				}
+			} else if (animaciones[anims - 1].tipo == ANIM_HIT_ENEMY) {
+				/* Preguntarle si el enemigo está muerto */
+				if (is_enemy_dead (animaciones[anims - 1].attack.enemy)) {
+					/* El enemigo está muerto, hay que eliminarlo */
+					enemy_ask_coords (animaciones[anims - 1].attack.enemy, &g, &h);
+					
+					free (stage->enemigos[stage->escenario[h][g] - ENEMY_1]);
+					stage->enemigos[stage->escenario[h][g] - ENEMY_1] = NULL;
+					stage->escenario[h][g] = NONE;
+					anims--;
+				} else if (is_enemy_ready (animaciones[anims - 1].attack.enemy)) {
+					/* El enemigo ya recibió el golpe, continuar */
+					anims--;
+				}
 			}
+			
 			if (anims == 0) {
 				/* Enviar el mensaje de listo y mostrar el reloj */
 				ui_estatus = UI_SHOW_TIMER;
@@ -1448,6 +1459,13 @@ void do_ninja_attacks (SnowStage *stage, ServerActions *server, Animaten *animac
 		animaciones[*pos].tipo = ANIM_ATTACK;
 		animaciones[*pos].attack.enemy = stage->enemigos[s];
 		animaciones[*pos].attack.ninja = stage->ninjas[n];
+		
+		(*pos)++;
+		
+		/* Agregar una animación que espere a que el ninja se muera */
+		
+		animaciones[*pos].tipo = ANIM_HIT_ENEMY;
+		animaciones[*pos].attack.enemy = stage->enemigos[s];
 		
 		(*pos)++;
 	}

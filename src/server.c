@@ -70,7 +70,6 @@ typedef struct SnowFight {
 	
 	/* Otra info aquí */
 	int escenario[5][9];
-	int acciones[5][9];
 	
 	int ready[3];
 	
@@ -376,7 +375,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	
 	agregar_write (fd, buffer_send, 5, 0);
 	
-	printf ("Se creó una tabla [%i] y se le envió ACCEPTED al jugador [%i]\n", new->id, fd);
+	printf ("Se creó una tabla «%i» y se le envió ACCEPTED al jugador [%i]\n", new->id, fd);
 	
 #ifdef STAND_ALONE
 	start_tabla (new);
@@ -452,7 +451,7 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		}
 	}
 	
-	printf ("El cliente [%i] se unió a la tabla [%i] y se le envió ACCEPTED.\n", fd, tabla->id);
+	printf ("El cliente [%i] se unió a la tabla «%i» y se le envió ACCEPTED.\n", fd, tabla->id);
 	
 	if (tabla->fds[0] != -1 && tabla->fds[1] != -1 && tabla->fds[2] != -1) {
 		start_tabla (tabla);
@@ -466,7 +465,6 @@ void start_tabla (SnowFight *tabla) {
 	
 	/* Vaciar el escenario */
 	memset (tabla->escenario, 0, sizeof (tabla->escenario));
-	memset (tabla->acciones, 0, sizeof (tabla->acciones));
 	
 	tabla->escenario[0][2] = tabla->escenario[0][6] = tabla->escenario[4][2] = tabla->escenario[4][6] = ROCK;
 	
@@ -629,15 +627,17 @@ void send_ask_actions (SnowFight *tabla) {
 	
 	/* Instalar un timer para forzar a los clientes a contestar en 10 segundos */
 	agregar_timer (tabla, (Callback) calculate_actions, 11, NULL);
-	printf ("La tabla [%i] instaló un timer para ser llamado en 11 segundos\n", tabla->id);
+	printf ("La tabla «%i» instaló un timer para ser llamado en 11 segundos\n", tabla->id);
 }
 
 void calculate_actions (SnowFight *tabla) {
 	char buffer_send[128];
 	int pos, pos_attack;
 	int g, s;
-	/* Ejecutar todas las acciones */
+	int i, j;
 	
+	printf ("Calculando tabla «%i»\n", tabla->id);
+	/* Ejecutar todas las acciones */
 	buffer_send[0] = 'S';
 	buffer_send[1] = 'N';
 
@@ -698,17 +698,20 @@ void calculate_actions (SnowFight *tabla) {
 	/* Enviar los ataques */
 	if (tabla->water != NULL) {
 		if (tabla->water->attack_x != -1 && tabla->water->attack_y != -1) {
+			printf ("«%i» El ninja de agua va a atacar (%i, %i)\n", tabla->id, tabla->water->attack_x, tabla->water->attack_y);
 			/* Ataque del ninja de agua */
+			i = tabla->water->attack_x;
+			j = tabla->water->attack_y;
 			g++;
 			buffer_send[pos] = NINJA_WATER;
-			buffer_send[pos + 1] = tabla->water->attack_x;
-			buffer_send[pos + 2] = tabla->water->attack_y;
+			buffer_send[pos + 1] = i;
+			buffer_send[pos + 2] = j;
 		
 			pos = pos + 3;
 		
 			/* Ejecutar el daño */
-			s = tabla->escenario[tabla->water->attack_y][tabla->water->attack_x] - ENEMY_1;
-		
+			s = tabla->escenario[j][i] - ENEMY_1;
+			
 			tabla->enemigos[s]->vida -= 10;
 			tabla->water->attack_x = tabla->water->attack_y = -1;
 		}
@@ -716,16 +719,19 @@ void calculate_actions (SnowFight *tabla) {
 	
 	if (tabla->fire != NULL) {
 		if (tabla->fire->attack_x != -1 && tabla->fire->attack_x != -1) {
+			printf ("«%i» El ninja de fuego va a atacar (%i, %i)\n", tabla->id, tabla->fire->attack_x, tabla->fire->attack_y);
 			/* Ataque del ninja de fuego */
+			i = tabla->fire->attack_x;
+			j = tabla->fire->attack_y;
 			g++;
 			buffer_send[pos] = NINJA_FIRE;
-			buffer_send[pos + 1] = tabla->fire->attack_x;
-			buffer_send[pos + 2] = tabla->fire->attack_y;
+			buffer_send[pos + 1] = i;
+			buffer_send[pos + 2] = j;
 		
 			pos = pos + 3;
 		
 			/* Ejecutar el daño */
-			s = tabla->escenario[tabla->fire->attack_y][tabla->fire->attack_x] - ENEMY_1;
+			s = tabla->escenario[j][i] - ENEMY_1;
 		
 			tabla->enemigos[s]->vida -= 8;
 			tabla->fire->attack_x = tabla->fire->attack_y = -1;
@@ -734,16 +740,19 @@ void calculate_actions (SnowFight *tabla) {
 	
 	if (tabla->snow != NULL) {
 		if (tabla->snow->attack_x != -1 && tabla->snow->attack_x != -1) {
+			printf ("«%i» El ninja de nieve va a atacar (%i, %i)\n", tabla->id, tabla->snow->attack_x, tabla->snow->attack_y);
 			/* Ataque del ninja de nieve */
+			i = tabla->snow->attack_x;
+			j = tabla->snow->attack_y;
 			g++;
 			buffer_send[pos] = NINJA_SNOW;
-			buffer_send[pos + 1] = tabla->snow->attack_x;
-			buffer_send[pos + 2] = tabla->snow->attack_y;
+			buffer_send[pos + 1] = i;
+			buffer_send[pos + 2] = j;
 		
 			pos = pos + 3;
 		
 			/* Ejecutar el daño */
-			s = tabla->escenario[tabla->snow->attack_y][tabla->snow->attack_x] - ENEMY_1;
+			s = tabla->escenario[j][i] - ENEMY_1;
 		
 			tabla->enemigos[s]->vida -= 6;
 			tabla->snow->attack_x = tabla->snow->attack_y = -1;
@@ -751,6 +760,21 @@ void calculate_actions (SnowFight *tabla) {
 	}
 	
 	buffer_send[pos_attack] = g;
+	
+	/* Revisar que enemigos murieron */
+	for (g = 0; g < 4; g++) {
+		if (tabla->enemigos[g] != NULL) {
+			/* Revisar si el enemigo ya está muerto */
+			if (tabla->enemigos[g]->vida <= 0) {
+				printf ("«%i» Un enemigo se murió\n", tabla->id);
+				i = tabla->enemigos[g]->x;
+				j = tabla->enemigos[g]->y;
+				tabla->escenario[j][i] = NONE;
+				free (tabla->enemigos[g]);
+				tabla->enemigos[g] = NULL;
+			}
+		}
+	}
 	
 	/* Enviar todo */
 	for (g = 0; g < 3; g++) {
@@ -826,7 +850,7 @@ void manage_client_done_actions (SnowFight *tabla, int fd) {
 	
 	if (g >= tabla->clientes) {
 		/* Cancelar el timer */
-		printf ("Done actions, ejecutando calculate\n");
+		printf ("Tabla «%i» Done actions, ejecutando calculate\n", tabla->id);
 		cancel_timer (tabla);
 		calculate_actions (tabla);
 	}
@@ -852,7 +876,7 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	
 	/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */
 	if (msg->action.object != NINJA_FIRE + slot) {
-		printf ("Error en la tabla. El cliente [%i] trata de mover un ninja que no es él\n", fd);
+		printf ("Error en la tabla «%i». El cliente [%i] trata de mover un ninja que no es él\n", tabla->id, fd);
 		return;
 	}
 	
@@ -873,7 +897,7 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	/* Validar la acción */
 	if (msg->action.type == ACTION_MOVE) {
 		if (msg->action.x < 0 || msg->action.x > 8 || msg->action.y < 0 || msg->action.y > 4) {
-			printf ("Error en la tabla. El cliente [%i] envió coordenadas inválidas para un movimiento\n", fd);
+			printf ("Error en la tabla «%i». El cliente [%i] envió coordenadas inválidas para un movimiento\n", tabla->id, fd);
 			return;
 		}
 		
@@ -924,7 +948,7 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		}
 	} else if (msg->action.type == ACTION_ATTACK) {
 		if (msg->action.x < 0 || msg->action.x > 8 || msg->action.y < 0 || msg->action.y > 4) {
-			printf ("Error en la tabla. El cliente [%i] envió coordenadas inválidas para un movimiento\n", fd);
+			printf ("Error en la tabla «%i». El cliente [%i] envió coordenadas inválidas para un movimiento\n", tabla->id, fd);
 			return;
 		}
 		
@@ -993,7 +1017,7 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		}
 	}
 	
-	printf ("Un cliente [%i] abandonó la tabla [%i].\n", fd, tabla->id);
+	printf ("Un cliente [%i] abandonó la tabla «%i».\n", fd, tabla->id);
 	if (tabla->running == FALSE) {
 		/* Como la tabla aún no está completa, puedo eliminar un jugador */
 		/* Rellenar con la firma del protocolo SN */
@@ -1018,14 +1042,14 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		tabla->fds[slot] = -1;
 		
 		if (tabla->fds[0] == -1 && tabla->fds[1] == -1 && tabla->fds[2] == -1) {
-			printf ("Eliminado tabla [%i] por falta de jugadores\n", tabla->id);
+			printf ("Eliminado tabla «%i» por falta de jugadores\n", tabla->id);
 			remove_table (tabla);
 		}
 	} else {
 		/* Un ninja se perdió en media partida, mandar el mensaje de eliminar */
 		if (tabla->clientes == 1) {
 			/* Último cliente, nada que mandar */
-			printf ("Eliminando tabla [%i]\n", tabla->id);
+			printf ("Eliminando tabla «%i»\n", tabla->id);
 			cancel_timer (tabla);
 			remove_table (tabla);
 			return;
@@ -1083,7 +1107,7 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 			g = tabla->ready[0] + tabla->ready[1] + tabla->ready[2];
 		
 			if (g >= tabla->clientes) {
-				printf ("Done actions, ejecutando calculate\n");
+				printf ("«%i» Done actions\n", tabla->id);
 				cancel_timer (tabla);
 				calculate_actions (tabla);
 			}

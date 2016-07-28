@@ -96,7 +96,6 @@ void check_timers (void) {
 		dif = timevaldiff (&pos->inicio, &now);
 		if (dif >= (pos->interval * 1000)) {
 			/* Llamar esta función */
-			printf ("Llamando la funcion por timer\n");
 			pos->func (pos->tabla, pos->user_data);
 			
 			/* Eliminar la función */

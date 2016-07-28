@@ -278,7 +278,7 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.5, 0.65625, 195.0, 167.0}
 };
 
-typedef struct _Enemy {
+struct _Enemy {
 	int frame;
 	int x, y;
 	int tipo;
@@ -431,6 +431,28 @@ int is_enemy_ready (Enemy *enemy) {
 	}
 	
 	return FALSE;
+}
+
+int is_enemy_dead (Enemy *enemy) {
+	int calc;
+	calc = enemy->frame / 2;
+	if (enemy->estado == SLY_KO && enemy->tipo == ENEMY_SLY) {
+		if (enemy->frame == 83) {
+			return TRUE;
+		}
+	}
+	
+	return FALSE;
+}
+
+void enemy_ask_coords (Enemy *enemy, int *x, int *y) {
+	if (x != NULL) {
+		*x = enemy->x;
+	}
+	
+	if (y != NULL) {
+		*y = enemy->y;
+	}
 }
 
 void add_enemy_ref (Enemy *enemy) {

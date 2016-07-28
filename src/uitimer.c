@@ -422,14 +422,6 @@ void dibujar_timer (UITimer *timer) {
 		
 		if (timer->anim >= 80) {
 			timer->anim = 80;
-			if (timer->event_sent == 0) {
-				SDL_zero (evento);
-				evento.type = UI_TIMER_EVENT;
-				evento.user.code = UI_TIMER_EVENT_HIDE;
-		
-				SDL_PushEvent (&evento);
-				timer->event_sent = 1;
-			}
 		}
 	}
 }

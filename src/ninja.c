@@ -1027,7 +1027,7 @@ void ninja_ask_actions (Ninja *ninja, int escenario[5][9], int acciones[5][9]) {
 			if (s > max) continue;
 			if (ninja->x + g >= 0 && ninja->x + g < 9 && ninja->y + h >= 0 && ninja->y + h < 5) {
 				obj = escenario[ninja->y + h][ninja->x + g];
-				if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW) {
+				if (obj == ROCK || obj == NINJA_WATER || obj == NINJA_FIRE || obj == NINJA_SNOW || (obj >= ENEMY_1 && obj <= ENEMY_4)) {
 					acciones[ninja->y + h][ninja->x + g] = ACTION_CANT_MOVE;
 				} else if (obj == NONE) {
 					acciones[ninja->y + h][ninja->x + g] = ACTION_MOVE;
