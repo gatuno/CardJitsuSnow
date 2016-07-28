@@ -377,6 +377,10 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	agregar_write (fd, buffer_send, 5, 0);
 	
 	printf ("Se creó una tabla [%i] y se le envió ACCEPTED al jugador [%i]\n", new->id, fd);
+	
+#ifdef STAND_ALONE
+	start_tabla (new);
+#endif
 }
 
 void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
@@ -456,7 +460,7 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 }
 
 void start_tabla (SnowFight *tabla) {
-	int r, g, h, i;
+	int r, g, h, i, ninjas;
 	char buffer_send[128];
 	int tipo;
 	
@@ -467,7 +471,27 @@ void start_tabla (SnowFight *tabla) {
 	tabla->escenario[0][2] = tabla->escenario[0][6] = tabla->escenario[4][2] = tabla->escenario[4][6] = ROCK;
 	
 	/* Colocar a los ninjas en posiciones aleatorias */
+#ifdef STAND_ALONE
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] != -1) {
+			h = g;
+			break;
+		}
+	}
+	r = NINJA_FIRE + h;
 	
+	tabla->escenario[2][0] = r;
+	
+	/* Crear el objeto correspondiente */
+	if (r == NINJA_FIRE) {
+		tabla->fire = create_server_ninja (0, 2, r);
+	} else if (r == NINJA_WATER) {
+		tabla->water = create_server_ninja (0, 2, r);
+	} else if (r == NINJA_SNOW) {
+		tabla->snow = create_server_ninja (0, 2, r);
+	}
+	ninjas = 1;
+#else
 	/* Sacar uno aleatorio para la primera posición */
 	r = NINJA_FIRE + RANDOM (3);
 	
@@ -513,6 +537,8 @@ void start_tabla (SnowFight *tabla) {
 	} else if (r == NINJA_SNOW) {
 		tabla->snow = create_server_ninja (0, 4, r);
 	}
+	ninjas = 3;
+#endif
 	
 	tabla->enemys = 1 + RANDOM(3);
 	for (g = 0; g < tabla->enemys; g++) {
@@ -545,7 +571,7 @@ void start_tabla (SnowFight *tabla) {
 	buffer_send[5] = RANDOM(3);
 	
 	/* Cantidad de objetos que vamos a enviar */
-	buffer_send[6] = 4 + 3 + tabla->enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
+	buffer_send[6] = 4 + ninjas + tabla->enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
 	
 	r = 7;
 	/* Colocar coordenadas iniciales de los objetos */
@@ -569,7 +595,7 @@ void start_tabla (SnowFight *tabla) {
 	}
 	tabla->running = TRUE;
 	tabla->estado = WAITING_CLIENTS;
-	tabla->clientes = 3;
+	tabla->clientes = ninjas;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
 	
 	/* Cambiar los ENEMY_SLY por ENEMY_1 */

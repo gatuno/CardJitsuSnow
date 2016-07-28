@@ -103,7 +103,7 @@ dnl Add special hack for Mac framework SDL after all other SDL stuff has been do
 dnl Note that SDL development environment must be installed for the build but SDL frameworks must also be installed for the build
 dnl If we had libSDLmain.a, which is not included in the framework, we should be able to get away with only installing framework
 if test "x$MACOSX" = xyes; then
- AM_PATH_SDL(1.2.0)
+ dnl AM_PATH_SDL(1.2.0)
  SDL_STATIC_PREFIX=`$SDL_CONFIG $sdl_config_args --prefix`
  SDL_LIBS="-Wl,-rpath,@loader_path/../Frameworks -framework AudioToolbox -framework AudioUnit -framework Cocoa -framework CoreAudio -framework IOKit -framework CoreFoundation -framework Carbon -framework CoreServices -framework ApplicationServices -framework Foundation -framework AppKit -framework OpenGL -framework SDL -framework SDL_mixer -framework SDL_image -framework SDL_ttf $SDL_STATIC_PREFIX/lib/libSDLmain.a"
 AC_SUBST(SDL_STATIC_PREFIX)
