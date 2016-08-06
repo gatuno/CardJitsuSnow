@@ -1080,6 +1080,24 @@ int game_loop (SnowStage *stage) {
 									do_ninja_attacks (stage, server, animaciones, &anims);
 								}
 								
+								if (server->round == 64) {
+									/* El juego ya finalizó */
+								} else if (server->round != 0) {
+									/* Nuevos enemigos */
+									animaciones[anims].tipo = UI_ANIM_ROUND;
+									animaciones[anims].round = server->round - 1;
+									
+									anims++;
+									
+									/* Copiar los enemigos siguientes */
+									printf ("Nuevo round: %i. Hay %i enemigos\n", server->round, server->count_next_enemys);
+									stage->count_next_enemys = server->count_next_enemys;
+									for (g = 0; g < stage->count_next_enemys; g++) {
+										stage->next_enemys[g].object = server->next_enemys[g].object;
+										stage->next_enemys[g].x = server->next_enemys[g].x;
+										stage->next_enemys[g].y = server->next_enemys[g].y;
+									}
+								}
 								reverse_animations (animaciones, anims);
 								ui_estatus = UI_ANIMATE;
 								free (server);
@@ -1209,7 +1227,7 @@ int game_loop (SnowStage *stage) {
 				SDL_RenderCopy (renderer, images[IMG_ROUND_1 + animaciones[anims - 1].round], NULL, &rect);
 				cont_a++;
 				
-				if (cont_a >= 60) {
+				if (cont_a >= 120) {
 					/* Como ya terminó la animación del round, apilar las animaciones para aparecer a los enemigos */
 					animaciones[anims - 1].tipo = UI_SHOW_ENEMYS;
 					for (g = 0; g < stage->count_next_enemys; g++) {
@@ -1218,6 +1236,7 @@ int game_loop (SnowStage *stage) {
 						/* Crear los objetos */
 						stage->enemigos[g] = create_enemy (stage->next_enemys[g].x, stage->next_enemys[g].y, stage->next_enemys[g].object);
 					}
+					cont_a = 0;
 				}
 			} else if (animaciones[anims - 1].tipo == UI_SHOW_ENEMYS) {
 				/* Preguntarle al primer enemigo si está listo */

@@ -352,7 +352,31 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			pos = pos + 3;
 		}
 		
-		real_len = 5 + (3 * msg->server.movs) + 1 + (3 * msg->server.attacks);
+		if (len < pos + 1) return -1;
+		msg->server.round = buffer[pos];
+		pos++;
+		
+		msg->server.count_next_enemys = 0;
+		/* Hay más enemigos para el siguiente round */
+		if (msg->server.round == 64) {
+			/* Fin del juego */
+		} else if (msg->server.round != 0) {
+			if (len < pos + 1) return -1;
+			
+			msg->server.count_next_enemys = buffer[pos];
+			pos++;
+			
+			if (len < pos + (3 * msg->server.count_next_enemys)) return -1;
+			for (g = 0; g < msg->server.count_next_enemys; g++) {
+				msg->server.next_enemys[g].object = buffer[pos];
+				msg->server.next_enemys[g].x = buffer[pos + 1];
+				msg->server.next_enemys[g].y = buffer[pos + 2];
+				
+				pos = pos + 3;
+			}
+		}
+		
+		real_len = pos;
 	}
 	
 	return real_len;

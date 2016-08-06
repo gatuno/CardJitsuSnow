@@ -49,6 +49,9 @@ typedef struct {
 	Action movs_coords[3];
 	int attacks;
 	Action attack_coords[3];
+	int round;
+	int count_next_enemys;
+	ObjectPos next_enemys[4];
 } ServerActions;
 
 typedef struct {

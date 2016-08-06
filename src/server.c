@@ -72,6 +72,7 @@ typedef struct SnowFight {
 	int escenario[5][9];
 	
 	int ready[3];
+	int round;
 	
 	ServerNinja *water;
 	ServerNinja *fire;
@@ -350,6 +351,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	}
 	
 	new->id = ids_tablas++;
+	new->round = 1;
 	
 	/* Rellenar los FD's */
 	new->fds[1] = new->fds[2] = new->fds[0] = -1;
@@ -458,6 +460,29 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 	}
 }
 
+void generar_enemigos (SnowFight *tabla, int bonus) {
+	int g, h, i, j;
+	tabla->enemys = 1 + RANDOM(3);
+	
+	if (bonus) {
+		tabla->enemys = 4;
+	}
+	printf ("Generando enemigos para la tabla «%i». Total = %i\n", tabla->id, tabla->enemys);
+	for (g = 0; g < tabla->enemys; g++) {
+		i = RANDOM(3);
+		i = 0; /* FIXME: Faltan los otros enemigos */
+		do {
+			h = RANDOM(5);
+			j = 8 - RANDOM(1);
+		} while (tabla->escenario[h][j] != NONE);
+		
+		printf ("Coordenadas para un enemigo: %i, %i\n");
+		tabla->escenario[h][j] = i + ENEMY_SLY;
+		
+		tabla->enemigos[g] = create_server_enemy (j, h, i + ENEMY_SLY);
+	}
+}
+
 void start_tabla (SnowFight *tabla) {
 	int r, g, h, i, ninjas;
 	char buffer_send[128];
@@ -538,19 +563,7 @@ void start_tabla (SnowFight *tabla) {
 	ninjas = 3;
 #endif
 	
-	tabla->enemys = 1 + RANDOM(3);
-	for (g = 0; g < tabla->enemys; g++) {
-		i = RANDOM(3);
-		i = 0; /* FIXME */
-		/* Como es la primera ronda, las posiciones son seguras */
-		do {
-			h = RANDOM(5);
-		} while (tabla->escenario[h][8] != NONE);
-		
-		tabla->escenario[h][8] = i + ENEMY_SLY;
-		
-		tabla->enemigos[g] = create_server_enemy (8, h, i + ENEMY_SLY);
-	}
+	generar_enemigos (tabla, 0);
 	
 	/* Preparar el mensaje de start + info de inicio */
 	buffer_send[0] = 'S';
@@ -632,7 +645,7 @@ void send_ask_actions (SnowFight *tabla) {
 
 void calculate_actions (SnowFight *tabla) {
 	char buffer_send[128];
-	int pos, pos_attack;
+	int pos, pos_attack, pos_round;
 	int g, s;
 	int i, j;
 	
@@ -774,6 +787,55 @@ void calculate_actions (SnowFight *tabla) {
 				tabla->enemigos[g] = NULL;
 			}
 		}
+	}
+	
+	/* Revisar si todos los enemigos mueriron, en ese caso, avanzar el round y mandar los siguiente enemigos */
+	/* Significado de los bytes:
+	 * 0 = Continua el round
+	 * 2 = Vas hacia el round 2
+	 * 3 = Vas hacia el round 3
+	 * 4 = Vas hacia el bonus round
+	 * 64 = Fin del juego
+	 */
+	
+	pos_round = pos++;
+	
+	i = 0;
+	for (g = 0; g < 4; g++) {
+		if (tabla->enemigos[g] != NULL) {
+			i++;
+		}
+	}
+	
+	if (i == 0) {
+		/* Generar más enemigos */
+		tabla->round++;
+		if ((0 && tabla->round == 4) || (tabla->round < 4)) {
+			/* Si cumple la condición del bonus round, meter al bonus round */
+			generar_enemigos (tabla, (tabla->round == 4) ? 1 : 0);
+			buffer_send[pos_round] = tabla->round;
+			
+			buffer_send[pos] = tabla->enemys;
+			pos++;
+			
+			for (g = 0; g < tabla->enemys; g++) {
+				buffer_send[pos] = tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x];
+				buffer_send[pos + 1] = tabla->enemigos[g]->x;
+				buffer_send[pos + 2] = tabla->enemigos[g]->y;
+				
+				pos = pos + 3;
+			}
+			
+			/* Cambiar los ENEMY_SLY por ENEMY_1 */
+			for (g = 0; g < tabla->enemys; g++) {
+				tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x] = ENEMY_1 + g;
+			}
+		} else if (tabla->round >= 4) {
+			/* Fin del juego */
+			buffer_send[pos_round] = 64;
+		}
+	} else {
+		buffer_send[pos_round] = 0;
 	}
 	
 	/* Enviar todo */
