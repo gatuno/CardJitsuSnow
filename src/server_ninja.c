@@ -261,6 +261,10 @@ ServerEnemy *create_server_enemy (int x, int y, int tipo) {
 	
 	if (tipo == ENEMY_SLY) {
 		obj->vida = 30;
+	} else if (tipo == ENEMY_SCRAP) {
+		obj->vida = 45;
+	} else if (tipo == ENEMY_TANK) {
+		obj->vida = 60;
 	}
 	return obj;
 }

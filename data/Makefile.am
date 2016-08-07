@@ -179,6 +179,18 @@ nobase_dist_gamedata_DATA = images/icon.png \
 	images/enemy/sly_hit.png \
 	images/enemy/sly_move.png \
 	images/enemy/sly_ko.png \
+	images/enemy/scrap_idle.png \
+	images/enemy/scrap_attack.png \
+	images/enemy/scrap_daze.png \
+	images/enemy/scrap_hit.png \
+	images/enemy/scrap_move.png \
+	images/enemy/scrap_ko.png \
+	images/enemy/tank_idle.png \
+	images/enemy/tank_attack.png \
+	images/enemy/tank_daze.png \
+	images/enemy/tank_hit.png \
+	images/enemy/tank_move.png \
+	images/enemy/tank_ko.png \
 	images/healthbar.png \
 	images/target_green_attack_selected.png \
 	images/target_green_attack_selected_intro.png \

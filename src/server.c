@@ -470,10 +470,14 @@ void generar_enemigos (SnowFight *tabla, int bonus) {
 	printf ("Generando enemigos para la tabla «%i». Total = %i\n", tabla->id, tabla->enemys);
 	for (g = 0; g < tabla->enemys; g++) {
 		i = RANDOM(3);
-		i = 0; /* FIXME: Faltan los otros enemigos */
+		
 		do {
 			h = RANDOM(5);
-			j = 8 - RANDOM(1);
+			j = 8;
+			
+			if (tabla->round != 1 && tabla->escenario[h][j] != NONE) {
+				j = 7;
+			}
 		} while (tabla->escenario[h][j] != NONE);
 		
 		printf ("Coordenadas para un enemigo: %i, %i\n");
@@ -670,10 +674,13 @@ void calculate_actions (SnowFight *tabla) {
 			buffer_send[pos + 1] = tabla->water->next_x;
 			buffer_send[pos + 2] = tabla->water->next_y;
 			
+			tabla->escenario[tabla->water->y][tabla->water->x] = NONE;
 			pos = pos + 3;
 			/* Mover al ninja */
 			tabla->water->x = tabla->water->next_x;
 			tabla->water->y = tabla->water->next_y;
+			
+			tabla->escenario[tabla->water->y][tabla->water->x] = NINJA_WATER;
 		}
 	}
 	
@@ -684,10 +691,12 @@ void calculate_actions (SnowFight *tabla) {
 			buffer_send[pos + 1] = tabla->fire->next_x;
 			buffer_send[pos + 2] = tabla->fire->next_y;
 			
+			tabla->escenario[tabla->fire->y][tabla->fire->x] = NONE;
 			pos = pos + 3;
 			/* Mover al ninja */
 			tabla->fire->x = tabla->fire->next_x;
 			tabla->fire->y = tabla->fire->next_y;
+			tabla->escenario[tabla->fire->y][tabla->fire->x] = NINJA_FIRE;
 		}
 	}
 	
@@ -698,10 +707,12 @@ void calculate_actions (SnowFight *tabla) {
 			buffer_send[pos + 1] = tabla->snow->next_x;
 			buffer_send[pos + 2] = tabla->snow->next_y;
 			
+			tabla->escenario[tabla->snow->y][tabla->snow->x] = NONE;
 			pos = pos + 3;
 			/* Mover al ninja */
 			tabla->snow->x = tabla->snow->next_x;
 			tabla->snow->y = tabla->snow->next_y;
+			tabla->escenario[tabla->snow->y][tabla->snow->x] = NINJA_SNOW;
 		}
 	}
 	buffer_send[4] = g;

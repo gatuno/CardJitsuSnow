@@ -50,6 +50,20 @@ enum {
 	SLY_MOVE,
 	SLY_KO,
 	
+	SCRAP_IDLE,
+	SCRAP_ATTACK,
+	SCRAP_DAZE,
+	SCRAP_HIT,
+	SCRAP_MOVE,
+	SCRAP_KO,
+	
+	TANK_IDLE,
+	TANK_ATTACK,
+	TANK_DAZE,
+	TANK_HIT,
+	TANK_MOVE,
+	TANK_KO,
+	
 	NUM_ENEMY_IMAGES
 };
 
@@ -61,7 +75,21 @@ static const char *enemy_images_names[NUM_ENEMY_IMAGES] = {
 	"images/enemy/sly_daze.png",
 	"images/enemy/sly_hit.png",
 	"images/enemy/sly_move.png",
-	"images/enemy/sly_ko.png"
+	"images/enemy/sly_ko.png",
+	
+	"images/enemy/scrap_idle.png",
+	"images/enemy/scrap_attack.png",
+	"images/enemy/scrap_daze.png",
+	"images/enemy/scrap_hit.png",
+	"images/enemy/scrap_move.png",
+	"images/enemy/scrap_ko.png",
+	
+	"images/enemy/tank_idle.png",
+	"images/enemy/tank_attack.png",
+	"images/enemy/tank_daze.png",
+	"images/enemy/tank_hit.png",
+	"images/enemy/tank_move.png",
+	"images/enemy/tank_ko.png"
 };
 
 static SnowSprite sprite_spawn[] = {
@@ -267,6 +295,412 @@ SnowSprite *enemy_sly_animations[6] = {
 	sprite_sly_ko
 };
 
+static SnowSprite sprite_scrap_idle[] = {
+	{80,284,76,69,22,22,FALSE},
+	{236,558,76,67,22,24,FALSE},
+	{158,493,76,67,21,24,FALSE},
+	{80,493,76,67,21,24,FALSE},
+	{2,493,76,67,21,24,FALSE},
+	{392,556,76,67,20,24,FALSE},
+	{2,284,76,69,20,22,FALSE},
+	{314,556,76,67,21,24,FALSE},
+	{236,489,76,67,21,24,FALSE},
+	{158,215,76,69,22,22,FALSE},
+	{158,424,76,67,22,24,FALSE},
+	{80,424,76,67,22,24,FALSE},
+	{240,211,76,69,22,22,FALSE},
+	{2,424,76,67,21,24,FALSE},
+	{392,487,76,67,21,24,FALSE},
+	{314,487,76,67,21,24,FALSE},
+	{236,420,76,67,21,24,FALSE},
+	{158,355,76,67,21,24,FALSE},
+	{80,213,76,69,22,22,FALSE},
+	{80,355,76,67,22,24,FALSE},
+	{2,355,76,67,21,24,FALSE},
+	{392,418,76,67,21,24,FALSE},
+	{314,418,76,67,21,24,FALSE},
+	{392,349,76,67,21,24,FALSE},
+	{162,73,78,69,20,22,FALSE},
+	{236,351,76,67,22,24,FALSE},
+	{314,349,76,67,22,24,FALSE},
+	{2,213,76,69,22,22,FALSE},
+	{396,280,76,67,22,24,FALSE},
+	{158,286,76,67,22,24,FALSE},
+	{82,73,78,69,20,22,FALSE},
+	{236,282,76,67,21,24,FALSE},
+	{318,280,76,67,21,24,FALSE},
+	{396,211,76,67,21,24,FALSE},
+	{82,144,78,67,19,24,FALSE},
+	{2,144,78,67,19,24,FALSE},
+	{2,73,78,69,20,22,FALSE},
+	{402,142,78,67,18,24,FALSE},
+	{390,625,74,67,20,24,FALSE},
+	{314,625,74,67,19,24,FALSE},
+	{318,211,76,67,17,24,FALSE},
+	{322,142,78,67,17,24,FALSE},
+	{242,142,78,67,18,24,FALSE},
+	{402,73,78,67,18,24,FALSE},
+	{322,73,78,67,19,24,FALSE},
+	{242,73,78,67,19,24,FALSE},
+	{330,2,80,69,17,22,FALSE},
+	{248,2,80,69,17,22,FALSE},
+	{166,2,80,69,17,22,FALSE},
+	{84,2,80,69,17,22,FALSE},
+	{2,2,80,69,17,22,FALSE},
+	{412,2,78,69,19,22,FALSE},
+	{162,144,76,69,22,22,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_scrap_attack[] = {
+	{2,644,76,68,78,124,FALSE},
+	{2,714,74,68,78,124,FALSE},
+	{306,632,64,68,77,124,FALSE},
+	{446,726,52,68,76,124,FALSE},
+	{450,656,52,68,76,124,FALSE},
+	{132,692,70,68,58,124,FALSE},
+	{312,422,60,68,68,124,FALSE},
+	{316,352,54,68,74,124,FALSE},
+	{276,772,48,70,80,122,TRUE},
+	{306,492,66,72,90,120,FALSE},
+	{374,434,90,96,91,96,TRUE},
+	{374,342,90,96,91,96,TRUE},
+	{374,250,90,118,91,74,TRUE},
+	{374,158,90,136,91,56,TRUE},
+	{2,552,90,144,91,48,TRUE},
+	{2,460,90,152,91,40,TRUE},
+	{158,384,90,152,91,40,TRUE},
+	{2,368,90,154,90,38,TRUE},
+	{2,264,102,156,91,36,TRUE},
+	{160,292,90,154,91,38,TRUE},
+	{156,476,82,148,91,44,TRUE},
+	{380,2,120,154,46,38,FALSE},
+	{2,154,108,166,29,26,TRUE},
+	{196,2,122,182,22,10,TRUE},
+	{2,2,150,192,7,0,TRUE},
+	{196,126,164,176,0,16,TRUE},
+	{2,836,70,50,58,142,FALSE},
+	{74,790,70,50,58,142,TRUE},
+	{130,762,70,50,58,142,FALSE},
+	{204,734,70,50,58,142,FALSE},
+	{2,784,70,50,58,142,FALSE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{78,718,70,50,58,142,TRUE},
+	{80,644,72,50,56,142,TRUE},
+	{316,292,56,58,72,134,FALSE},
+	{240,652,80,62,49,130,TRUE},
+	{374,590,90,64,39,128,FALSE},
+	{148,626,90,64,39,128,FALSE},
+	{240,560,90,64,39,128,TRUE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{148,560,90,64,39,128,FALSE},
+	{374,526,92,62,37,130,FALSE},
+	{306,566,66,64,62,128,FALSE},
+	{304,702,62,68,78,124,FALSE},
+	{368,726,76,68,78,124,FALSE},
+	{372,656,76,68,78,124,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_scrap_daze[] = {
+	{2,276,67,85,17,32,TRUE},
+	{91,213,67,85,16,33,TRUE},
+	{184,91,67,87,15,32,FALSE},
+	{184,2,67,87,14,33,FALSE},
+	{93,2,67,89,14,32,TRUE},
+	{2,138,63,89,19,31,TRUE},
+	{93,71,65,89,17,31,TRUE},
+	{2,2,67,89,17,30,TRUE},
+	{2,71,65,89,20,29,TRUE},
+	{2,203,71,87,15,30,TRUE},
+	{93,138,73,87,13,30,TRUE},
+	{182,180,71,87,14,30,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_scrap_hit[] = {
+	{69,397,67,60,21,57,TRUE},
+	{196,266,65,70,22,47,TRUE},
+	{117,118,93,80,3,42,FALSE},
+	{425,327,71,68,16,49,FALSE},
+	{425,257,73,68,14,49,FALSE},
+	{357,2,111,80,13,37,FALSE},
+	{242,2,113,92,6,25,FALSE},
+	{123,2,117,114,3,7,FALSE},
+	{2,2,119,104,2,13,FALSE},
+	{2,108,113,108,8,9,FALSE},
+	{357,84,101,104,18,13,TRUE},
+	{242,96,97,92,17,25,FALSE},
+	{212,190,83,74,18,43,FALSE},
+	{341,187,85,66,17,51,FALSE},
+	{297,255,73,72,16,55,FALSE},
+	{372,255,51,72,26,50,FALSE},
+	{81,270,57,70,24,50,TRUE},
+	{2,397,65,68,21,49,FALSE},
+	{2,288,69,68,22,49,FALSE},
+	{2,218,77,68,21,49,FALSE},
+	{117,200,77,68,21,49,FALSE},
+	{428,187,77,68,21,49,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_scrap_move[] = {
+	{2,312,68,70,19,24,TRUE},
+	{76,186,66,72,20,25,TRUE},
+	{172,2,66,80,19,23,TRUE},
+	{88,2,56,82,27,23,TRUE},
+	{2,2,48,84,36,23,TRUE},
+	{2,52,60,80,27,23,TRUE},
+	{84,60,52,78,20,24,TRUE},
+	{164,70,62,76,15,24,TRUE},
+	{2,114,66,74,14,26,TRUE},
+	{2,182,70,72,11,24,TRUE},
+	{78,114,70,72,12,23,TRUE},
+	{152,134,66,72,17,23,TRUE},
+	{150,202,60,72,24,23,TRUE},
+	{2,254,56,72,31,24,TRUE},
+	{74,324,56,68,26,26,TRUE},
+	{148,264,66,68,20,26,TRUE},
+	{76,254,68,70,19,24,TRUE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_scrap_ko[] = {
+	{291,376,77,69,79,54,TRUE},
+	{166,347,123,91,60,39,FALSE},
+	{887,2,133,101,50,29,FALSE},
+	{2,413,111,107,41,23,FALSE},
+	{164,440,121,113,38,22,FALSE},
+	{887,105,131,105,34,25,FALSE},
+	{363,300,125,103,42,27,FALSE},
+	{2,308,103,125,67,5,TRUE},
+	{2,522,101,99,63,31,FALSE},
+	{547,371,91,95,59,35,TRUE},
+	{362,405,101,93,57,37,FALSE},
+	{287,500,93,91,63,39,FALSE},
+	{2,623,75,87,81,43,TRUE},
+	{160,555,75,87,81,43,TRUE},
+	{644,373,75,85,81,45,TRUE},
+	{465,444,75,87,81,43,FALSE},
+	{382,500,81,87,75,43,FALSE},
+	{883,212,139,129,36,15,FALSE},
+	{722,121,159,139,27,11,FALSE},
+	{557,2,163,147,24,7,FALSE},
+	{722,2,163,117,17,29,FALSE},
+	{370,161,141,137,27,13,FALSE},
+	{557,151,157,155,16,12,FALSE},
+	{2,149,165,157,15,13,FALSE},
+	{189,127,179,157,8,14,FALSE},
+	{374,2,181,157,7,13,FALSE},
+	{2,2,185,145,5,25,FALSE},
+	{189,2,183,123,5,36,FALSE},
+	{716,262,149,109,35,51,FALSE},
+	{867,343,145,83,35,62,FALSE},
+	{169,286,131,59,49,85,FALSE},
+	{556,308,137,61,43,84,FALSE},
+	{490,319,123,55,40,85,TRUE},
+	{513,161,93,41,38,84,TRUE},
+	{115,503,95,43,36,85,TRUE},
+	{330,455,25,39,106,85,FALSE},
+	{287,455,41,41,95,84,FALSE},
+	{115,448,53,45,88,85,TRUE},
+	{302,286,59,43,83,85,FALSE},
+	{302,331,57,43,85,84,FALSE},
+	{513,256,61,41,82,84,TRUE},
+	{129,308,67,35,79,83,TRUE},
+	{129,377,69,33,79,80,TRUE},
+	{370,127,1,1,0,0,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+SnowSprite *enemy_scrap_animations[6] = {
+	sprite_scrap_idle,
+	sprite_scrap_attack,
+	sprite_scrap_daze,
+	sprite_scrap_hit,
+	sprite_scrap_move,
+	sprite_scrap_ko
+};
+
+static SnowSprite sprite_tank_idle[] = {
+	{81,2,77,65,4,3,FALSE},
+	{2,136,75,65,6,3,FALSE},
+	{156,69,75,65,6,3,FALSE},
+	{79,69,75,65,6,3,FALSE},
+	{2,203,75,63,6,5,FALSE},
+	{79,201,75,63,6,5,FALSE},
+	{77,331,73,63,8,5,FALSE},
+	{154,266,73,63,8,5,FALSE},
+	{2,268,73,63,8,5,FALSE},
+	{79,266,73,63,8,5,FALSE},
+	{156,201,73,63,8,5,FALSE},
+	{156,136,75,63,6,5,FALSE},
+	{79,136,75,63,6,5,FALSE},
+	{2,69,75,65,6,3,FALSE},
+	{160,2,75,65,6,3,FALSE},
+	{2,2,77,65,4,3,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_tank_attack[] = {
+	{103,304,99,79,36,34,FALSE},
+	{103,304,99,79,36,34,FALSE},
+	{103,304,99,79,36,34,FALSE},
+	{204,306,109,79,36,34,FALSE},
+	{204,306,109,79,36,34,FALSE},
+	{2,144,133,77,11,36,FALSE},
+	{2,144,133,77,11,36,FALSE},
+	{311,69,133,77,8,37,FALSE},
+	{337,395,133,81,8,32,FALSE},
+	{337,395,133,81,8,32,FALSE},
+	{204,387,131,79,7,34,FALSE},
+	{204,387,131,79,7,34,FALSE},
+	{137,146,129,77,9,36,FALSE},
+	{180,69,129,75,8,38,FALSE},
+	{2,223,127,77,9,36,FALSE},
+	{268,148,127,77,9,36,FALSE},
+	{87,385,115,79,20,34,FALSE},
+	{79,69,99,73,35,40,FALSE},
+	{158,2,93,65,35,48,FALSE},
+	{2,65,75,65,35,48,FALSE},
+	{407,2,75,65,35,48,FALSE},
+	{330,2,75,65,35,48,FALSE},
+	{2,2,75,61,35,52,FALSE},
+	{404,314,79,87,31,26,TRUE},
+	{2,302,77,99,33,14,TRUE},
+	{331,227,77,97,33,16,TRUE},
+	{331,227,77,97,33,16,TRUE},
+	{430,227,79,85,31,28,FALSE},
+	{315,306,79,87,31,26,TRUE},
+	{230,227,77,99,33,14,TRUE},
+	{131,225,77,97,33,16,TRUE},
+	{131,225,77,97,33,16,TRUE},
+	{131,225,77,97,33,16,TRUE},
+	{397,148,77,99,33,14,TRUE},
+	{2,381,83,81,27,32,FALSE},
+	{79,2,77,63,34,50,FALSE},
+	{253,2,75,65,35,48,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_tank_daze[] = {
+	{82,226,78,72,6,3,FALSE},
+	{162,226,78,70,6,5,FALSE},
+	{2,226,78,72,6,3,FALSE},
+	{2,2,80,72,5,3,FALSE},
+	{162,152,78,72,6,3,FALSE},
+	{82,152,78,72,6,3,FALSE},
+	{2,152,78,72,6,3,FALSE},
+	{162,78,78,72,6,3,FALSE},
+	{164,2,78,74,6,1,FALSE},
+	{2,76,78,74,6,1,FALSE},
+	{84,2,78,74,6,1,FALSE},
+	{82,78,78,72,6,3,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_tank_hit[] = {
+	{422,204,76,66,18,22,FALSE},
+	{370,138,78,64,16,24,FALSE},
+	{2,2,100,82,0,6,FALSE},
+	{290,2,86,84,11,4,FALSE},
+	{200,2,88,88,6,0,FALSE},
+	{2,86,92,88,2,0,FALSE},
+	{104,2,94,86,0,2,FALSE},
+	{96,90,88,84,6,4,FALSE},
+	{416,340,72,66,22,22,FALSE},
+	{416,272,72,66,22,22,FALSE},
+	{342,272,72,68,22,20,FALSE},
+	{264,224,76,66,18,22,FALSE},
+	{186,92,78,66,16,22,FALSE},
+	{378,70,80,66,14,22,FALSE},
+	{290,88,78,66,16,22,FALSE},
+	{378,2,80,66,14,22,FALSE},
+	{344,204,76,66,18,22,FALSE},
+	{186,160,76,66,18,22,FALSE},
+	{266,156,76,66,18,22,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_tank_move[] = {
+	{160,69,77,65,4,3,FALSE},
+	{81,69,77,65,5,3,FALSE},
+	{2,69,77,65,6,3,FALSE},
+	{85,2,79,65,7,3,FALSE},
+	{152,268,73,63,8,5,FALSE},
+	{77,266,73,63,9,5,FALSE},
+	{79,201,75,63,8,5,FALSE},
+	{81,136,77,63,9,5,FALSE},
+	{2,331,71,63,10,5,FALSE},
+	{2,266,73,63,9,5,FALSE},
+	{2,201,75,63,8,5,FALSE},
+	{2,136,77,63,9,5,FALSE},
+	{156,203,73,63,8,5,FALSE},
+	{160,136,75,65,7,3,FALSE},
+	{166,2,77,65,6,3,FALSE},
+	{2,2,81,65,5,3,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+static SnowSprite sprite_tank_ko[] = {
+	{399,540,77,67,32,46,FALSE},
+	{437,119,79,67,30,46,TRUE},
+	{259,515,95,87,24,26,FALSE},
+	{399,453,89,85,25,28,FALSE},
+	{259,424,97,89,20,24,FALSE},
+	{2,462,101,93,16,22,FALSE},
+	{119,412,101,95,14,25,FALSE},
+	{411,200,99,97,21,27,FALSE},
+	{409,299,109,101,25,20,TRUE},
+	{135,256,123,109,18,16,FALSE},
+	{282,127,127,115,16,13,FALSE},
+	{282,244,125,91,11,31,FALSE},
+	{2,349,115,111,14,15,FALSE},
+	{2,218,131,129,4,14,FALSE},
+	{147,127,133,127,6,16,FALSE},
+	{294,2,141,123,1,18,FALSE},
+	{149,2,143,123,1,18,FALSE},
+	{2,2,145,115,1,26,FALSE},
+	{2,119,143,97,1,36,FALSE},
+	{260,337,115,85,25,48,FALSE},
+	{437,2,115,67,23,55,TRUE},
+	{406,410,103,41,34,80,FALSE},
+	{119,367,107,43,30,79,FALSE},
+	{358,449,95,39,29,79,TRUE},
+	{391,609,75,31,26,80,FALSE},
+	{478,540,77,31,24,80,TRUE},
+	{356,595,47,33,54,78,TRUE},
+	{222,508,43,35,59,75,TRUE},
+	{222,412,47,35,56,74,TRUE},
+	{222,461,45,35,57,73,TRUE},
+	{356,546,47,33,56,74,TRUE},
+	{377,394,53,27,53,73,TRUE},
+	{377,337,55,27,52,71,TRUE},
+	{506,2,1,1,0,0,FALSE},
+	{-1,-1,-1,-1,-1,-1,FALSE}
+};
+
+SnowSprite *enemy_tank_animations[6] = {
+	sprite_tank_idle,
+	sprite_tank_attack,
+	sprite_tank_daze,
+	sprite_tank_hit,
+	sprite_tank_move,
+	sprite_tank_ko
+};
+
 static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.46875, 0.90625, 185.0, 133.0},
 	
@@ -275,7 +709,21 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.625, 1.0625, 74.0, 83.0},
 	{0.53125, 0.875, 115.0, 112.0},
 	{0.53125, 1.03125, 68.0, 64.0},
-	{0.5, 0.65625, 195.0, 167.0}
+	{0.5, 0.65625, 195.0, 167.0},
+	
+	{0.5, 1.03125, 112.0, 93.0},
+	{0.53125, 0.96875, 76.0, 68.0},
+	{0.40625, 0.9375, 67.0, 85.0},
+	{0.40625, 0.9375, 67.0, 60.0},
+	{0.5, 0.84375, 68.0, 70.0},
+	{0.59375, 0.65625, 77.0, 69.0},
+	
+	{0.53125, 1.0, 77.0, 65.0},
+	{0.5, 1.0, 99.0, 79.0},
+	{0.59375, 1.0, 78.0, 72.0},
+	{0.5625, 0.96875, 76.0, 66.0},
+	{0.53125, 1.0, 77.0, 65.0},
+	{0.4375, 0.78125, 77.0, 67.0}
 };
 
 struct _Enemy {
@@ -312,6 +760,10 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	
 	if (obj->tipo == ENEMY_SLY) {
 		obj->vida = obj->max_life = 30;
+	} else if (obj->tipo == ENEMY_SCRAP) {
+		obj->vida = obj->max_life = 45;
+	} else if (obj->tipo == ENEMY_TANK) {
+		obj->vida = obj->max_life = 60;
 	}
 	
 	obj->ref = 0;
@@ -337,11 +789,24 @@ void draw_enemy (Enemy *enemy) {
 		if (enemy->vida < 0) {
 			enemy->vida = 0;
 		}
-		
-		if (enemy->ref == 0 && enemy->vida == 0) {
-			enemy->estado = SLY_KO; // FIXME: ¿Y los otros?
-		} else {
-			enemy->estado = SLY_HIT;
+		if (enemy->tipo == ENEMY_SLY) {
+			if (enemy->ref == 0 && enemy->vida == 0) {
+				enemy->estado = SLY_KO;
+			} else {
+				enemy->estado = SLY_HIT;
+			}
+		} else if (enemy->tipo == ENEMY_SCRAP) {
+			if (enemy->ref == 0 && enemy->vida == 0) {
+				enemy->estado = SCRAP_KO;
+			} else {
+				enemy->estado = SCRAP_HIT;
+			}
+		} else if (enemy->tipo == ENEMY_TANK) {
+			if (enemy->ref == 0 && enemy->vida == 0) {
+				enemy->estado = TANK_KO;
+			} else {
+				enemy->estado = TANK_HIT;
+			}
 		}
 		
 		enemy->frame = 0;
@@ -356,6 +821,10 @@ void draw_enemy (Enemy *enemy) {
 		animation = sprite_spawn;
 	} else if (enemy->tipo == ENEMY_SLY) {
 		animation = enemy_sly_animations[est - SLY_IDLE];
+	} else if (enemy->tipo == ENEMY_SCRAP) {
+		animation = enemy_scrap_animations[est - SCRAP_IDLE];
+	} else if (enemy->tipo == ENEMY_TANK) {
+		animation = enemy_tank_animations[est - TANK_IDLE];
 	}
 	
 	rect2.x = animation[calc].orig_x;
@@ -418,15 +887,23 @@ void draw_enemy (Enemy *enemy) {
 		if (est == SNOWMAN_SPAWN) {
 			if (enemy->tipo == ENEMY_SLY) {
 				enemy->estado = SLY_IDLE;
-			} /* TODO: Los otros enemigos aquí */
+			} else if (enemy->tipo == ENEMY_SCRAP) {
+				enemy->estado = SCRAP_IDLE;
+			} else if (enemy->tipo == ENEMY_TANK) {
+				enemy->estado = TANK_IDLE;
+			}
 		} else if (est == SLY_HIT) {
 			enemy->estado = SLY_IDLE;
+		} else if (est == SCRAP_HIT) {
+			enemy->estado = SCRAP_IDLE;
+		} else if (est == TANK_HIT) {
+			enemy->estado = TANK_IDLE;
 		}
 	}
 }
 
 int is_enemy_ready (Enemy *enemy) {
-	if (enemy->estado == SLY_IDLE /* || TODO: Los otros */) {
+	if (enemy->estado == SLY_IDLE || enemy->estado == SCRAP_IDLE || enemy->estado == TANK_IDLE) {
 		return TRUE;
 	}
 	
@@ -438,6 +915,18 @@ int is_enemy_dead (Enemy *enemy) {
 	calc = enemy->frame / 2;
 	if (enemy->estado == SLY_KO && enemy->tipo == ENEMY_SLY) {
 		if (enemy->frame == 83) {
+			return TRUE;
+		}
+	}
+	
+	if (enemy->estado == SCRAP_KO && enemy->tipo == ENEMY_SCRAP) {
+		if (enemy->frame == 87) {
+			return TRUE;
+		}
+	}
+	
+	if (enemy->estado == TANK_KO && enemy->tipo == ENEMY_TANK) {
+		if (enemy->frame == 67) {
 			return TRUE;
 		}
 	}
