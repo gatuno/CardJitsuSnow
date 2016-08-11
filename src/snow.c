@@ -558,7 +558,7 @@ int main (int argc, char *argv[]) {
 	setup_select_server (renderer);
 	
 	ServerInfo servers[7] = {
-		{.name = "Nombre 1", .host = "host1.gatuno.com", .population = 21, .max_population = 50},
+		{.name = "Localhost", .host = "127.0.0.1", .population = 21, .max_population = 50},
 		{.name = "Miles", .host = "miles.gatuno.mx", .population = 10, .max_population = 50},
 		{.name = "Nombre 3", .host = "alanturing.cucei.udg.mx", .population = 0, .max_population = 50},
 		{.name = "Gatuno", .host = "gatuno.gatuno.mx", .population = 30, .max_population = 50},
@@ -568,15 +568,24 @@ int main (int argc, char *argv[]) {
 	};
 	
 	ServerInfo *selected;
-	int recommend[5] = {1, 3, 4, -1, -1};
+	int recommend[5] = {1, 3, 4, 0, -1};
 	selected = select_server (renderer, servers, 7, recommend);
 	
-	return 0;
-	if (setup_netplay ("127.0.0.1", 3301) < 0) {
+	if (selected == NULL) {
+		/* Cerró antes de conectar a un servidor */
+		SDL_Quit ();
+		return EXIT_SUCCESS;
+	}
+	
+	printf ("Información del servidor seleccionado, Name = %s, host = %s\n", selected->name, selected->host);
+	
+	if (setup_netplay (selected->host, 3301) < 0) {
 		printf ("Falló la inicializar la red\n");
 		SDL_Quit ();
 		return EXIT_FAILURE;
 	}
+	
+	unload_select_server ();
 	
 	memset (&stage, 0, sizeof (stage));
 	do {

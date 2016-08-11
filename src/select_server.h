@@ -37,6 +37,7 @@ typedef struct {
 
 ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int servers, int recommended[5]);
 void setup_select_server (SDL_Renderer *renderer);
+void unload_select_server (void);
 
 #endif /* __SELECT_SERVER_H__ */
 

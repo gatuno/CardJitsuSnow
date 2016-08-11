@@ -47,7 +47,9 @@
 #define _(string) gettext (string)
 
 #include "select_server.h"
+#include "draw-text.h"
 #include "path.h"
+#include "rotar.h"
 
 #define FPS (1000/24)
 
@@ -191,7 +193,7 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	
 	/* Copiar el texto de "servidores recomendados" */
 	SDL_GET_SIZE (text_images_server[TEXT_SERVER_RECOMMEND], rect.w, rect.h);
-	rect.x = 92 + (632 - rect.w) / 2;
+	rect.x = (800 - rect.w) / 2;
 	rect.y = 30;
 	SDL_COMP_BLIT (text_images_server[TEXT_SERVER_RECOMMEND], NULL, screen, &rect);
 	
@@ -204,6 +206,27 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	rect.y = 253;
 	SDL_GET_SIZE (images_server[IMG_MORE_SERVER], rect.w, rect.h);
 	SDL_COMP_BLIT (images_server[IMG_MORE_SERVER], NULL, screen, &rect);
+	
+	SDL_GET_SIZE (text_images_server[TEXT_MORE_SERVER], rect.w, rect.h);
+	rect.x = 616 + (130 - rect.w) / 2;
+	rect.y = 268;
+	SDL_COMP_BLIT (text_images_server[TEXT_MORE_SERVER], NULL, screen, &rect);
+	
+	SDL_GET_SIZE (text_images_server[TEXT_CLICK_HERE], rect.w, rect.h);
+	rect.x = 620 + (140 - rect.w) / 2;
+	rect.y = 320;
+	SDL_COMP_BLIT (text_images_server[TEXT_CLICK_HERE], NULL, screen, &rect);
+	
+	/* Dibujar la otra info */
+	rect.x = 276 + 20;
+	rect.y = 448;
+	SDL_GET_SIZE (images_server[IMG_STAT_MINI_ONLINE], rect.w, rect.h);
+	SDL_COMP_BLIT (images_server[IMG_STAT_MINI_ONLINE], NULL, screen, &rect);
+	
+	rect.x = 292 + 20;
+	rect.y = 450;
+	SDL_GET_SIZE (text_images_server[TEXT_AMOUNT], rect.w, rect.h);
+	SDL_COMP_BLIT (text_images_server[TEXT_AMOUNT], NULL, screen, &rect);
 	
 	world_hover = -1;
 	
@@ -229,6 +252,14 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 					break;
 				case SDL_MOUSEBUTTONUP:
 					if (event.button.button != SDL_BUTTON_LEFT) break;
+					
+					map = mouse_motion_world_big (event.button.x, event.button.y);
+					
+					if (map != -1 && map < tot_rec) {
+						/* Eligió un servidor, retornar la información */
+						selected_server = &server_list[recommended[map]];
+						done = 1;
+					}
 					break;
 			}
 		}
@@ -245,17 +276,19 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	
 	/* Cerrar la tipografía, ya no la vamos a usar */
 	TTF_CloseFont (ttf16);
+	
+	return selected_server;
 }
 
 void setup_select_server (SDL_Renderer *renderer) {
-	SDL_Surface * image;
+	SDL_Surface * image, *image2;
 	SDL_Texture * texture;
 	
 	int g, h;
 	char buffer_file[8192];
 	TTF_Font *ttf20, *ttf14;
 	
-	SDL_Color azul = {0, 0x33, 0x66}, blanco = {0xFF, 0xFF, 0xFF};
+	SDL_Color azul = {0, 0x33, 0x66}, blanco = {0xFF, 0xFF, 0xFF}, cafe = {0x54, 0x3A, 0x01};
 	
 	for (g = 0; g < NUM_SERVER_IMAGES; g++) {
 		sprintf (buffer_file, "%s%s", systemdata_path, images_server_names[g]);
@@ -272,6 +305,7 @@ void setup_select_server (SDL_Renderer *renderer) {
 		}
 #if SDL_MAJOR_VERSION == 2
 		texture = SDL_CreateTextureFromSurface (renderer, image);
+		SDL_FreeSurface (image);
 #else
 		texture = image;
 #endif
@@ -299,8 +333,92 @@ void setup_select_server (SDL_Renderer *renderer) {
 	}
 	
 	/* Pre-renderizar los textos */
+	TTF_SetFontOutline (ttf20, 3);
+	image = TTF_RenderUTF8_Blended (ttf20, gettext (text_server_strings [TEXT_SERVER_RECOMMEND]), azul);
+	
+	TTF_SetFontOutline (ttf20, 0);
+	image2 = TTF_RenderUTF8_Blended (ttf20, gettext (text_server_strings [TEXT_SERVER_RECOMMEND]), blanco);
+	
+	SDL_Rect rect;
+	rect.x = 3;
+	rect.y = 3;
+	rect.w = image2->w;
+	rect.h = image2->h;
+	SDL_BlitSurface (image2, NULL, image, &rect);
+	
+	SDL_FreeSurface (image2);
+#if SDL_MAJOR_VERSION == 2
+	texture = SDL_CreateTextureFromSurface (renderer, image);
+	SDL_FreeSurface (image);
+#else
+	texture = image;
+#endif
+	
+	text_images_server[TEXT_SERVER_RECOMMEND] = texture;
+	
+	/* El texto de "Más servidores" */
+	image = draw_text (ttf20, gettext (text_server_strings [TEXT_MORE_SERVER]), cafe, ALIGN_CENTER, 0);
+	
+	image2 = rotozoomSurface (image, 9.0, 1);
+	SDL_FreeSurface (image);
+#if SDL_MAJOR_VERSION == 2
+	texture = SDL_CreateTextureFromSurface (renderer, image2);
+	SDL_FreeSurface (image2);
+#else
+	texture = image2;
+#endif
+	text_images_server[TEXT_MORE_SERVER] = texture;
 	
 	TTF_CloseFont (ttf20);
+	
+	/* Abrir la tipografía en tamaño 14 */
+	sprintf (buffer_file, "%s%s", systemdata_path, "server/burbanksb.ttf");
+	ttf14 = TTF_OpenFont (buffer_file, 14);
+	if (!ttf14) {
+		fprintf (stderr,
+			_("Failed to load font file 'Burbank Small Bold'\n"
+			"The error returned by SDL is:\n"
+			"%s\n"), TTF_GetError ());
+		SDL_Quit ();
+		exit (1);
+	}
+	
+	/* Pre renderizar los textos */
+	image = TTF_RenderUTF8_Blended (ttf14, gettext (text_server_strings [TEXT_AMOUNT]), blanco);
+#if SDL_MAJOR_VERSION == 2
+	texture = SDL_CreateTextureFromSurface (renderer, image);
+	SDL_FreeSurface (image);
+#else
+	texture = image;
+#endif
+	text_images_server[TEXT_AMOUNT] = texture;
+	TTF_CloseFont (ttf14);
+	
+	sprintf (buffer_file, "%s%s", systemdata_path, "server/comicrazy.ttf");
+	ttf14 = TTF_OpenFont (buffer_file, 14);
+	
+	if (!ttf14) {
+		fprintf (stderr,
+			_("Failed to load font file 'Comic Crazy'\n"
+			"The error returned by SDL is:\n"
+			"%s\n"), TTF_GetError ());
+		SDL_Quit ();
+		exit (1);
+	}
+	
+	/* El texto de "Click Here" */
+	image = TTF_RenderUTF8_Blended (ttf14, gettext (text_server_strings [TEXT_CLICK_HERE]), cafe);
+	image2 = rotozoomSurface (image, 9.0, 1);
+	SDL_FreeSurface (image);
+#if SDL_MAJOR_VERSION == 2
+	texture = SDL_CreateTextureFromSurface (renderer, image2);
+	SDL_FreeSurface (image2);
+#else
+	texture = image2;
+#endif
+	text_images_server[TEXT_CLICK_HERE] = texture;
+	
+	TTF_CloseFont (ttf14);
 	
 	sprintf (buffer_file, "%s%s", systemdata_path, "server/burbanksb.ttf");
 	ttf16 = TTF_OpenFont (buffer_file, 24);
@@ -313,8 +431,19 @@ void setup_select_server (SDL_Renderer *renderer) {
 		SDL_Quit ();
 		exit (1);
 	}
+}
+
+void unload_select_server (void) {
+	int g;
 	
+	/* Liberar todos los recursos usados */
+	for (g = 0; g < NUM_SERVER_IMAGES; g++) {
+		SDL_DestroyTexture (images_server[g]);
+	}
 	
+	for (g = 0; g < NUM_SERVER_TEXTS; g++) {
+		SDL_DestroyTexture (text_images_server[g]);
+	}
 }
 
 static int mouse_motion_world_big (int x, int y) {
