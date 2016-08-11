@@ -1,5 +1,7 @@
 gamedatadir = $(pkgdatadir)/data
 
+SUBDIRS = server
+
 nobase_dist_gamedata_DATA = images/icon.png \
 	images/background_1.png \
 	images/background_2.png \

@@ -30,9 +30,9 @@
 	H = I->h; \
 	} while (0)
 #define SDL_COMP_BLIT(IMG, SRCRECT, DEST, DSTRECT) SDL_BlitSurface (IMG, SRCRECT, DEST, DSTRECT);
-#define SDL_Renderer SDL_Surface
 #define SDL_Texture SDL_Surface
 #define SDL_RendererPresent SDL_UpdateSurface
+#define SDL_DestroyTexture SDL_FreeSurface
 #else
 #define SDL_GET_SIZE(I, W, H) SDL_QueryTexture (I, NULL, NULL, &W, &H)
 #define SDL_COMP_BLIT(IMG, SRCRECT, DEST, DSTRECT) SDL_RenderCopy (DEST, IMG, SRCRECT, DSTRECT);
@@ -49,6 +49,8 @@
 #include "select_server.h"
 #include "path.h"
 
+#define FPS (1000/24)
+
 enum {
 	IMG_SERVER_BACKGROUND,
 	
@@ -57,20 +59,22 @@ enum {
 	IMG_WORLD_BIG_STAT_ON,
 	IMG_WORLD_BIG_STAT_OFF,
 	
+	IMG_MORE_SERVER,
 	IMG_STAT_MINI_ONLINE,
 	
 	NUM_SERVER_IMAGES
 };
 
 static const char *images_server_names[NUM_SERVER_IMAGES] = {
-	"images/server/background.png",
+	"server/images/background.png",
 	
-	"images/server/world_big.png",
-	"images/server/world_big_hover.png",
-	"images/server/world_big_pop_on.png",
-	"images/server/world_big_pop_off.png",
+	"server/images/world_big.png",
+	"server/images/world_big_hover.png",
+	"server/images/world_big_pop_on.png",
+	"server/images/world_big_pop_off.png",
 	
-	"images/server/online_mini.png",
+	"server/images/more_server.png",
+	"server/images/online_mini.png"
 };
 
 enum {
@@ -97,6 +101,51 @@ static SDL_Texture * images_server [NUM_SERVER_IMAGES];
 static SDL_Texture * text_images_server [NUM_SERVER_TEXTS];
 static TTF_Font *ttf16;
 
+/* Prototipos locales */
+static int mouse_motion_world_big (int x, int y);
+
+static void draw_world_big (SDL_Renderer *screen, SDL_Texture *name, ServerInfo *world, int pos, int hover) {
+	SDL_Rect rect;
+	int g, h, i;
+	
+	if (hover) {
+		i = IMG_WORLD_BIG_HOVER;
+	} else {
+		i = IMG_WORLD_BIG;
+	}
+	rect.x = 207;
+	rect.y = 91 + (51 * pos);
+	SDL_GET_SIZE (images_server[i], rect.w, rect.h);
+	SDL_COMP_BLIT (images_server[i], NULL, screen, &rect);
+
+	/* Escribir los nombres en pantalla */
+	rect.x = 207 + 29;
+	rect.y = 104 + (51 * pos);
+	SDL_GET_SIZE (name, rect.w, rect.h);
+	SDL_COMP_BLIT (name, NULL, screen, &rect);
+
+	/* El primer stat siempre prendido */
+	rect.x = 207 + 247;
+	rect.y = 101 + (51 * pos);
+	SDL_GET_SIZE (images_server[IMG_WORLD_BIG_STAT_ON], rect.w, rect.h);
+	SDL_COMP_BLIT (images_server[IMG_WORLD_BIG_STAT_ON], NULL, screen, &rect);
+
+	h = world->population * 100 / world->max_population;
+	h = (h + 5) / 20;
+	for (g = 0; g < 4; g++) {
+		if (g + 2 <= h) {
+			i = IMG_WORLD_BIG_STAT_ON;
+		} else {
+			i = IMG_WORLD_BIG_STAT_OFF;
+		}
+	
+		rect.x = 207 + 247 + 24 + (24 * g);
+		rect.y = 101 + (51 * pos);
+		SDL_GET_SIZE (images_server[i], rect.w, rect.h);
+		SDL_COMP_BLIT (images_server[i], NULL, screen, &rect);
+	}
+}
+
 /* Nuestra función principal */
 ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int servers, int recommended[5]) {
 	int done = 0;
@@ -105,8 +154,9 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	SDL_Rect rect;
 	SDL_Rect update_rects[6];
 	int num_rects;
-	int tot_rec, g;
-	int world_hover;
+	int tot_rec, g, h, i, j;
+	int world_hover, map;
+	ServerInfo *selected_server = NULL;
 	
 	SDL_Surface *image;
 	SDL_Texture *rec_names[5];
@@ -127,7 +177,7 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 		image = TTF_RenderUTF8_Blended (ttf16, server_list[recommended[g]].name, blanco);
 		
 #if SDL_MAJOR_VERSION == 2
-		rec_names[g] = SDL_CreateTextureFromSurface (screen, images[g]);
+		rec_names[g] = SDL_CreateTextureFromSurface (screen, image);
 		SDL_FreeSurface (image);
 #else
 		rec_names[g] = image;
@@ -136,8 +186,8 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	
 	rect.x = 0;
 	rect.y = 0;
-	SDL_GET_SIZE (images[IMG_SERVER_BACKGROUND], rect.w, rect.h);
-	SDL_COMP_BLIT (images[IMG_SERVER_BACKGROUND], NULL, screen, &rect);
+	SDL_GET_SIZE (images_server[IMG_SERVER_BACKGROUND], rect.w, rect.h);
+	SDL_COMP_BLIT (images_server[IMG_SERVER_BACKGROUND], NULL, screen, &rect);
 	
 	/* Copiar el texto de "servidores recomendados" */
 	SDL_GET_SIZE (text_images_server[TEXT_SERVER_RECOMMEND], rect.w, rect.h);
@@ -146,21 +196,58 @@ ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int s
 	SDL_COMP_BLIT (text_images_server[TEXT_SERVER_RECOMMEND], NULL, screen, &rect);
 	
 	for (g = 0; g < tot_rec; g++) {
-		rect.x = 187;
-		rect.y = 91 + (51 * g);
-		SDL_GET_SIZE (images[IMG_WORLD_BIG], rect.w, rect.h);
-		SDL_COMP_BLIT (images[IMG_WORLD_BIG], NULL, screen, &rect);
-		
-		/* Escribir los nombres en pantalla */
-		rect.x = 29;
-		rect.y = 94 + (51 * g);
-		SDL_GET_SIZE (rec_names[g], rect.w, rect.h);
-		SDL_COMP_BLIT (rec_names[g], NULL, screen, &rect);
+		draw_world_big (screen, rec_names[g], &server_list[recommended[g]], g, 0);
 	}
 	
+	/* Dibujar la nota */
+	rect.x = 610;
+	rect.y = 253;
+	SDL_GET_SIZE (images_server[IMG_MORE_SERVER], rect.w, rect.h);
+	SDL_COMP_BLIT (images_server[IMG_MORE_SERVER], NULL, screen, &rect);
+	
+	world_hover = -1;
+	
+	SDL_RenderPresent (screen);
+	
+	do {
+		last_time = SDL_GetTicks ();
+		
+		while (SDL_PollEvent(&event) > 0) {
+			switch (event.type) {
+				case SDL_QUIT:
+					/* Vamos a cerrar la aplicación */
+					done = 1;
+					break;
+				case SDL_MOUSEMOTION:
+					map = mouse_motion_world_big (event.motion.x, event.motion.y);
+					
+					if (world_hover != map && map < tot_rec) {
+						if (world_hover != -1) draw_world_big (screen, rec_names[world_hover], &server_list[recommended[world_hover]], world_hover, 0);
+						if (map != -1) draw_world_big (screen, rec_names[map], &server_list[recommended[map]], map, 1);
+						world_hover = map;
+					}
+					break;
+				case SDL_MOUSEBUTTONUP:
+					if (event.button.button != SDL_BUTTON_LEFT) break;
+					break;
+			}
+		}
+		
+		SDL_RenderPresent (screen);
+		
+		now_time = SDL_GetTicks ();
+		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
+	} while (!done);
+	
+	for (g = 0; g < tot_rec; g++) {
+		SDL_DestroyTexture (rec_names[g]);
+	}
+	
+	/* Cerrar la tipografía, ya no la vamos a usar */
+	TTF_CloseFont (ttf16);
 }
 
-void setup_select_server (void) {
+void setup_select_server (SDL_Renderer *renderer) {
 	SDL_Surface * image;
 	SDL_Texture * texture;
 	
@@ -188,7 +275,7 @@ void setup_select_server (void) {
 #else
 		texture = image;
 #endif
-		images[g] = texture;
+		images_server[g] = texture;
 	}
 	
 	if (TTF_Init () < 0) {
@@ -199,7 +286,7 @@ void setup_select_server (void) {
 		exit (1);
 	}
 	
-	sprintf (buffer_file, "%s%s", systemdata_path, "comic crazy.ttf");
+	sprintf (buffer_file, "%s%s", systemdata_path, "server/comicrazy.ttf");
 	ttf20 = TTF_OpenFont (buffer_file, 20);
 	
 	if (!ttf20) {
@@ -215,8 +302,8 @@ void setup_select_server (void) {
 	
 	TTF_CloseFont (ttf20);
 	
-	sprintf (buffer_file, "%s%s", systemdata_path, "burbanksb.ttf");
-	ttf16 = TTF_OpenFont (buffer_file, 16);
+	sprintf (buffer_file, "%s%s", systemdata_path, "server/burbanksb.ttf");
+	ttf16 = TTF_OpenFont (buffer_file, 24);
 	
 	if (!ttf16) {
 		fprintf (stderr,
@@ -229,3 +316,15 @@ void setup_select_server (void) {
 	
 	
 }
+
+static int mouse_motion_world_big (int x, int y) {
+	if (x >= 207 && x < 207 + 388 &&
+	    y >= 91 && y < 91 + 255) {
+		if ((y - 91) % 51 < 47) {
+			return ((y - 91) / 51);
+		}
+	}
+	
+	return -1;
+}
+

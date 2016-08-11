@@ -8,7 +8,8 @@ cjsnow_SOURCES = snow.c path.c path.h \
 	netplay.h netplay.c \
 	ninja.c ninja.h \
 	enemy.c enemy.h \
-	cp-button.c cp-button.h
+	cp-button.c cp-button.h \
+	select_server.c select_server.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h \
 	server_ninja.c server_ninja.h \
 	server_timer.c server_timer.h

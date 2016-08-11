@@ -21,6 +21,12 @@
 #ifndef __SELECT_SERVER_H__
 #define __SELECT_SERVER_H__
 
+#include <SDL.h>
+
+#if SDL_MAJOR_VERSION == 1
+#define SDL_Renderer SDL_Surface
+#endif
+
 typedef struct {
 	char name[60];
 	char host[256];
@@ -29,7 +35,8 @@ typedef struct {
 	int max_population;
 } ServerInfo;
 
-void setup_select_server (void);
+ServerInfo * select_server (SDL_Renderer *screen, ServerInfo *server_list, int servers, int recommended[5]);
+void setup_select_server (SDL_Renderer *renderer);
 
 #endif /* __SELECT_SERVER_H__ */
 

@@ -45,6 +45,8 @@
 #include "netplay.h"
 #include "cp-button.h"
 
+#include "select_server.h"
+
 #define FPS (1000/30)
 
 /* Enumerar las imágenes */
@@ -553,6 +555,23 @@ int main (int argc, char *argv[]) {
 	
 	nick_default = 1;
 	
+	setup_select_server (renderer);
+	
+	ServerInfo servers[7] = {
+		{.name = "Nombre 1", .host = "host1.gatuno.com", .population = 21, .max_population = 50},
+		{.name = "Miles", .host = "miles.gatuno.mx", .population = 10, .max_population = 50},
+		{.name = "Nombre 3", .host = "alanturing.cucei.udg.mx", .population = 0, .max_population = 50},
+		{.name = "Gatuno", .host = "gatuno.gatuno.mx", .population = 30, .max_population = 50},
+		{.name = "Doggy", .host = "doggy.dogpatch.press", .population = 16, .max_population = 50},
+		{.name = "Info", .host = "test.info.mx", .population = 40, .max_population = 50},
+		{.name = "Uno mas", .host = "devuan.org", .population = 50, .max_population = 50},
+	};
+	
+	ServerInfo *selected;
+	int recommend[5] = {1, 3, 4, -1, -1};
+	selected = select_server (renderer, servers, 7, recommend);
+	
+	return 0;
 	if (setup_netplay ("127.0.0.1", 3301) < 0) {
 		printf ("Falló la inicializar la red\n");
 		SDL_Quit ();
