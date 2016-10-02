@@ -24,6 +24,7 @@
 typedef struct {
 	int x, y;
 	int tipo;
+	int vida;
 	int next_x, next_y;
 	int attack_x, attack_y;
 } ServerNinja;
@@ -41,6 +42,8 @@ typedef struct {
 	int x, y;
 	int tipo;
 	int vida;
+	int old_x, old_y;
+	int attack_x, attack_y;
 } ServerEnemy;
 
 ServerEnemy *create_server_enemy (int x, int y, int tipo);

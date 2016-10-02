@@ -732,6 +732,8 @@ struct _Enemy {
 	int tipo;
 	int estado;
 	int x_real, y_real;
+	int next_x_real, next_y_real;
+	int sum_x, sum_y;
 	int vida;
 	int max_life;
 	
@@ -770,6 +772,29 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	obj->damage = 0;
 	obj->delay = 0;
 	return obj;
+}
+
+void enemy_move (Enemy *enemy, int x, int y) {
+	enemy->frame = 0;
+	//enemy->estado = ENEMY_MOVE;
+	
+	if (enemy->tipo == ENEMY_SLY) {
+		enemy->estado = SLY_MOVE;
+	} else if (enemy->tipo == ENEMY_SCRAP) {
+		enemy->estado = SCRAP_MOVE;
+	} else if (enemy->tipo == ENEMY_TANK) {
+		enemy->estado = TANK_MOVE;
+	}
+	
+	enemy->x = x;
+	enemy->y = y;
+	
+	/* Calcular las siguientes coordenadas reales */
+	enemy->next_x_real = MAP_X + (x * 70) + 35;
+	enemy->next_y_real = MAP_Y + (y * 70) + 70;
+	
+	enemy->sum_x = (enemy->next_x_real - enemy->x_real) / 35;
+	enemy->sum_y = (enemy->next_y_real - enemy->y_real) / 35;
 }
 
 void draw_enemy (Enemy *enemy) {
@@ -831,6 +856,11 @@ void draw_enemy (Enemy *enemy) {
 	rect2.y = animation[calc].orig_y;
 	rect.w = rect2.w = animation[calc].w;
 	rect.h = rect2.h = animation[calc].h;
+	
+	if (enemy->estado == SLY_MOVE || enemy->estado == SCRAP_MOVE || enemy->estado == TANK_MOVE) {
+		enemy->x_real += enemy->sum_x;
+		enemy->y_real += enemy->sum_y;
+	}
 	
 	rect.x = enemy->x_real - enemy_offsets_int[est][0] + animation[calc].dest_x;
 	rect.y = enemy->y_real - enemy_offsets_int[est][1] + animation[calc].dest_y;
@@ -898,6 +928,20 @@ void draw_enemy (Enemy *enemy) {
 			enemy->estado = SCRAP_IDLE;
 		} else if (est == TANK_HIT) {
 			enemy->estado = TANK_IDLE;
+		}
+	}
+	
+	if (enemy->estado == SLY_MOVE || enemy->estado == SCRAP_MOVE || enemy->estado == TANK_MOVE) {
+		if (enemy->x_real == enemy->next_x_real && enemy->y_real == enemy->next_y_real) {
+			/* Llegamos al destino */
+			if (enemy->estado == SLY_MOVE) {
+				enemy->estado = SLY_IDLE;
+			} else if (enemy->estado == SCRAP_MOVE) {
+				enemy->estado = SCRAP_IDLE;
+			} else if (enemy->estado == TANK_MOVE) {
+				enemy->estado = TANK_IDLE;
+			}
+			enemy->frame = 0;
 		}
 	}
 }

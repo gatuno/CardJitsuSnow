@@ -14,10 +14,12 @@ cjsnow_SOURCES = snow.c path.c path.h \
 	rotar.c rotar.h
 servidor_SOURCES = server.c netplay.c netplay.h snow.h \
 	server_ninja.c server_ninja.h \
-	server_timer.c server_timer.h
+	server_timer.c server_timer.h \
+	server_ia.c server_ia.h
 stand_alone_SOURCES = server.c netplay.c netplay.h snow.h \
 	server_ninja.c server_ninja.h \
-	server_timer.c server_timer.h
+	server_timer.c server_timer.h \
+	server_ia.c server_ia.h
 
 # El servidor sólo funciona en Linux
 if LINUX

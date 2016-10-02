@@ -318,40 +318,71 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		/* Validación por partes */
 		if (len < 5) return -1;
 		
-		/* Primero, la cantidad de movimientos */
-		msg->server.movs = buffer[4];
+		/* Primero, la cantidad de movimientos de los ninjas */
+		msg->server.ninja_movs = buffer[4];
 		
-		if (msg->server.movs > 3 || msg->server.movs < 0) {
+		if (msg->server.ninja_movs > 3 || msg->server.ninja_movs < 0) {
 			printf ("Cantidad de movimientos inválidos\n");
 			return -1;
 		}
 		
-		if (len < 5 + (3 * msg->server.movs)) return -1;
-		for (g = 0; g < msg->server.movs; g++) {
-			msg->server.movs_coords[g].object = buffer[5 + (g * 3)];
-			msg->server.movs_coords[g].x = buffer[6 + (g * 3)];
-			msg->server.movs_coords[g].y = buffer[7 + (g * 3)];
+		if (len < 5 + (3 * msg->server.ninja_movs)) return -1;
+		for (g = 0; g < msg->server.ninja_movs; g++) {
+			msg->server.ninja_movs_coords[g].object = buffer[5 + (g * 3)];
+			msg->server.ninja_movs_coords[g].x = buffer[6 + (g * 3)];
+			msg->server.ninja_movs_coords[g].y = buffer[7 + (g * 3)];
 			
 			/* TODO: Validar que estos datos sean válidos */
 		}
 		
-		pos = 5 + (3 * msg->server.movs);
+		pos = 5 + (3 * msg->server.ninja_movs);
 		
 		if (len < pos + 1) return -1;
 		
-		msg->server.attacks = buffer[pos];
+		msg->server.ninja_attacks = buffer[pos];
 		pos++;
 		
-		if (len < pos + (3 * msg->server.attacks)) return -1;
-		for (g = 0; g < msg->server.attacks; g++) {
-			msg->server.attack_coords[g].object = buffer[pos];
-			msg->server.attack_coords[g].x = buffer[pos + 1];
-			msg->server.attack_coords[g].y = buffer[pos + 2];
+		if (len < pos + (3 * msg->server.ninja_attacks)) return -1;
+		for (g = 0; g < msg->server.ninja_attacks; g++) {
+			msg->server.ninja_attack_coords[g].object = buffer[pos];
+			msg->server.ninja_attack_coords[g].x = buffer[pos + 1];
+			msg->server.ninja_attack_coords[g].y = buffer[pos + 2];
 			
 			/* TODO: Validar que estos datos sean válidos */
 			pos = pos + 3;
 		}
 		
+		/* La cantidad de movimientos por parte de los enemigos */
+		if (len < pos + 1) return -1;
+		msg->server.enemy_movs = buffer[pos];
+		pos++;
+		
+		if (len < pos + (3 * msg->server.enemy_movs)) return -1;
+		for (g = 0; g < msg->server.enemy_movs; g++) {
+			msg->server.enemy_movs_coords[g].object = buffer[pos];
+			msg->server.enemy_movs_coords[g].x = buffer[pos + 1];
+			msg->server.enemy_movs_coords[g].y = buffer[pos + 2];
+			
+			/* TODO: Validar que estos datos sean válidos */
+			pos = pos + 3;
+		}
+		
+		/* La cantidad de ataques por parte de los enemigos */
+		if (len < pos + 1) return -1;
+		msg->server.enemy_attacks = buffer[pos];
+		pos++;
+		
+		if (len < pos + (3 * msg->server.enemy_attacks)) return -1;
+		for (g = 0; g < msg->server.enemy_attacks; g++) {
+			msg->server.enemy_attack_coords[g].object = buffer[pos];
+			msg->server.enemy_attack_coords[g].x = buffer[pos + 1];
+			msg->server.enemy_attack_coords[g].y = buffer[pos + 2];
+			
+			/* TODO: Validar que estos datos sean válidos */
+			pos = pos + 3;
+		}
+		
+		/* Leer el round */
 		if (len < pos + 1) return -1;
 		msg->server.round = buffer[pos];
 		pos++;

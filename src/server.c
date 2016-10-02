@@ -4,18 +4,18 @@
  *
  * Copyright (C) 2016 - Félix Arreola Rodríguez
  *
- * Blokus is free software; you can redistribute it and/or modify
+ * Card Jitsu Snow is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Blokus is distributed in the hope that it will be useful,
+ * Card Jitsu Snow is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Blokus. If not, see <http://www.gnu.org/licenses/>.
+ * along with Card Jitsu Snow. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -74,9 +74,14 @@ typedef struct SnowFight {
 	int ready[3];
 	int round;
 	
-	ServerNinja *water;
-	ServerNinja *fire;
-	ServerNinja *snow;
+	union {
+		struct {
+			ServerNinja *water;
+			ServerNinja *fire;
+			ServerNinja *snow;
+		};
+		ServerNinja *ninjas[3];
+	};
 	
 	int enemys;
 	ServerEnemy *enemigos[4];
@@ -253,7 +258,7 @@ void do_writes (int fd) {
 		write (pos->fd, pos->buffer, pos->size);
 		
 		if (pos->close) {
-			printf ("Y después se solicitó cerrar\n");
+			//printf ("Y después se solicitó cerrar\n");
 			eliminar_a_fd (pos->fd);
 		}
 		*prev = pos->next;
@@ -282,7 +287,7 @@ void cancel_writes (int fd) {
 			
 			free (pos);
 			pos = n;
-			printf ("Se canceló una escritura pendiente para el fd [%i]\n", fd);
+			//printf ("Se canceló una escritura pendiente para el fd [%i]\n", fd);
 		} else {
 			prev = &(pos->next);
 			pos = pos->next;
@@ -332,7 +337,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	element = msg->element;
 	
 	if (element < NINJA_FIRE || element > NINJA_WATER) {
-		printf ("El elemento que quiere hacer join es inválido\n");
+		printf ("Error. El elemento que quiere hacer join es inválido\n");
 		return NULL;
 	}
 	
@@ -377,7 +382,7 @@ SnowFight *crear_tabla (int fd, NetworkMessage *msg) {
 	
 	agregar_write (fd, buffer_send, 5, 0);
 	
-	printf ("Se creó una tabla «%i» y se le envió ACCEPTED al jugador [%i]\n", new->id, fd);
+	//printf ("Se creó una tabla «%i» y se le envió ACCEPTED al jugador [%i]\n", new->id, fd);
 	
 #ifdef STAND_ALONE
 	start_tabla (new);
@@ -453,7 +458,7 @@ void join_tabla (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		}
 	}
 	
-	printf ("El cliente [%i] se unió a la tabla «%i» y se le envió ACCEPTED.\n", fd, tabla->id);
+	//printf ("El cliente [%i] se unió a la tabla «%i» y se le envió ACCEPTED.\n", fd, tabla->id);
 	
 	if (tabla->fds[0] != -1 && tabla->fds[1] != -1 && tabla->fds[2] != -1) {
 		start_tabla (tabla);
@@ -467,10 +472,12 @@ void generar_enemigos (SnowFight *tabla, int bonus) {
 	if (bonus) {
 		tabla->enemys = 4;
 	}
-	printf ("Generando enemigos para la tabla «%i». Total = %i\n", tabla->id, tabla->enemys);
+	// FIXME: tabla->enemys = 3;
+	//printf ("Generando enemigos para la tabla «%i». Total = %i\n", tabla->id, tabla->enemys);
 	for (g = 0; g < tabla->enemys; g++) {
+		/* I determina el tipo de enemigo */
 		i = RANDOM(3);
-		
+		// FIXME: i = 2;
 		do {
 			h = RANDOM(5);
 			j = 8;
@@ -480,7 +487,7 @@ void generar_enemigos (SnowFight *tabla, int bonus) {
 			}
 		} while (tabla->escenario[h][j] != NONE);
 		
-		printf ("Coordenadas para un enemigo: %i, %i\n");
+		//printf ("Coordenadas para un enemigo: %i, %i\n");
 		tabla->escenario[h][j] = i + ENEMY_SLY;
 		
 		tabla->enemigos[g] = create_server_enemy (j, h, i + ENEMY_SLY);
@@ -589,10 +596,10 @@ void start_tabla (SnowFight *tabla) {
 	buffer_send[6] = 4 + ninjas + tabla->enemys; /* 4 rocas + 3 ninjas + 3 enemigos */
 	
 	r = 7;
-	/* Colocar coordenadas iniciales de los objetos */
+	/* Colocar coordenadas iniciales de los objetos, excepto los enemigos iniciales */
 	for (g = 0; g < 5; g++) {
 		for (h = 0; h < 9; h++) {
-			if (tabla->escenario[g][h] != NONE) {
+			if (tabla->escenario[g][h] != NONE && tabla->escenario[g][h] < ENEMY_SLY) {
 				buffer_send[r] = tabla->escenario[g][h];
 				buffer_send[r + 1] = h;
 				buffer_send[r + 2] = g;
@@ -602,12 +609,23 @@ void start_tabla (SnowFight *tabla) {
 		}
 	}
 	
+	/* Mandar los enemigos en el mismo orden que están en el arreglo */
+	for (g = 0; g < 4; g++) {
+		if (tabla->enemigos[g] == NULL) continue;
+		buffer_send[r] = tabla->enemigos[g]->tipo;
+		buffer_send[r + 1] = tabla->enemigos[g]->x;
+		buffer_send[r + 2] = tabla->enemigos[g]->y;
+		
+		r = r + 3;
+	}
+	
 	/* Enviar el mensaje de start */
 	for (g = 0; g < 3; g++) {
 		if (tabla->fds[g] != -1) {
 			agregar_write (tabla->fds[g], buffer_send, r, 0);
 		}
 	}
+	
 	tabla->running = TRUE;
 	tabla->estado = WAITING_CLIENTS;
 	tabla->clientes = ninjas;
@@ -644,13 +662,13 @@ void send_ask_actions (SnowFight *tabla) {
 	
 	/* Instalar un timer para forzar a los clientes a contestar en 10 segundos */
 	agregar_timer (tabla, (Callback) calculate_actions, 11, NULL);
-	printf ("La tabla «%i» instaló un timer para ser llamado en 11 segundos\n", tabla->id);
+	//printf ("La tabla «%i» instaló un timer para ser llamado en 11 segundos\n", tabla->id);
 }
 
 void calculate_actions (SnowFight *tabla) {
 	char buffer_send[128];
-	int pos, pos_attack, pos_round;
-	int g, s;
+	int pos, pos_attack, pos_round, pos_ene_movs, pos_ene_attack;
+	int g, s, h;
 	int i, j;
 	
 	printf ("Calculando tabla «%i»\n", tabla->id);
@@ -722,7 +740,7 @@ void calculate_actions (SnowFight *tabla) {
 	/* Enviar los ataques */
 	if (tabla->water != NULL) {
 		if (tabla->water->attack_x != -1 && tabla->water->attack_y != -1) {
-			printf ("«%i» El ninja de agua va a atacar (%i, %i)\n", tabla->id, tabla->water->attack_x, tabla->water->attack_y);
+			//printf ("«%i» El ninja de agua va a atacar (%i, %i)\n", tabla->id, tabla->water->attack_x, tabla->water->attack_y);
 			/* Ataque del ninja de agua */
 			i = tabla->water->attack_x;
 			j = tabla->water->attack_y;
@@ -743,7 +761,7 @@ void calculate_actions (SnowFight *tabla) {
 	
 	if (tabla->fire != NULL) {
 		if (tabla->fire->attack_x != -1 && tabla->fire->attack_x != -1) {
-			printf ("«%i» El ninja de fuego va a atacar (%i, %i)\n", tabla->id, tabla->fire->attack_x, tabla->fire->attack_y);
+			//printf ("«%i» El ninja de fuego va a atacar (%i, %i)\n", tabla->id, tabla->fire->attack_x, tabla->fire->attack_y);
 			/* Ataque del ninja de fuego */
 			i = tabla->fire->attack_x;
 			j = tabla->fire->attack_y;
@@ -764,7 +782,7 @@ void calculate_actions (SnowFight *tabla) {
 	
 	if (tabla->snow != NULL) {
 		if (tabla->snow->attack_x != -1 && tabla->snow->attack_x != -1) {
-			printf ("«%i» El ninja de nieve va a atacar (%i, %i)\n", tabla->id, tabla->snow->attack_x, tabla->snow->attack_y);
+			//printf ("«%i» El ninja de nieve va a atacar (%i, %i)\n", tabla->id, tabla->snow->attack_x, tabla->snow->attack_y);
 			/* Ataque del ninja de nieve */
 			i = tabla->snow->attack_x;
 			j = tabla->snow->attack_y;
@@ -790,7 +808,7 @@ void calculate_actions (SnowFight *tabla) {
 		if (tabla->enemigos[g] != NULL) {
 			/* Revisar si el enemigo ya está muerto */
 			if (tabla->enemigos[g]->vida <= 0) {
-				printf ("«%i» Un enemigo se murió\n", tabla->id);
+				//printf ("«%i» Un enemigo se murió\n", tabla->id);
 				i = tabla->enemigos[g]->x;
 				j = tabla->enemigos[g]->y;
 				tabla->escenario[j][i] = NONE;
@@ -809,14 +827,70 @@ void calculate_actions (SnowFight *tabla) {
 	 * 64 = Fin del juego
 	 */
 	
-	pos_round = pos++;
-	
 	i = 0;
 	for (g = 0; g < 4; g++) {
 		if (tabla->enemigos[g] != NULL) {
 			i++;
 		}
 	}
+	
+	if (i != 0) {
+		/* Preparar los enemigos */
+		for (g = 0; g < 4; g++) {
+			if (tabla->enemigos[g] == NULL) continue;
+			tabla->enemigos[g]->old_x = tabla->enemigos[g]->x;
+			tabla->enemigos[g]->old_y = tabla->enemigos[g]->y;
+			tabla->enemigos[g]->attack_x = tabla->enemigos[g]->attack_y = -1;
+		}
+		
+		/* Ejecutar el cálculo */
+		calcular_ia (tabla->escenario, tabla->ninjas, tabla->enemigos);
+		
+		pos_ene_movs = pos++;
+		s = 0;
+		/* Por cada movimiento, mandar los bytes correspondientes */
+		for (g = 0; g < 4; g++) {
+			if (tabla->enemigos[g] == NULL) continue;
+			if (tabla->enemigos[g]->old_x != tabla->enemigos[g]->x ||
+			    tabla->enemigos[g]->old_y != tabla->enemigos[g]->y) {
+				
+				buffer_send[pos] = ENEMY_1 + g;
+				buffer_send[pos + 1] = tabla->enemigos[g]->x;
+				buffer_send[pos + 2] = tabla->enemigos[g]->y;
+				
+				pos = pos + 3;
+				s++;
+			}
+		}
+		
+		buffer_send[pos_ene_movs] = s;
+		
+		pos_ene_attack = pos++;
+		s = 0;
+		/* Por cada ataque, mandar los bytes */
+		for (g = 0; g < 4; g++) {
+			if (tabla->enemigos[g] == NULL) continue;
+			if (tabla->enemigos[g]->attack_x != -1 && tabla->enemigos[g]->attack_y != -1) {
+				
+				buffer_send[pos] = ENEMY_1 + g;
+				buffer_send[pos + 1] = tabla->enemigos[g]->attack_x;
+				buffer_send[pos + 2] = tabla->enemigos[g]->attack_y;
+				
+				pos = pos + 3;
+				
+				s++;
+			}
+		}
+		
+		buffer_send[pos_ene_attack] = s;
+		
+	} else {
+		/* No hay enemigos, mandar 0 en sus movimientos y ataques */
+		buffer_send[pos++] = 0;
+		buffer_send[pos++] = 0;
+	}
+	
+	pos_round = pos++;
 	
 	if (i == 0) {
 		/* Generar más enemigos */
@@ -1090,7 +1164,7 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		}
 	}
 	
-	printf ("Un cliente [%i] abandonó la tabla «%i».\n", fd, tabla->id);
+	//printf ("Un cliente [%i] abandonó la tabla «%i».\n", fd, tabla->id);
 	if (tabla->running == FALSE) {
 		/* Como la tabla aún no está completa, puedo eliminar un jugador */
 		/* Rellenar con la firma del protocolo SN */
@@ -1115,14 +1189,14 @@ void leave_table_by_close (SnowFight *tabla, int fd) {
 		tabla->fds[slot] = -1;
 		
 		if (tabla->fds[0] == -1 && tabla->fds[1] == -1 && tabla->fds[2] == -1) {
-			printf ("Eliminado tabla «%i» por falta de jugadores\n", tabla->id);
+			//printf ("Eliminado tabla «%i» por falta de jugadores\n", tabla->id);
 			remove_table (tabla);
 		}
 	} else {
 		/* Un ninja se perdió en media partida, mandar el mensaje de eliminar */
 		if (tabla->clientes == 1) {
 			/* Último cliente, nada que mandar */
-			printf ("Eliminando tabla «%i»\n", tabla->id);
+			//printf ("Eliminando tabla «%i»\n", tabla->id);
 			cancel_timer (tabla);
 			remove_table (tabla);
 			return;
@@ -1272,7 +1346,7 @@ int main (int argc, char *argv[]) {
 			
 			getnameinfo ((struct sockaddr *) &cliente, cliente_size, buffer_ip, sizeof (buffer_ip), buffer_port, sizeof (buffer_port), NI_NUMERICHOST | NI_NUMERICSERV);
 			
-			printf ("Nueva conexión entrante desde la IP: %s:%s => [%i]\n", buffer_ip, buffer_port, nuevo);
+			//printf ("Nueva conexión entrante desde la IP: %s:%s => [%i]\n", buffer_ip, buffer_port, nuevo);
 			agregar_a_fd (nuevo);
 		}
 		

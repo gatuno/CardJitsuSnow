@@ -31,6 +31,7 @@ int is_enemy_ready (Enemy *enemy);
 int is_enemy_dead (Enemy *enemy);
 void add_enemy_ref (Enemy *enemy);
 void enemy_hit_delayed (Enemy *enemy, int damage, int delay);
+void enemy_move (Enemy *enemy, int x, int y);
 
 #endif /* __ENEMY_H__ */
 

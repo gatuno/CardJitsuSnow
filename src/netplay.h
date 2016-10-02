@@ -45,10 +45,14 @@ typedef struct {
 } Action;
 
 typedef struct {
-	int movs;
-	Action movs_coords[3];
-	int attacks;
-	Action attack_coords[3];
+	int ninja_movs;
+	Action ninja_movs_coords[3];
+	int ninja_attacks;
+	Action ninja_attack_coords[3];
+	int enemy_movs;
+	Action enemy_movs_coords[4];
+	int enemy_attacks;
+	Action enemy_attack_coords[4];
 	int round;
 	int count_next_enemys;
 	ObjectPos next_enemys[4];

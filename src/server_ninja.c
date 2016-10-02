@@ -38,6 +38,15 @@ ServerNinja *create_server_ninja (int x, int y, int tipo) {
 	
 	obj->tipo = tipo;
 	obj->attack_x = obj->attack_y = -1;
+	
+	if (tipo == NINJA_FIRE) {
+		obj->vida = 30;
+	} else if (tipo == NINJA_SNOW) {
+		obj->vida = 25;
+	} else if (tipo == NINJA_WATER) {
+		obj->vida = 40;
+	}
+	
 	return obj;
 }
 
