@@ -92,6 +92,20 @@ static const char *enemy_images_names[NUM_ENEMY_IMAGES] = {
 	"images/enemy/tank_ko.png"
 };
 
+/* Los estados de los enemigos */
+enum {
+	ENEMY_SPAWN,
+	
+	ENEMY_IDLE,
+	ENEMY_ATTACK,
+	ENEMY_DAZE,
+	ENEMY_HIT,
+	ENEMY_MOVE,
+	ENEMY_KO,
+	
+	NUM_ENEMY_STATES
+};
+
 static SnowSprite sprite_spawn[] = {
 	{189,79,63,39,57,73,FALSE},
 	{189,120,59,37,59,75,FALSE},
@@ -727,9 +741,9 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 };
 
 struct _Enemy {
-	int frame;
-	int x, y;
 	int tipo;
+	int frame, image;
+	int x, y;
 	int estado;
 	int x_real, y_real;
 	int next_x_real, next_y_real;
@@ -757,7 +771,8 @@ Enemy *create_enemy (int x, int y, int tipo) {
 	obj->y_real = MAP_Y + (y * 70) + 70;
 	
 	obj->tipo = tipo;
-	obj->estado = SNOWMAN_SPAWN;
+	obj->estado = ENEMY_SPAWN;
+	obj->image = SNOWMAN_SPAWN;
 	obj->frame = 0;
 	
 	if (obj->tipo == ENEMY_SLY) {
@@ -776,14 +791,14 @@ Enemy *create_enemy (int x, int y, int tipo) {
 
 void enemy_move (Enemy *enemy, int x, int y) {
 	enemy->frame = 0;
-	//enemy->estado = ENEMY_MOVE;
+	enemy->estado = ENEMY_MOVE;
 	
 	if (enemy->tipo == ENEMY_SLY) {
-		enemy->estado = SLY_MOVE;
+		enemy->image = SLY_MOVE;
 	} else if (enemy->tipo == ENEMY_SCRAP) {
-		enemy->estado = SCRAP_MOVE;
+		enemy->image = SCRAP_MOVE;
 	} else if (enemy->tipo == ENEMY_TANK) {
-		enemy->estado = TANK_MOVE;
+		enemy->image = TANK_MOVE;
 	}
 	
 	enemy->x = x;
@@ -814,24 +829,19 @@ void draw_enemy (Enemy *enemy) {
 		if (enemy->vida < 0) {
 			enemy->vida = 0;
 		}
+		
+		if (enemy->ref == 0 && enemy->vida == 0) {
+			enemy->estado = ENEMY_KO;
+		} else {
+			enemy->estado = ENEMY_HIT;
+		}
+		
 		if (enemy->tipo == ENEMY_SLY) {
-			if (enemy->ref == 0 && enemy->vida == 0) {
-				enemy->estado = SLY_KO;
-			} else {
-				enemy->estado = SLY_HIT;
-			}
+			enemy->image = (enemy->estado == ENEMY_KO) ? SLY_KO : SLY_HIT;
 		} else if (enemy->tipo == ENEMY_SCRAP) {
-			if (enemy->ref == 0 && enemy->vida == 0) {
-				enemy->estado = SCRAP_KO;
-			} else {
-				enemy->estado = SCRAP_HIT;
-			}
+			enemy->image = (enemy->estado == ENEMY_KO) ? SCRAP_KO : SCRAP_HIT;
 		} else if (enemy->tipo == ENEMY_TANK) {
-			if (enemy->ref == 0 && enemy->vida == 0) {
-				enemy->estado = TANK_KO;
-			} else {
-				enemy->estado = TANK_HIT;
-			}
+			enemy->image = (enemy->estado == ENEMY_KO) ? TANK_KO : TANK_HIT;
 		}
 		
 		enemy->frame = 0;
@@ -842,14 +852,14 @@ void draw_enemy (Enemy *enemy) {
 	est = enemy->estado;
 	calc = enemy->frame / 2;
 	
-	if (est == SNOWMAN_SPAWN) {
+	if (est == ENEMY_SPAWN) {
 		animation = sprite_spawn;
 	} else if (enemy->tipo == ENEMY_SLY) {
-		animation = enemy_sly_animations[est - SLY_IDLE];
+		animation = enemy_sly_animations[est - ENEMY_IDLE];
 	} else if (enemy->tipo == ENEMY_SCRAP) {
-		animation = enemy_scrap_animations[est - SCRAP_IDLE];
+		animation = enemy_scrap_animations[est - ENEMY_IDLE];
 	} else if (enemy->tipo == ENEMY_TANK) {
-		animation = enemy_tank_animations[est - TANK_IDLE];
+		animation = enemy_tank_animations[est - ENEMY_IDLE];
 	}
 	
 	rect2.x = animation[calc].orig_x;
@@ -857,7 +867,7 @@ void draw_enemy (Enemy *enemy) {
 	rect.w = rect2.w = animation[calc].w;
 	rect.h = rect2.h = animation[calc].h;
 	
-	if (enemy->estado == SLY_MOVE || enemy->estado == SCRAP_MOVE || enemy->estado == TANK_MOVE) {
+	if (enemy->estado == ENEMY_MOVE) {
 		enemy->x_real += enemy->sum_x;
 		enemy->y_real += enemy->sum_y;
 	}
@@ -876,12 +886,12 @@ void draw_enemy (Enemy *enemy) {
 		p.x = rect.w;
 		rect.x -= rect.w;
 		
-		SDL_RenderCopyEx (renderer, enemy_images[est], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
+		SDL_RenderCopyEx (renderer, enemy_images[enemy->image], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
 	} else {
-		SDL_RenderCopy (renderer, enemy_images[est], &rect2, &rect);
+		SDL_RenderCopy (renderer, enemy_images[enemy->image], &rect2, &rect);
 	}
 	
-	if (est != SNOWMAN_SPAWN) {
+	if (est != ENEMY_SPAWN) {
 		/* Dibujar la barra de vida */
 		temp = 59 - (59 * enemy->vida) / enemy->max_life;
 		
@@ -914,32 +924,37 @@ void draw_enemy (Enemy *enemy) {
 	calc = enemy->frame / 2;
 	if (animation[calc].w == -1 && animation[calc].h == -1) {
 		enemy->frame = 0;
-		if (est == SNOWMAN_SPAWN) {
+		if (est == ENEMY_SPAWN) {
+			enemy->estado = ENEMY_IDLE;
 			if (enemy->tipo == ENEMY_SLY) {
-				enemy->estado = SLY_IDLE;
+				enemy->image = SLY_IDLE;
 			} else if (enemy->tipo == ENEMY_SCRAP) {
-				enemy->estado = SCRAP_IDLE;
+				enemy->image = SCRAP_IDLE;
 			} else if (enemy->tipo == ENEMY_TANK) {
-				enemy->estado = TANK_IDLE;
+				enemy->image = TANK_IDLE;
 			}
-		} else if (est == SLY_HIT) {
-			enemy->estado = SLY_IDLE;
-		} else if (est == SCRAP_HIT) {
-			enemy->estado = SCRAP_IDLE;
-		} else if (est == TANK_HIT) {
-			enemy->estado = TANK_IDLE;
+		} else if (est == ENEMY_HIT) {
+			enemy->estado = ENEMY_IDLE;
+			if (enemy->tipo == ENEMY_SLY) {
+				enemy->image = SLY_IDLE;
+			} else if (enemy->tipo == ENEMY_SCRAP) {
+				enemy->image = SCRAP_IDLE;
+			} else if (enemy->tipo == ENEMY_TANK) {
+				enemy->image = TANK_IDLE;
+			}
 		}
 	}
 	
-	if (enemy->estado == SLY_MOVE || enemy->estado == SCRAP_MOVE || enemy->estado == TANK_MOVE) {
+	if (enemy->estado == ENEMY_MOVE) {
 		if (enemy->x_real == enemy->next_x_real && enemy->y_real == enemy->next_y_real) {
 			/* Llegamos al destino */
-			if (enemy->estado == SLY_MOVE) {
-				enemy->estado = SLY_IDLE;
-			} else if (enemy->estado == SCRAP_MOVE) {
-				enemy->estado = SCRAP_IDLE;
-			} else if (enemy->estado == TANK_MOVE) {
-				enemy->estado = TANK_IDLE;
+			enemy->estado = ENEMY_IDLE;
+			if (enemy->tipo == ENEMY_SLY) {
+				enemy->image = SLY_IDLE;
+			} else if (enemy->tipo == ENEMY_SCRAP) {
+				enemy->image = SCRAP_IDLE;
+			} else if (enemy->tipo == ENEMY_TANK) {
+				enemy->image = TANK_IDLE;
 			}
 			enemy->frame = 0;
 		}
@@ -947,7 +962,7 @@ void draw_enemy (Enemy *enemy) {
 }
 
 int is_enemy_ready (Enemy *enemy) {
-	if (enemy->estado == SLY_IDLE || enemy->estado == SCRAP_IDLE || enemy->estado == TANK_IDLE) {
+	if (enemy->estado == ENEMY_IDLE) {
 		return TRUE;
 	}
 	
@@ -957,19 +972,19 @@ int is_enemy_ready (Enemy *enemy) {
 int is_enemy_dead (Enemy *enemy) {
 	int calc;
 	calc = enemy->frame / 2;
-	if (enemy->estado == SLY_KO && enemy->tipo == ENEMY_SLY) {
+	if (enemy->estado == ENEMY_KO && enemy->tipo == ENEMY_SLY) {
 		if (enemy->frame == 83) {
 			return TRUE;
 		}
 	}
 	
-	if (enemy->estado == SCRAP_KO && enemy->tipo == ENEMY_SCRAP) {
+	if (enemy->estado == ENEMY_KO && enemy->tipo == ENEMY_SCRAP) {
 		if (enemy->frame == 87) {
 			return TRUE;
 		}
 	}
 	
-	if (enemy->estado == TANK_KO && enemy->tipo == ENEMY_TANK) {
+	if (enemy->estado == ENEMY_KO && enemy->tipo == ENEMY_TANK) {
 		if (enemy->frame == 67) {
 			return TRUE;
 		}

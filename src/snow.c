@@ -920,17 +920,12 @@ int game_loop (SnowStage *stage) {
 	stage->attack_x = stage->attack_y = -1;
 	readys[1] = readys[2] = readys[3] = FALSE;
 	
-	/* Crear los 3 ninjas */
-	if (stage->escenario[0][0] >= NINJA_FIRE && stage->escenario[0][0] <= NINJA_WATER) {
-		stage->ninjas[stage->escenario[0][0] - NINJA_FIRE] = create_ninja (stage->escenario[0][0], 0, 0);
-	}
-	
-	if (stage->escenario[2][0] >= NINJA_FIRE && stage->escenario[2][0] <= NINJA_WATER) {
-		stage->ninjas[stage->escenario[2][0] - NINJA_FIRE] = create_ninja (stage->escenario[2][0], 0, 2);
-	}
-	
-	if (stage->escenario[4][0] >= NINJA_FIRE && stage->escenario[4][0] <= NINJA_WATER) {
-		stage->ninjas[stage->escenario[4][0] - NINJA_FIRE] = create_ninja (stage->escenario[4][0], 0, 4);
+	/* Crear los ninjas */
+	for (g = 0; g < 5; g++) {
+		h = stage->escenario[g][0];
+		if (h >= NINJA_FIRE && h <= NINJA_WATER) {
+			stage->ninjas[h - NINJA_FIRE] = create_ninja (h, 0, g);
+		}
 	}
 	
 	stage->local_ninja = stage->ninjas[stage->local_ui - NINJA_FIRE];
@@ -1075,21 +1070,11 @@ int game_loop (SnowStage *stage) {
 								/* Eliminar a otro jugador */
 								g = GPOINTER_TO_INT (event.user.data1);
 								
-								if (g == NINJA_FIRE) {
-									ninja_ask_coords (stage->fire, &h, &i);
+								if (g >= NINJA_FIRE && g <= NINJA_WATER) {
+									ninja_ask_coords (stage->ninjas[g - NINJA_FIRE], &h, &i);
 									stage->escenario[i][h] = NONE;
-									free (stage->fire);
-									stage->fire = NULL;
-								} else if (g == NINJA_SNOW) {
-									ninja_ask_coords (stage->snow, &h, &i);
-									stage->escenario[i][h] = NONE;
-									free (stage->snow);
-									stage->snow = NULL;
-								} else if (g == NINJA_WATER) {
-									ninja_ask_coords (stage->water, &h, &i);
-									stage->escenario[i][h] = NONE;
-									free (stage->water);
-									stage->water = NULL;
+									free (stage->ninjas[g - NINJA_FIRE]);
+									stage->ninjas[g - NINJA_FIRE] = NULL;
 								}
 								break;
 							case NETWORK_EVENT_PLAYER_DONE_ACTIONS:
