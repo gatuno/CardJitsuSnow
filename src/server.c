@@ -76,9 +76,9 @@ typedef struct SnowFight {
 	
 	union {
 		struct {
-			ServerNinja *water;
 			ServerNinja *fire;
 			ServerNinja *snow;
+			ServerNinja *water;
 		};
 		ServerNinja *ninjas[3];
 	};
@@ -660,6 +660,15 @@ void send_ask_actions (SnowFight *tabla) {
 	tabla->estado = WAITING_ACTIONS;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
 	
+	/* Los ninjas muertos no tienen derecho a realizar acciones */
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] != -1) {
+			if (tabla->ninjas[g]->vida == 0) {
+				tabla->ready[g] = 1;
+			}
+		}
+	}
+	
 	/* Instalar un timer para forzar a los clientes a contestar en 10 segundos */
 	agregar_timer (tabla, (Callback) calculate_actions, 11, NULL);
 	//printf ("La tabla «%i» instaló un timer para ser llamado en 11 segundos\n", tabla->id);
@@ -670,6 +679,7 @@ void calculate_actions (SnowFight *tabla) {
 	int pos, pos_attack, pos_round, pos_ene_movs, pos_ene_attack;
 	int g, s, h;
 	int i, j;
+	int gameover = 0;
 	
 	printf ("Calculando tabla «%i»\n", tabla->id);
 	/* Ejecutar todas las acciones */
@@ -824,7 +834,8 @@ void calculate_actions (SnowFight *tabla) {
 	 * 2 = Vas hacia el round 2
 	 * 3 = Vas hacia el round 3
 	 * 4 = Vas hacia el bonus round
-	 * 64 = Fin del juego
+	 * 64 = Fin del juego (Ganaste)
+	 * 65 = Fin del juego (Todos murieron)
 	 */
 	
 	i = 0;
@@ -918,9 +929,25 @@ void calculate_actions (SnowFight *tabla) {
 		} else if (tabla->round >= 4) {
 			/* Fin del juego */
 			buffer_send[pos_round] = 64;
+			gameover = 1;
 		}
 	} else {
-		buffer_send[pos_round] = 0;
+		/* Revisar si todos los ninjas murieron, para finalizar la partida */
+		i = 0;
+		for (g = 0; g < 3; g++) {
+			if (tabla->ninjas[g] != NULL) {
+				if (tabla->ninjas[g]->vida > 0) {
+					i++;
+				}
+			}
+		}
+		if (i == 0) {
+			/* Todos murieron */
+			buffer_send[pos_round] = 65;
+			gameover = 1;
+		} else {
+			buffer_send[pos_round] = 0;
+		}
 	}
 	
 	/* Enviar todo */
@@ -930,6 +957,11 @@ void calculate_actions (SnowFight *tabla) {
 		}
 	}
 	
+	if (gameover) {
+		/* Cerrar la mesa, pero no los clientes */
+		remove_table (tabla);
+		return;
+	}
 	tabla->estado = WAITING_CLIENTS;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
 }
@@ -1019,6 +1051,12 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 			slot = g;
 			break;
 		}
+	}
+	
+	if (tabla->readys[slot] == 1) {
+		/* El cliente ya está listo, ignorar su acción */
+		printf ("Warning. El cliente [%i] envió una acción cuando ya estaba listo, ignorando\n", fd);
+		return;
 	}
 	
 	/* Ya localizado el cliente, validar que el movimiento sea del ninja al que pertenece */

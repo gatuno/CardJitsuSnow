@@ -29,7 +29,8 @@
 #include "server_ia.h"
 
 void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy[4]) {
-	int g, s;
+	int g, s, h, i;
+	int max_h, min_h, max_i, min_i;
 	int done;
 	int dir;
 	
@@ -38,6 +39,8 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 		if (enemy[g] == NULL) return;
 		done = 0;
 		
+		#if 0
+		/* Ejemplo de como causar un movimiento */
 		dir = RANDOM (4);
 		if (dir == 0) {
 			/* Izq */
@@ -69,6 +72,8 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 			g--; /* Repetir el ciclo, aún no hace un movimiento */
 			continue;
 		}
+		#endif
+		
 		
 		/* Si el enemigo hizo un movimiento, moverlo */
 		if (enemy[g]->old_x != enemy[g]->x || enemy[g]->old_y != enemy[g]->y) {
@@ -77,5 +82,95 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 			escenario[enemy[g]->old_y][enemy[g]->old_x] = NONE;
 			escenario[enemy[g]->y][enemy[g]->x] = s;
 		}
-	}
+		
+		/* Tratar de atacar a alguien que esté a la izquierda */
+		Ninja *n;
+		
+		if (enemy[g]->x > 0) {
+			s = escenario[enemy[g]->y][enemy[g]->x - 1];
+			if (s >= NINJA_FIRE && s <= NINJA_WATER) { /* Es un objeto ninja */
+				n = ninjas[s - NINJA_FIRE];
+				
+				if (n->vida > 0) {
+					/* Pegarle, porque aún tiene vida */
+					enemy[g]->attack_x = enemy[g]->x - 1;
+					enemy[g]->attack_y = enemy[g]->y;
+				}
+			}
+		}
+		
+		
+		/* Si este enemigo ejecutó un ataque bajar vida */
+		if (enemy[g]->attack_x != -1 && enemy->attack_y != -1) {
+			
+			if (enemy[g]->tipo == ENEMY_SLY) {
+				/* Calcular la distancia absoluta para saber el daño */
+				h = (enemy->x - enemy->attack_x);
+				if (h < 0) h = -h;
+				
+				i = (enemy->y - enemy->attack_y);
+				if (i < 0) i = -i;
+				
+				s = escenario[enemy->attack_y][enemy->attack_x];
+				n = ninjas[s - NINJA_FIRE];
+				
+				n->vida = n->vida - (h + i + 2);
+				if (n->vida < 0) n->vida = 0;
+			} else if (enemy[g] == ENEMY_SCRAP) {
+				/* Ejecutar daño en esa posición y todas alrededor */
+				s = escenario[enemy->attack_y][enemy->attack_x];
+				n = ninjas[s - NINJA_FIRE];
+				n->vida = n->vida - 4;
+				if (n->vida < 0) n->vida = 0;
+				
+				min_h = (enemy[g]->attack_y - 1 < 0) ? enemy[g]->attack_y : enemy[g]->attack_y - 1;
+				max_h = (enemy[g]->attack_y + 1 > 4) ? enemy[g]->attack_y : enemy[g]->attack_y + 1;
+				
+				min_i = (enemy[g]->attack_x - 1 < 0) ? enemy[g]->attack_x : enemy[g]->attack_x - 1;
+				max_i = (enemy[g]->attack_x + 1 > 8) ? enemy[g]->attack_x : enemy[g]->attack_x + 1;
+				
+				for (h = min_h; h <= max_h; h++) {
+					for (i = min_i; i <= min_i; i++) {
+						s = escenario[h][i];
+						if (s >= NINJA_FIRE && s <= NINJA_WATER) { /* Ninja que recibe daño colateral */
+							n = ninjas[s - NINJA_FIRE];
+							
+							if (n->vida > 0) {
+								n->vida = n->vida - 4;
+								if (n->vida < 0) n->vida = 0;
+							}
+						}
+					}
+				} /* For ninjas daño colateral */
+			} else if (enemy[g] == ENEMY_TANK) {
+				/* Ejecutar daño a ese ninja y a los que estén al lado */
+				if (enemy[g]->attack_x == enemy[g]->x) { /* Golpe hacia abajo o hacia arriba */
+					min_i = (enemy[g]->attack_x - 1 < 0) ? enemy[g]->attack_x : enemy[g]->attack_x - 1;
+					max_i = (enemy[g]->attack_x + 1 > 8) ? enemy[g]->attack_x : enemy[g]->attack_x + 1;
+					min_h = max_h = enemy[g]->attack_y;
+				} else if (enemy[g]->attack_y == enemy[g]->y) { /* Golpe hacia la izquierda o derecha */
+					min_h = (enemy[g]->attack_y - 1 < 0) ? enemy[g]->attack_y : enemy[g]->attack_y - 1;
+					max_h = (enemy[g]->attack_y + 1 > 4) ? enemy[g]->attack_y : enemy[g]->attack_y + 1;
+					min_i = max_i = enemy[g]->attack_x;
+				}
+				
+				for (h = min_h; h <= max_h; h++) {
+					for (i = min_i; i <= min_i; i++) {
+						s = escenario[h][i];
+						if (s >= NINJA_FIRE && s <= NINJA_WATER) { /* Ninja que recibe daño colateral */
+							n = ninjas[s - NINJA_FIRE];
+							
+							if (n->vida > 0) {
+								n->vida = n->vida - 10;
+								if (n->vida < 0) n->vida = 0;
+							}
+						}
+					}
+				} /* For ninjas daño colateral */
+				
+			} /* Enemigo tipo == TANK */
+			
+		} /* Fin del if si el enemigo ataca */
+	} /* Fin del ciclo recorrer enemigos */
 }
+

@@ -52,6 +52,8 @@ enum {
 	NINJA_SNOW,
 	NINJA_WATER,
 	
+	NINJA, /* Generico */
+	
 	ROCK,
 	
 	ENEMY_SLY,
