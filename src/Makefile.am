@@ -12,19 +12,6 @@ cjsnow_SOURCES = snow.c path.c path.h \
 	select_server.c select_server.h \
 	draw-text.c draw-text.h \
 	rotar.c rotar.h
-servidor_SOURCES = server.c netplay.c netplay.h snow.h \
-	server_ninja.c server_ninja.h \
-	server_timer.c server_timer.h \
-	server_ia.c server_ia.h
-stand_alone_SOURCES = server.c netplay.c netplay.h snow.h \
-	server_ninja.c server_ninja.h \
-	server_timer.c server_timer.h \
-	server_ia.c server_ia.h
-
-# El servidor sólo funciona en Linux
-if LINUX
-bin_PROGRAMS += servidor stand_alone
-endif
 
 EXTRA_DIST = snow.rc
 
@@ -40,18 +27,12 @@ endif
 
 cjsnow_CPPFLAGS = -DGAMEDATA_DIR=\"$(gamedatadir)/\" -DLOCALEDIR=\"$(localedir)\" $(AM_CPPFLAGS)
 cjsnow_CFLAGS = $(SDL_CFLAGS) $(SDL_image_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_ttf_CFLAGS) $(AM_CFLAGS)
-servidor_CPPFLAGS = -DGAMEDATA_DIR=\"$(gamedatadir)/\" -DLOCALEDIR=\"$(localedir)\" $(AM_CPPFLAGS)
-servidor_CFLAGS = $(SDL_CFLAGS) $(SDL_image_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_ttf_CFLAGS) $(AM_CFLAGS)
-stand_alone_CPPFLAGS = -DGAMEDATA_DIR=\"$(gamedatadir)/\" -DLOCALEDIR=\"$(localedir)\" -DSTAND_ALONE=1 $(AM_CPPFLAGS)
-stand_alone_CFLAGS = $(SDL_CFLAGS) $(SDL_image_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_ttf_CFLAGS) $(AM_CFLAGS)
 
 if MACOSX
 # En MAC OS X, hay que ligar/compilar contra los frameworks
 cjsnow_LDADD = $(SDL_LIBS)
 else
 cjsnow_LDADD = -lm $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
-servidor_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
-stand_alone_LDADD = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_mixer_LIBS) $(SDL_ttf_LIBS) $(mingw_ldadd)
 endif
 LDADD = $(LIBINTL)
 

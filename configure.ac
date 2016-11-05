@@ -116,6 +116,7 @@ AC_CONFIG_FILES([ po/Makefile.in
                  etc/Makefile
                  etc/Info.plist
                  data/server/Makefile
+                 server/Makefile
 ])
 
 AC_OUTPUT

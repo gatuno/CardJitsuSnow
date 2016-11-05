@@ -18,8 +18,8 @@ config.log
 config.status
 .deps
 src/cjsnow
-src/servidor
-src/stand_alone
+server/servidor
+server/stand_alone
 *.o
 stamp-h1
 

@@ -1,4 +1,4 @@
-SUBDIRS = po src data etc
+SUBDIRS = po src data etc server
 
 ACLOCAL_AMFLAGS = -I m4
 
