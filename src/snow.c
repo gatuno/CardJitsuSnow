@@ -909,6 +909,7 @@ int game_loop (SnowStage *stage) {
 	int readys[4];
 	fondo = 2;
 	EnemyHitZone hitzone[9];
+	int removed_players[2] = {-1, -1};
 	
 	anims = 1;
 	animaciones[0].tipo = UI_ANIM_ROUND;
@@ -1020,6 +1021,26 @@ int game_loop (SnowStage *stage) {
 									start_ticking (timer);
 									readys[1] = readys[2] = readys[3] = FALSE;
 									stage->attack_x = stage->attack_y = -1;
+									
+									/* Si otro jugador fué eliminado durante la animación, borrarlo ahora */
+									if (removed_players[1] != -1) {
+										/* Eliminar un ninja */
+										g = removed_players[1];
+										ninja_ask_coords (stage->ninjas[g - NINJA_FIRE], &h, &i);
+										stage->escenario[i][h] = NONE;
+										free (stage->ninjas[g - NINJA_FIRE]);
+										stage->ninjas[g - NINJA_FIRE] = NULL;
+										removed_players[1] = -1;
+									}
+									if (removed_players[0] != -1) {
+										/* Eliminar un ninja */
+										g = removed_players[0];
+										ninja_ask_coords (stage->ninjas[g - NINJA_FIRE], &h, &i);
+										stage->escenario[i][h] = NONE;
+										free (stage->ninjas[g - NINJA_FIRE]);
+										stage->ninjas[g - NINJA_FIRE] = NULL;
+										removed_players[0] = -1;
+									}
 									memset (stage->acciones, 0, sizeof (stage->acciones));
 									ninja_ask_actions (stage->local_ninja, stage->escenario, stage->acciones);
 									
@@ -1069,10 +1090,27 @@ int game_loop (SnowStage *stage) {
 								g = GPOINTER_TO_INT (event.user.data1);
 								
 								if (g >= NINJA_FIRE && g <= NINJA_WATER) {
-									ninja_ask_coords (stage->ninjas[g - NINJA_FIRE], &h, &i);
-									stage->escenario[i][h] = NONE;
-									free (stage->ninjas[g - NINJA_FIRE]);
-									stage->ninjas[g - NINJA_FIRE] = NULL;
+									/* Programar que el objeto se debe eliminar */
+									if (ui_estatus == UI_ANIMATE) {
+										if (removed_players[0] == -1) {
+											removed_players[0] = g;
+										} else {
+											removed_players[1] = g;
+										}
+									} else {
+										/* Eliminar de inmediato */
+										ninja_ask_coords (stage->ninjas[g - NINJA_FIRE], &h, &i);
+										stage->escenario[i][h] = NONE;
+										free (stage->ninjas[g - NINJA_FIRE]);
+										stage->ninjas[g - NINJA_FIRE] = NULL;
+									}
+								}
+								
+								if (ui_estatus == UI_WAIT_INPUT) {
+									memset (stage->acciones, 0, sizeof (stage->acciones));
+									ninja_ask_actions (stage->local_ninja, stage->escenario, stage->acciones);
+									
+									update_target_actions (stage);
 								}
 								break;
 							case NETWORK_EVENT_PLAYER_DONE_ACTIONS:
