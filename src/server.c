@@ -103,6 +103,7 @@ typedef struct PendingWrite {
 void cancel_writes (int fd);
 void start_tabla (SnowFight *tabla);
 void calculate_actions (SnowFight *tabla);
+void remove_table (SnowFight *tabla);
 
 static SnowFight *lista_partidas;
 static PendingWrite *writes;
@@ -488,7 +489,7 @@ void generar_enemigos (SnowFight *tabla, int bonus) {
 		} while (tabla->escenario[h][j] != NONE);
 		
 		//printf ("Coordenadas para un enemigo: %i, %i\n");
-		tabla->escenario[h][j] = i + ENEMY_SLY;
+		tabla->escenario[h][j] = ENEMY_1 + g;
 		
 		tabla->enemigos[g] = create_server_enemy (j, h, i + ENEMY_SLY);
 	}
@@ -630,11 +631,6 @@ void start_tabla (SnowFight *tabla) {
 	tabla->estado = WAITING_CLIENTS;
 	tabla->clientes = ninjas;
 	tabla->ready[0] = tabla->ready[1] = tabla->ready[2] = 0;
-	
-	/* Cambiar los ENEMY_SLY por ENEMY_1 */
-	for (g = 0; g < tabla->enemys; g++) {
-		tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x] = ENEMY_1 + g;
-	}
 }
 
 void send_ask_actions (SnowFight *tabla) {
@@ -754,15 +750,15 @@ void calculate_actions (SnowFight *tabla) {
 			/* Ataque del ninja de agua */
 			i = tabla->water->attack_x;
 			j = tabla->water->attack_y;
+			s = tabla->escenario[j][i] - ENEMY_1;
+			
 			g++;
 			buffer_send[pos] = NINJA_WATER;
-			buffer_send[pos + 1] = i;
-			buffer_send[pos + 2] = j;
+			buffer_send[pos + 1] = tabla->escenario[j][i];
 		
-			pos = pos + 3;
+			pos = pos + 2;
 		
 			/* Ejecutar el daño */
-			s = tabla->escenario[j][i] - ENEMY_1;
 			
 			tabla->enemigos[s]->vida -= 10;
 			tabla->water->attack_x = tabla->water->attack_y = -1;
@@ -777,10 +773,9 @@ void calculate_actions (SnowFight *tabla) {
 			j = tabla->fire->attack_y;
 			g++;
 			buffer_send[pos] = NINJA_FIRE;
-			buffer_send[pos + 1] = i;
-			buffer_send[pos + 2] = j;
+			buffer_send[pos + 1] = tabla->escenario[j][i];
 		
-			pos = pos + 3;
+			pos = pos + 2;
 		
 			/* Ejecutar el daño */
 			s = tabla->escenario[j][i] - ENEMY_1;
@@ -798,10 +793,9 @@ void calculate_actions (SnowFight *tabla) {
 			j = tabla->snow->attack_y;
 			g++;
 			buffer_send[pos] = NINJA_SNOW;
-			buffer_send[pos + 1] = i;
-			buffer_send[pos + 2] = j;
+			buffer_send[pos + 1] = tabla->escenario[j][i];
 		
-			pos = pos + 3;
+			pos = pos + 2;
 		
 			/* Ejecutar el daño */
 			s = tabla->escenario[j][i] - ENEMY_1;
@@ -883,11 +877,13 @@ void calculate_actions (SnowFight *tabla) {
 			if (tabla->enemigos[g] == NULL) continue;
 			if (tabla->enemigos[g]->attack_x != -1 && tabla->enemigos[g]->attack_y != -1) {
 				
-				buffer_send[pos] = ENEMY_1 + g;
-				buffer_send[pos + 1] = tabla->enemigos[g]->attack_x;
-				buffer_send[pos + 2] = tabla->enemigos[g]->attack_y;
+				i = tabla->enemigos[g]->attack_x;
+				j = tabla->enemigos[g]->attack_y;
 				
-				pos = pos + 3;
+				buffer_send[pos] = ENEMY_1 + g;
+				buffer_send[pos + 1] = tabla->escenario[j][i];
+				
+				pos = pos + 2;
 				
 				s++;
 			}
@@ -915,16 +911,11 @@ void calculate_actions (SnowFight *tabla) {
 			pos++;
 			
 			for (g = 0; g < tabla->enemys; g++) {
-				buffer_send[pos] = tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x];
+				buffer_send[pos] = tabla->enemigos[g]->tipo;
 				buffer_send[pos + 1] = tabla->enemigos[g]->x;
 				buffer_send[pos + 2] = tabla->enemigos[g]->y;
 				
 				pos = pos + 3;
-			}
-			
-			/* Cambiar los ENEMY_SLY por ENEMY_1 */
-			for (g = 0; g < tabla->enemys; g++) {
-				tabla->escenario[tabla->enemigos[g]->y][tabla->enemigos[g]->x] = ENEMY_1 + g;
 			}
 		} else if (tabla->round >= 4) {
 			/* Fin del juego */
@@ -1053,7 +1044,7 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 		}
 	}
 	
-	if (tabla->readys[slot] == 1) {
+	if (tabla->ready[slot] == 1) {
 		/* El cliente ya está listo, ignorar su acción */
 		printf ("Warning. El cliente [%i] envió una acción cuando ya estaba listo, ignorando\n", fd);
 		return;

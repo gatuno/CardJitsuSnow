@@ -295,6 +295,7 @@ enum {
 	
 	ANIM_ENEMY_MOVE,
 	ANIM_ENEMY_ATTACK,
+	ANIM_HIT_NINJA,
 	
 	NUM_UI_ANIM
 };
@@ -331,9 +332,10 @@ typedef struct {
 	int iniciada;
 	union {
 		int round;
+		Ninja *ninja;
 		struct {
-			Ninja *ninja;
 			Enemy *enemy;
+			Ninja *ninja;
 		} attack;
 		struct {
 			Enemy *enemy;
@@ -351,6 +353,7 @@ void setup (void);
 void do_moves_ninjas (SnowStage *stage, ServerActions *server);
 void do_ninja_attacks (SnowStage *stage, ServerActions *server, Animaten *animaciones, int *pos);
 void do_moves_enemy (SnowStage *stage, ServerActions *server, Animaten *animaciones, int *pos);
+void do_enemy_attacks (SnowStage *stage, ServerActions *server, Animaten *animaciones, int *pos);
 void reverse_animations (Animaten *animaciones, int total);
 void update_target_actions (SnowStage *stage);
 int mouse_intro_penguin (int x, int y);
@@ -911,6 +914,7 @@ int game_loop (SnowStage *stage) {
 	ServerActions *server;
 	int readys[4];
 	fondo = 2;
+	EnemyHitZone hitzone[9];
 	
 	anims = 1;
 	animaciones[0].tipo = UI_ANIM_ROUND;
@@ -1100,11 +1104,17 @@ int game_loop (SnowStage *stage) {
 									do_ninja_attacks (stage, server, animaciones, &anims);
 								}
 								
+								if (anims == 10) printf ("Desbordamiento\n");
 								if (server->enemy_movs != 0) {
 									do_moves_enemy (stage, server, animaciones, &anims);
 								}
+								if (anims == 10) printf ("Desbordamiento\n");
 								
-								if (server->round == 64) {
+								if (server->enemy_attacks != 0) {
+									do_enemy_attacks (stage, server, animaciones, &anims);
+								}
+								
+								if (server->round == 64 || server->round == 65) {
 									/* El juego ya finalizó */
 								} else if (server->round != 0) {
 									/* Nuevos enemigos */
@@ -1122,6 +1132,7 @@ int game_loop (SnowStage *stage) {
 										stage->next_enemys[g].y = server->next_enemys[g].y;
 									}
 								}
+								
 								reverse_animations (animaciones, anims);
 								ui_estatus = UI_ANIMATE;
 								free (server);
@@ -1329,6 +1340,45 @@ int game_loop (SnowStage *stage) {
 						anims--;
 					}
 				}
+			} else if (animaciones[anims - 1].tipo == ANIM_ENEMY_ATTACK) {
+				if (animaciones[anims - 1].iniciada == 0) {
+					enemy_attack (animaciones[anims - 1].attack.enemy);
+					
+					/* Solicitarle al enemigo las areas de daño */
+					ninja_ask_coords (animaciones[anims - 1].attack.ninja, &i, &j);
+					h = enemy_get_hit_zone (animaciones[anims - 1].attack.enemy, hitzone, i, j);
+					
+					for (g = 0; g < h; g++) {
+						i = stage->escenario[hitzone[g].y][hitzone[g].x];
+						
+						if (i >= NINJA_FIRE && i <= NINJA_WATER) {
+							ninja_hit_delayed (stage->ninjas[i - NINJA_FIRE], hitzone[g].damage, hitzone[g].delay);
+						}
+					}
+					
+					animaciones[anims - 1].iniciada = 1;
+				} else {
+					/* Preguntarle al enemigo si ya atacó */
+					if (is_enemy_done (animaciones[anims - 1].attack.enemy)) {
+						anims--;
+					}
+				}
+			} else if (animaciones[anims - 1].tipo == ANIM_HIT_NINJA) {
+				h = 0;
+				i = 0;
+				for (g = 0; g < 3; g++) {
+					if (stage->ninjas[g] != NULL) {
+						h++;
+						
+						if (ninja_is_done (stage->ninjas[g])) {
+							i++;
+						}
+					}
+				}
+				
+				if (h == i) {
+					anims--;
+				}
 			}
 			
 			if (anims == 0) {
@@ -1501,15 +1551,15 @@ void do_moves_ninjas (SnowStage *stage, ServerActions *server) {
 		h = server->ninja_movs_coords[i].y;
 		ninja_move (stage->ninjas[s], g, h);
 		stage->escenario[h][g] = s + NINJA_FIRE;
+		/* Nota: Los movimientos de los ninjas se realizan aquí porque en cada turno siempre es la primera acción */
 	}
 }
 
 void do_ninja_attacks (SnowStage *stage, ServerActions *server, Animaten *animaciones, int *pos) {
 	int g, s, n;
-	int x, y;
 	
 	for (g = 0; g < server->ninja_attacks; g++) {
-		s = stage->escenario[server->ninja_attack_coords[g].y][server->ninja_attack_coords[g].x] - ENEMY_1;
+		s = server->ninja_attack_coords[g].dest - ENEMY_1;
 		
 		add_enemy_ref (stage->enemigos[s]);
 		
@@ -1521,7 +1571,7 @@ void do_ninja_attacks (SnowStage *stage, ServerActions *server, Animaten *animac
 		
 		(*pos)++;
 		
-		/* Agregar una animación que espere a que el ninja se muera */
+		/* Agregar una animación que espere a que el enemigo se muera */
 		
 		animaciones[*pos].tipo = ANIM_HIT_ENEMY;
 		animaciones[*pos].attack.enemy = stage->enemigos[s];
@@ -1547,6 +1597,44 @@ void do_moves_enemy (SnowStage *stage, ServerActions *server, Animaten *animacio
 			animaciones[*pos].enemy_move.enemy = stage->enemigos[g];
 			animaciones[*pos].enemy_move.x = server->enemy_movs_coords[h].x;
 			animaciones[*pos].enemy_move.y = server->enemy_movs_coords[h].y;
+			animaciones[*pos].iniciada = 0;
+			
+			/* Los movimientos de los enemigos en el escenario se realizan cuando la animación inicie */
+			(*pos)++;
+		}
+	}
+}
+
+void do_enemy_attacks (SnowStage *stage, ServerActions *server, Animaten *animaciones, int *pos) {
+	int g, h;
+	int s, n;
+	
+	for (g = 0; g < 4; g++) {
+		if (stage->enemigos[g] == NULL) continue;
+		
+		/* Buscar si este enemigo atacó */
+		for (h = 0; h < server->enemy_attacks; h++) {
+			if (server->enemy_attack_coords[h].object == ENEMY_1 + g) break;
+		}
+		
+		if (h != server->enemy_attacks) {
+			/* Tiene un ataque */
+			n = server->enemy_attack_coords[h].dest - NINJA_FIRE;
+			
+			animaciones[*pos].tipo = ANIM_ENEMY_ATTACK;
+			animaciones[*pos].attack.enemy = stage->enemigos[g];
+			
+			/* Sacar el objeto ninja que recibe el ataque */
+			animaciones[*pos].attack.ninja = stage->ninjas[n];
+			animaciones[*pos].iniciada = 0;
+			
+			(*pos)++;
+			
+			/* Agregar una animación que espere a que el ninja reciba el golpe */
+			
+			animaciones[*pos].tipo = ANIM_HIT_NINJA;
+			//animaciones[*pos].ninja = stage->ninjas[n];
+			
 			animaciones[*pos].iniciada = 0;
 			
 			(*pos)++;

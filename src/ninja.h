@@ -26,6 +26,7 @@ typedef struct _Ninja Ninja;
 void setup_ninja (void);
 Ninja *create_ninja (int tipo, int x, int y);
 void ninja_ask_coords (Ninja *ninja, int *x, int *y);
+void ninja_hit_delayed (Ninja *ninja, int damage, int delay);
 int ninja_is_done (Ninja *ninja);
 void ninja_attack (Ninja *ninja);
 void ninja_move (Ninja *ninja, int x, int y);

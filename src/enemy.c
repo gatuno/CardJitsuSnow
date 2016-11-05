@@ -933,7 +933,7 @@ void draw_enemy (Enemy *enemy) {
 			} else if (enemy->tipo == ENEMY_TANK) {
 				enemy->image = TANK_IDLE;
 			}
-		} else if (est == ENEMY_HIT) {
+		} else if (est == ENEMY_HIT || est == ENEMY_ATTACK) {
 			enemy->estado = ENEMY_IDLE;
 			if (enemy->tipo == ENEMY_SLY) {
 				enemy->image = SLY_IDLE;
@@ -1011,6 +1011,92 @@ void enemy_hit_delayed (Enemy *enemy, int damage, int delay) {
 	enemy->ref--;
 	enemy->delay = delay;
 	enemy->damage = damage;
+}
+
+int enemy_get_hit_zone (Enemy *enemy, EnemyHitZone *hitzone, int x, int y) {
+	int g, h, i;
+	int max_h, min_h, max_g, min_g;
+	
+	if (enemy->tipo == ENEMY_SLY) {
+		hitzone[0].x = x;
+		hitzone[0].y = y;
+		g = enemy->x - x;
+		h = enemy->y - y;
+		if (g < 0) g = -g;
+		if (h < 0) h = -h;
+		
+		hitzone[0].damage = g + h + 2;
+		hitzone[0].delay = 20;
+		
+		return 1;
+	} else if (enemy->tipo == ENEMY_SCRAP) {
+		i = 0;
+		for (g = x - 1; g <= x + 1; g++) {
+			for (h = y - 1; h <= y + 1; h++) {
+				if (g < 0 || h < 0 || g > 8 || h > 4) continue;
+				hitzone[i].x = g;
+				hitzone[i].y = h;
+				if (g == x && h == y) {
+					hitzone[i].delay = 20;
+					hitzone[i].damage = 8;
+				} else {
+					hitzone[i].delay = 40;
+					hitzone[i].damage = 4;
+				}
+				i++;
+			}
+		}
+		
+		return i;
+	} else if (enemy->tipo == ENEMY_TANK) {
+		printf ("Tank busca su zona de hit. (%i, %i). Ataque: %i, %i\n", enemy->x, enemy->y, x, y);
+		if (x == enemy->x) { /* Golpe hacia abajo o hacia arriba */
+			min_g = (x - 1 < 0) ? x : x - 1;
+			max_g = (x + 1 > 8) ? x : x + 1;
+			min_h = max_h = y;
+		} else if (y == enemy->y) { /* Golpe hacia la izquierda o derecha */
+			min_h = (y - 1 < 0) ? y : y - 1;
+			max_h = (y + 1 > 4) ? y : y + 1;
+			min_g = max_g = x;
+		}
+		
+		i = 0;
+		for (g = min_g; g <= max_g; g++) {
+			for (h = min_h; h <= max_h; h++) {
+				if (g < 0 || h < 0 || g > 8 || h > 4) continue;
+				printf ("Hitzone: %i, %i\n", g, h);
+				hitzone[i].x = g;
+				hitzone[i].y = h;
+				hitzone[i].delay = 20;
+				hitzone[i].damage = 10;
+				
+				i++;
+			}
+		}
+		
+		return i;
+	}
+	
+	return 0;
+}
+
+int is_enemy_done (Enemy *enemy) {
+	if (enemy->estado == ENEMY_IDLE) return TRUE;
+	
+	return FALSE;
+}
+
+void enemy_attack (Enemy *enemy) {
+	enemy->frame = 0;
+	enemy->estado = ENEMY_ATTACK;
+	
+	if (enemy->tipo == ENEMY_SLY) {
+		enemy->image = SLY_ATTACK;
+	} else if (enemy->tipo == ENEMY_SCRAP) {
+		enemy->image = SCRAP_ATTACK;
+	} else if (enemy->tipo == ENEMY_TANK) {
+		enemy->image = TANK_ATTACK;
+	}
 }
 
 void setup_enemy (void) {

@@ -332,7 +332,7 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			msg->server.ninja_movs_coords[g].x = buffer[6 + (g * 3)];
 			msg->server.ninja_movs_coords[g].y = buffer[7 + (g * 3)];
 			
-			/* TODO: Validar que estos datos sean válidos */
+			/* TODO: Validar que estos datos estén en rango */
 		}
 		
 		pos = 5 + (3 * msg->server.ninja_movs);
@@ -342,14 +342,13 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		msg->server.ninja_attacks = buffer[pos];
 		pos++;
 		
-		if (len < pos + (3 * msg->server.ninja_attacks)) return -1;
+		if (len < pos + (2 * msg->server.ninja_attacks)) return -1;
 		for (g = 0; g < msg->server.ninja_attacks; g++) {
 			msg->server.ninja_attack_coords[g].object = buffer[pos];
-			msg->server.ninja_attack_coords[g].x = buffer[pos + 1];
-			msg->server.ninja_attack_coords[g].y = buffer[pos + 2];
+			msg->server.ninja_attack_coords[g].dest   = buffer[pos + 1];
 			
-			/* TODO: Validar que estos datos sean válidos */
-			pos = pos + 3;
+			/* TODO: Validar que estos datos estén en rango */
+			pos = pos + 2;
 		}
 		
 		/* La cantidad de movimientos por parte de los enemigos */
@@ -363,7 +362,7 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			msg->server.enemy_movs_coords[g].x = buffer[pos + 1];
 			msg->server.enemy_movs_coords[g].y = buffer[pos + 2];
 			
-			/* TODO: Validar que estos datos sean válidos */
+			/* TODO: Validar que estos datos estén en rango */
 			pos = pos + 3;
 		}
 		
@@ -372,14 +371,13 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		msg->server.enemy_attacks = buffer[pos];
 		pos++;
 		
-		if (len < pos + (3 * msg->server.enemy_attacks)) return -1;
+		if (len < pos + (2 * msg->server.enemy_attacks)) return -1;
 		for (g = 0; g < msg->server.enemy_attacks; g++) {
 			msg->server.enemy_attack_coords[g].object = buffer[pos];
-			msg->server.enemy_attack_coords[g].x = buffer[pos + 1];
-			msg->server.enemy_attack_coords[g].y = buffer[pos + 2];
+			msg->server.enemy_attack_coords[g].dest   = buffer[pos + 1];
 			
-			/* TODO: Validar que estos datos sean válidos */
-			pos = pos + 3;
+			/* TODO: Validar que estos datos estén en rango */
+			pos = pos + 2;
 		}
 		
 		/* Leer el round */
@@ -389,7 +387,7 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 		
 		msg->server.count_next_enemys = 0;
 		/* Hay más enemigos para el siguiente round */
-		if (msg->server.round == 64) {
+		if (msg->server.round == 64 || msg->server.round == 65) {
 			/* Fin del juego */
 		} else if (msg->server.round != 0) {
 			if (len < pos + 1) return -1;

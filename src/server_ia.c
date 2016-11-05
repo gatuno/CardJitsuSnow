@@ -28,7 +28,7 @@
 #include "server_ninja.h"
 #include "server_ia.h"
 
-void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy[4]) {
+void calcular_ia (int escenario[5][9], ServerNinja *ninjas[3], ServerEnemy *enemy[4]) {
 	int g, s, h, i;
 	int max_h, min_h, max_i, min_i;
 	int done;
@@ -84,7 +84,7 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 		}
 		
 		/* Tratar de atacar a alguien que esté a la izquierda */
-		Ninja *n;
+		ServerNinja *n;
 		
 		if (enemy[g]->x > 0) {
 			s = escenario[enemy[g]->y][enemy[g]->x - 1];
@@ -101,24 +101,24 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 		
 		
 		/* Si este enemigo ejecutó un ataque bajar vida */
-		if (enemy[g]->attack_x != -1 && enemy->attack_y != -1) {
+		if (enemy[g]->attack_x != -1 && enemy[g]->attack_y != -1) {
 			
 			if (enemy[g]->tipo == ENEMY_SLY) {
 				/* Calcular la distancia absoluta para saber el daño */
-				h = (enemy->x - enemy->attack_x);
+				h = (enemy[g]->x - enemy[g]->attack_x);
 				if (h < 0) h = -h;
 				
-				i = (enemy->y - enemy->attack_y);
+				i = (enemy[g]->y - enemy[g]->attack_y);
 				if (i < 0) i = -i;
 				
-				s = escenario[enemy->attack_y][enemy->attack_x];
+				s = escenario[enemy[g]->attack_y][enemy[g]->attack_x];
 				n = ninjas[s - NINJA_FIRE];
 				
 				n->vida = n->vida - (h + i + 2);
 				if (n->vida < 0) n->vida = 0;
-			} else if (enemy[g] == ENEMY_SCRAP) {
+			} else if (enemy[g]->tipo == ENEMY_SCRAP) {
 				/* Ejecutar daño en esa posición y todas alrededor */
-				s = escenario[enemy->attack_y][enemy->attack_x];
+				s = escenario[enemy[g]->attack_y][enemy[g]->attack_x];
 				n = ninjas[s - NINJA_FIRE];
 				n->vida = n->vida - 4;
 				if (n->vida < 0) n->vida = 0;
@@ -142,7 +142,7 @@ void calcular_ia (int escenario[5][9], ServerNinja *ninja[3], ServerEnemy *enemy
 						}
 					}
 				} /* For ninjas daño colateral */
-			} else if (enemy[g] == ENEMY_TANK) {
+			} else if (enemy[g]->tipo == ENEMY_TANK) {
 				/* Ejecutar daño a ese ninja y a los que estén al lado */
 				if (enemy[g]->attack_x == enemy[g]->x) { /* Golpe hacia abajo o hacia arriba */
 					min_i = (enemy[g]->attack_x - 1 < 0) ? enemy[g]->attack_x : enemy[g]->attack_x - 1;

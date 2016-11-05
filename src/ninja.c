@@ -799,6 +799,8 @@ struct _Ninja {
 	int x_real, y_real;
 	int next_x_real, next_y_real;
 	int sum_x, sum_y;
+	int vida, max_life;
+	int delay, damage;
 };
 
 Ninja *create_ninja (int tipo, int x, int y) {
@@ -825,11 +827,15 @@ Ninja *create_ninja (int tipo, int x, int y) {
 	
 	if (tipo == NINJA_FIRE) {
 		obj->image = IMG_FIRE_NINJA_IDLE;
+		obj->vida = 30;
 	} else if (tipo == NINJA_SNOW) {
 		obj->image = IMG_SNOW_NINJA_IDLE;
+		obj->vida = 25;
 	} else if (tipo == NINJA_WATER) {
 		obj->image = IMG_WATER_NINJA_IDLE;
+		obj->vida = 40;
 	}
+	obj->max_life = obj->vida;
 	
 	return obj;
 }
@@ -844,8 +850,14 @@ void ninja_ask_coords (Ninja *ninja, int *x, int *y) {
 	}
 }
 
+void ninja_hit_delayed (Ninja *ninja, int damage, int delay) {
+	ninja->delay = delay;
+	ninja->damage = damage;
+}
+
 int ninja_is_done (Ninja *ninja) {
 	if (ninja->estado == NINJA_IDLE) return TRUE;
+	if (ninja->estado == NINJA_KO_LOOP) return TRUE;
 	
 	return FALSE;
 }
@@ -896,6 +908,38 @@ void ninja_draw (Ninja *ninja) {
 	int calc;
 	int temp;
 	SnowSprite *animation;
+	
+	/* Si estamos esperando un golpe, calcular si ya llegó */
+	if (ninja->damage != 0 && ninja->delay > 0) ninja->delay--;
+	
+	if (ninja->damage != 0 && ninja->delay == 0) {
+		/* Delay de golpe */
+		printf ("Estaba esperando un golpe y ya llegó, Daño: %i\n", ninja->damage);
+		ninja->vida = ninja->vida - ninja->damage;
+		
+		if (ninja->vida < 0) {
+			ninja->vida = 0;
+		}
+		printf ("Mi vida es: %i\n", ninja->vida);
+		
+		if (ninja->vida == 0) {
+			ninja->estado = NINJA_KO_INTRO;
+		} else {
+			ninja->estado = NINJA_HIT;
+		}
+		
+		if (ninja->tipo == NINJA_FIRE) {
+			ninja->image = (ninja->estado == NINJA_KO_INTRO) ? IMG_FIRE_NINJA_KO_INTRO : IMG_FIRE_NINJA_HIT;
+		} else if (ninja->tipo == NINJA_SNOW) {
+			ninja->image = (ninja->estado == NINJA_KO_INTRO) ? IMG_SNOW_NINJA_KO_INTRO : IMG_SNOW_NINJA_HIT;
+		} else if (ninja->tipo == NINJA_WATER) {
+			ninja->image = (ninja->estado == NINJA_KO_INTRO) ? IMG_WATER_NINJA_KO_INTRO : IMG_WATER_NINJA_HIT;
+		}
+		
+		ninja->frame = 0;
+		ninja->damage = 0;
+		ninja->delay = 0;
+	}
 	
 	calc = ninja->frame / 2;
 	
@@ -970,6 +1014,33 @@ void ninja_draw (Ninja *ninja) {
 			}
 		}
 	}
+	/* Dibujar la barra de vida */
+	temp = 59 - (59 * ninja->vida) / ninja->max_life;
+	
+	rect2.x = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_x;
+	rect2.y = shared_sprites[SHARED_IMG_HEALTHBAR][temp].orig_y;
+	rect.w = rect2.w = shared_sprites[SHARED_IMG_HEALTHBAR][temp].w;
+	rect.h = rect2.h = shared_sprites[SHARED_IMG_HEALTHBAR][temp].h;
+	
+	rect.x = ninja->x_real + shared_sprites[SHARED_IMG_HEALTHBAR][temp].dest_x - 29;
+	rect.y = ninja->y_real + shared_sprites[SHARED_IMG_HEALTHBAR][temp].dest_y - 8;
+	
+	if (shared_sprites[SHARED_IMG_HEALTHBAR][temp].rot) {
+		rect2.w = rect.h;
+		rect2.h = rect.w;
+	
+		rect.h = rect2.h;
+		rect.w = rect2.w;
+		SDL_Point p;
+		p.y = 0;
+		p.x = rect.w;
+		rect.x -= rect.w;
+	
+		SDL_RenderCopyEx (renderer, shared_images[SHARED_IMG_HEALTHBAR], &rect2, &rect, 270.0, &p, SDL_FLIP_NONE);
+	} else {
+		SDL_RenderCopy (renderer, shared_images[SHARED_IMG_HEALTHBAR], &rect2, &rect);
+	}
+	
 	if (ninja->estado == NINJA_MOVE) {
 		if (ninja->x_real == ninja->next_x_real && ninja->y_real == ninja->next_y_real) {
 			/* Llegamos al destino */

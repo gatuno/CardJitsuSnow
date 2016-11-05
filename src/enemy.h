@@ -23,14 +23,23 @@
 
 typedef struct _Enemy Enemy;
 
+typedef struct {
+	int x, y;
+	int delay;
+	int damage;
+} EnemyHitZone;
+
 Enemy *create_enemy (int x, int y, int tipo);
 void enemy_ask_coords (Enemy *enemy, int *x, int *y);
 void draw_enemy (Enemy *enemy);
 void setup_enemy (void);
 int is_enemy_ready (Enemy *enemy);
 int is_enemy_dead (Enemy *enemy);
+int is_enemy_done (Enemy *enemy);
+void enemy_attack (Enemy *enemy);
 void add_enemy_ref (Enemy *enemy);
 void enemy_hit_delayed (Enemy *enemy, int damage, int delay);
+int enemy_get_hit_zone (Enemy *enemy, EnemyHitZone *hitzone, int x, int y);
 void enemy_move (Enemy *enemy, int x, int y);
 
 #endif /* __ENEMY_H__ */

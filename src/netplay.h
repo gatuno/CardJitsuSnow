@@ -45,14 +45,24 @@ typedef struct {
 } Action;
 
 typedef struct {
+	int object;
+	int x, y;
+} NetworkMove;
+
+typedef struct {
+	int object;
+	int dest;
+} NetworkAttack;
+
+typedef struct {
 	int ninja_movs;
-	Action ninja_movs_coords[3];
+	NetworkMove ninja_movs_coords[3];
 	int ninja_attacks;
-	Action ninja_attack_coords[3];
+	NetworkAttack ninja_attack_coords[3];
 	int enemy_movs;
-	Action enemy_movs_coords[4];
+	NetworkMove enemy_movs_coords[4];
 	int enemy_attacks;
-	Action enemy_attack_coords[4];
+	NetworkAttack enemy_attack_coords[4];
 	int round;
 	int count_next_enemys;
 	ObjectPos next_enemys[4];
