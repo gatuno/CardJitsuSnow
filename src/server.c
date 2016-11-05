@@ -296,8 +296,6 @@ void cancel_writes (int fd) {
 	}
 }
 
-
-
 /* Manejo de tablas */
 SnowFight *find_table_by_fd (int fd) {
 	SnowFight *n;
@@ -498,7 +496,7 @@ void generar_enemigos (SnowFight *tabla, int bonus) {
 void start_tabla (SnowFight *tabla) {
 	int r, g, h, i, ninjas;
 	char buffer_send[128];
-	int tipo;
+	int tipo, good;
 	
 	/* Vaciar el escenario */
 	memset (tabla->escenario, 0, sizeof (tabla->escenario));
@@ -506,74 +504,30 @@ void start_tabla (SnowFight *tabla) {
 	tabla->escenario[0][2] = tabla->escenario[0][6] = tabla->escenario[4][2] = tabla->escenario[4][6] = ROCK;
 	
 	/* Colocar a los ninjas en posiciones aleatorias */
-#ifdef STAND_ALONE
+	ninjas = 0;
+	int random_pos[3] = {-1, -1, -1};
 	for (g = 0; g < 3; g++) {
-		if (tabla->fds[g] != -1) {
-			h = g;
-			break;
-		}
-	}
-	r = NINJA_FIRE + h;
-	
-	tabla->escenario[2][0] = r;
-	
-	/* Crear el objeto correspondiente */
-	if (r == NINJA_FIRE) {
-		tabla->fire = create_server_ninja (0, 2, r);
-	} else if (r == NINJA_WATER) {
-		tabla->water = create_server_ninja (0, 2, r);
-	} else if (r == NINJA_SNOW) {
-		tabla->snow = create_server_ninja (0, 2, r);
-	}
-	ninjas = 1;
-#else
-	/* Sacar uno aleatorio para la primera posición */
-	r = NINJA_FIRE + RANDOM (3);
-	
-	tabla->escenario[0][0] = r;
-	
-	/* Crear el objeto correspondiente */
-	if (r == NINJA_FIRE) {
-		tabla->fire = create_server_ninja (0, 0, r);
-	} else if (r == NINJA_WATER) {
-		tabla->water = create_server_ninja (0, 0, r);
-	} else if (r == NINJA_SNOW) {
-		tabla->snow = create_server_ninja (0, 0, r);
+		if (tabla->fds[g] == -1) continue;
+		/* Generar una posición */
+		do {
+			good = 1;
+			r = RANDOM(3);
+			
+			for (h = 0; h < 3; h++) {
+				if (random_pos[h] == r) good = 0;
+			}
+		} while (!good);
+		random_pos[g] = r;
+		ninjas++;
 	}
 	
-	/* Sacar otro que no sea el primero para la posición de en medio */
-	do {
-		r = NINJA_FIRE + RANDOM (3);
-	} while (r == tabla->escenario[0][0]);
-	
-	tabla->escenario[2][0] = r;
-	
-	/* Crear el objeto correspondiente */
-	if (r == NINJA_FIRE) {
-		tabla->fire = create_server_ninja (0, 2, r);
-	} else if (r == NINJA_WATER) {
-		tabla->water = create_server_ninja (0, 2, r);
-	} else if (r == NINJA_SNOW) {
-		tabla->snow = create_server_ninja (0, 2, r);
+	for (g = 0; g < 3; g++) {
+		if (tabla->fds[g] == -1) continue;
+		
+		tabla->ninjas[g] = create_server_ninja (0, random_pos[g] * 2, NINJA_FIRE + g);
+		
+		tabla->escenario[random_pos[g] * 2][0] = NINJA_FIRE + g;
 	}
-	
-	/* Determinar el último ninja */
-	r = NINJA_FIRE;
-	if (tabla->escenario[0][0] == r || tabla->escenario[2][0] == r) r++;
-	if (tabla->escenario[0][0] == r || tabla->escenario[2][0] == r) r++;
-	
-	tabla->escenario[4][0] = r;
-	
-	/* Crear el objeto correspondiente */
-	if (r == NINJA_FIRE) {
-		tabla->fire = create_server_ninja (0, 4, r);
-	} else if (r == NINJA_WATER) {
-		tabla->water = create_server_ninja (0, 4, r);
-	} else if (r == NINJA_SNOW) {
-		tabla->snow = create_server_ninja (0, 4, r);
-	}
-	ninjas = 3;
-#endif
 	
 	generar_enemigos (tabla, 0);
 	
@@ -672,10 +626,11 @@ void send_ask_actions (SnowFight *tabla) {
 
 void calculate_actions (SnowFight *tabla) {
 	char buffer_send[128];
-	int pos, pos_attack, pos_round, pos_ene_movs, pos_ene_attack;
+	int pos, save_pos;
 	int g, s, h;
 	int i, j;
 	int gameover = 0;
+	int enemigos_muertos;
 	
 	printf ("Calculando tabla «%i»\n", tabla->id);
 	/* Ejecutar todas las acciones */
@@ -689,123 +644,63 @@ void calculate_actions (SnowFight *tabla) {
 	buffer_send[3] = NET_TYPE_SERVER_ACTIONS;
 	
 	pos = 5;
-	g = 0;
+	s = 0;
+	
 	/* Primero los movimientos de los ninjas */
-	if (tabla->water != NULL) {
-		if (tabla->water->next_x != tabla->water->x || tabla->water->next_y != tabla->water->y) {
-			g++;
-			buffer_send[pos] = NINJA_WATER;
-			buffer_send[pos + 1] = tabla->water->next_x;
-			buffer_send[pos + 2] = tabla->water->next_y;
+	for (g = 0; g < 3; g++) {
+		if (tabla->ninjas[g] == NULL) continue;
+		
+		if (tabla->ninjas[g]->next_x != tabla->ninjas[g]->x || tabla->ninjas[g]->next_y != tabla->ninjas[g]->y) {
+			s++;
+			buffer_send[pos] = NINJA_FIRE + g;
+			buffer_send[pos + 1] = tabla->ninjas[g]->next_x;
+			buffer_send[pos + 2] = tabla->ninjas[g]->next_y;
 			
-			tabla->escenario[tabla->water->y][tabla->water->x] = NONE;
+			tabla->escenario[tabla->ninjas[g]->y][tabla->ninjas[g]->x] = NONE;
 			pos = pos + 3;
-			/* Mover al ninja */
-			tabla->water->x = tabla->water->next_x;
-			tabla->water->y = tabla->water->next_y;
+			/* Mover realmente al ninja */
+			tabla->ninjas[g]->x = tabla->ninjas[g]->next_x;
+			tabla->ninjas[g]->y = tabla->ninjas[g]->next_y;
 			
-			tabla->escenario[tabla->water->y][tabla->water->x] = NINJA_WATER;
+			tabla->escenario[tabla->ninjas[g]->y][tabla->ninjas[g]->x] = NINJA_FIRE + g;
 		}
 	}
 	
-	if (tabla->fire != NULL) {
-		if (tabla->fire->next_x != tabla->fire->x || tabla->fire->next_y != tabla->fire->y) {
-			g++;
-			buffer_send[pos] = NINJA_FIRE;
-			buffer_send[pos + 1] = tabla->fire->next_x;
-			buffer_send[pos + 2] = tabla->fire->next_y;
-			
-			tabla->escenario[tabla->fire->y][tabla->fire->x] = NONE;
-			pos = pos + 3;
-			/* Mover al ninja */
-			tabla->fire->x = tabla->fire->next_x;
-			tabla->fire->y = tabla->fire->next_y;
-			tabla->escenario[tabla->fire->y][tabla->fire->x] = NINJA_FIRE;
-		}
-	}
+	buffer_send[4] = s;
 	
-	if (tabla->snow != NULL) {
-		if (tabla->snow->next_x != tabla->snow->x || tabla->snow->next_y != tabla->snow->y) {
-			g++;
-			buffer_send[pos] = NINJA_SNOW;
-			buffer_send[pos + 1] = tabla->snow->next_x;
-			buffer_send[pos + 2] = tabla->snow->next_y;
-			
-			tabla->escenario[tabla->snow->y][tabla->snow->x] = NONE;
-			pos = pos + 3;
-			/* Mover al ninja */
-			tabla->snow->x = tabla->snow->next_x;
-			tabla->snow->y = tabla->snow->next_y;
-			tabla->escenario[tabla->snow->y][tabla->snow->x] = NINJA_SNOW;
-		}
-	}
-	buffer_send[4] = g;
+	save_pos = pos++;
+	s = 0;
 	
-	pos_attack = pos++;
-	g = 0;
 	/* Enviar los ataques */
-	if (tabla->water != NULL) {
-		if (tabla->water->attack_x != -1 && tabla->water->attack_y != -1) {
-			//printf ("«%i» El ninja de agua va a atacar (%i, %i)\n", tabla->id, tabla->water->attack_x, tabla->water->attack_y);
-			/* Ataque del ninja de agua */
-			i = tabla->water->attack_x;
-			j = tabla->water->attack_y;
-			s = tabla->escenario[j][i] - ENEMY_1;
+	for (g = 0; g < 3; g++) {
+		if (tabla->ninjas[g] == NULL) continue;
+		
+		/* Este ninja tiene un ataque por hacer */
+		if (tabla->ninjas[g]->attack_x != -1 && tabla->ninjas[g]->attack_y != -1) {
+			i = tabla->ninjas[g]->attack_x;
+			j = tabla->ninjas[g]->attack_y;
+			h = tabla->escenario[j][i] - ENEMY_1;
 			
-			g++;
-			buffer_send[pos] = NINJA_WATER;
+			s++;
+			buffer_send[pos] = NINJA_FIRE + g;
 			buffer_send[pos + 1] = tabla->escenario[j][i];
-		
-			pos = pos + 2;
-		
-			/* Ejecutar el daño */
 			
-			tabla->enemigos[s]->vida -= 10;
-			tabla->water->attack_x = tabla->water->attack_y = -1;
-		}
-	}
-	
-	if (tabla->fire != NULL) {
-		if (tabla->fire->attack_x != -1 && tabla->fire->attack_x != -1) {
-			//printf ("«%i» El ninja de fuego va a atacar (%i, %i)\n", tabla->id, tabla->fire->attack_x, tabla->fire->attack_y);
-			/* Ataque del ninja de fuego */
-			i = tabla->fire->attack_x;
-			j = tabla->fire->attack_y;
-			g++;
-			buffer_send[pos] = NINJA_FIRE;
-			buffer_send[pos + 1] = tabla->escenario[j][i];
-		
 			pos = pos + 2;
-		
+			
 			/* Ejecutar el daño */
-			s = tabla->escenario[j][i] - ENEMY_1;
-		
-			tabla->enemigos[s]->vida -= 8;
-			tabla->fire->attack_x = tabla->fire->attack_y = -1;
+			if (g == 0) { /* Ninja de fuego */
+				tabla->enemigos[h]->vida -= 8;
+			} else if (g == 1) { /* Ninja de nieve */
+				tabla->enemigos[h]->vida -= 6;
+			} else if (g == 2) { /* Ninja de agua */
+				tabla->enemigos[h]->vida -= 10;
+			}
+			
+			tabla->ninjas[g]->attack_x = tabla->ninjas[g]->attack_y = -1;
 		}
 	}
 	
-	if (tabla->snow != NULL) {
-		if (tabla->snow->attack_x != -1 && tabla->snow->attack_x != -1) {
-			//printf ("«%i» El ninja de nieve va a atacar (%i, %i)\n", tabla->id, tabla->snow->attack_x, tabla->snow->attack_y);
-			/* Ataque del ninja de nieve */
-			i = tabla->snow->attack_x;
-			j = tabla->snow->attack_y;
-			g++;
-			buffer_send[pos] = NINJA_SNOW;
-			buffer_send[pos + 1] = tabla->escenario[j][i];
-		
-			pos = pos + 2;
-		
-			/* Ejecutar el daño */
-			s = tabla->escenario[j][i] - ENEMY_1;
-		
-			tabla->enemigos[s]->vida -= 6;
-			tabla->snow->attack_x = tabla->snow->attack_y = -1;
-		}
-	}
-	
-	buffer_send[pos_attack] = g;
+	buffer_send[save_pos] = s;
 	
 	/* Revisar que enemigos murieron */
 	for (g = 0; g < 4; g++) {
@@ -832,15 +727,15 @@ void calculate_actions (SnowFight *tabla) {
 	 * 65 = Fin del juego (Todos murieron)
 	 */
 	
-	i = 0;
+	enemigos_muertos = 0;
 	for (g = 0; g < 4; g++) {
 		if (tabla->enemigos[g] != NULL) {
-			i++;
+			enemigos_muertos++;
 		}
 	}
 	
-	if (i != 0) {
-		/* Preparar los enemigos */
+	if (enemigos_muertos != 0) {
+		/* Vaciar movimientos y ataques previos */
 		for (g = 0; g < 4; g++) {
 			if (tabla->enemigos[g] == NULL) continue;
 			tabla->enemigos[g]->old_x = tabla->enemigos[g]->x;
@@ -848,10 +743,10 @@ void calculate_actions (SnowFight *tabla) {
 			tabla->enemigos[g]->attack_x = tabla->enemigos[g]->attack_y = -1;
 		}
 		
-		/* Ejecutar el cálculo */
+		/* Ejecutar el cálculo de la IA */
 		calcular_ia (tabla->escenario, tabla->ninjas, tabla->enemigos);
 		
-		pos_ene_movs = pos++;
+		save_pos = pos++;
 		s = 0;
 		/* Por cada movimiento, mandar los bytes correspondientes */
 		for (g = 0; g < 4; g++) {
@@ -868,9 +763,9 @@ void calculate_actions (SnowFight *tabla) {
 			}
 		}
 		
-		buffer_send[pos_ene_movs] = s;
+		buffer_send[save_pos] = s;
 		
-		pos_ene_attack = pos++;
+		save_pos = pos++;
 		s = 0;
 		/* Por cada ataque, mandar los bytes */
 		for (g = 0; g < 4; g++) {
@@ -889,7 +784,7 @@ void calculate_actions (SnowFight *tabla) {
 			}
 		}
 		
-		buffer_send[pos_ene_attack] = s;
+		buffer_send[save_pos] = s;
 		
 	} else {
 		/* No hay enemigos, mandar 0 en sus movimientos y ataques */
@@ -897,19 +792,20 @@ void calculate_actions (SnowFight *tabla) {
 		buffer_send[pos++] = 0;
 	}
 	
-	pos_round = pos++;
+	save_pos = pos++;
 	
-	if (i == 0) {
+	if (enemigos_muertos == 0) {
 		/* Generar más enemigos */
 		tabla->round++;
 		if ((0 && tabla->round == 4) || (tabla->round < 4)) {
 			/* Si cumple la condición del bonus round, meter al bonus round */
 			generar_enemigos (tabla, (tabla->round == 4) ? 1 : 0);
-			buffer_send[pos_round] = tabla->round;
+			buffer_send[save_pos] = tabla->round;
 			
 			buffer_send[pos] = tabla->enemys;
 			pos++;
 			
+			/* Mandar las coordenadas de los nuevos enemigos */
 			for (g = 0; g < tabla->enemys; g++) {
 				buffer_send[pos] = tabla->enemigos[g]->tipo;
 				buffer_send[pos + 1] = tabla->enemigos[g]->x;
@@ -919,7 +815,7 @@ void calculate_actions (SnowFight *tabla) {
 			}
 		} else if (tabla->round >= 4) {
 			/* Fin del juego */
-			buffer_send[pos_round] = 64;
+			buffer_send[save_pos] = 64;
 			gameover = 1;
 		}
 	} else {
@@ -934,10 +830,10 @@ void calculate_actions (SnowFight *tabla) {
 		}
 		if (i == 0) {
 			/* Todos murieron */
-			buffer_send[pos_round] = 65;
+			buffer_send[save_pos] = 65;
 			gameover = 1;
 		} else {
-			buffer_send[pos_round] = 0;
+			buffer_send[save_pos] = 0;
 		}
 	}
 	
@@ -1159,6 +1055,8 @@ void manage_client_actions (SnowFight *tabla, int fd, NetworkMessage *msg) {
 
 void remove_table (SnowFight *tabla) {
 	SnowFight *prev;
+	int g;
+	
 	/* Localizar la tabla en la lista ligada y eliminarla */
 	if (lista_partidas == tabla) {
 		/* Primera de la lista */
@@ -1171,6 +1069,15 @@ void remove_table (SnowFight *tabla) {
 		}
 		
 		prev->next = tabla->next;
+	}
+	
+	/* Antes de hacerle free, revisar si dejó objetos creados para eliminarlos */
+	for (g = 0; g < 3; g++) {
+		if (tabla->ninjas[g] != NULL) free (tabla->ninjas[g]);
+	}
+	
+	for (g = 0; g < 4; g++) {
+		if (tabla->enemigos[g] != NULL) free (tabla->enemigos[g]);
 	}
 	
 	free (tabla);
