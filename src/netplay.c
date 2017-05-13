@@ -30,6 +30,8 @@
 
 #include <fcntl.h>
 
+#include <unistd.h>
+
 #include <SDL.h>
 
 #ifdef HAVE_CONFIG_H
@@ -351,33 +353,20 @@ int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 			pos = pos + 2;
 		}
 		
-		/* La cantidad de movimientos por parte de los enemigos */
+		/* La cantidad de enemigos que tienen un movimiento */
 		if (len < pos + 1) return -1;
 		msg->server.enemy_movs = buffer[pos];
 		pos++;
 		
-		if (len < pos + (3 * msg->server.enemy_movs)) return -1;
+		if (len < pos + (4 * msg->server.enemy_movs)) return -1;
 		for (g = 0; g < msg->server.enemy_movs; g++) {
-			msg->server.enemy_movs_coords[g].object = buffer[pos];
-			msg->server.enemy_movs_coords[g].x = buffer[pos + 1];
-			msg->server.enemy_movs_coords[g].y = buffer[pos + 2];
-			
+			msg->server.enemy_actions[g].object = buffer[pos];
+			msg->server.enemy_actions[g].x = buffer[pos + 1];
+			msg->server.enemy_actions[g].y = buffer[pos + 2];
+			msg->server.enemy_actions[g].dest = buffer[pos + 3];
 			/* TODO: Validar que estos datos estén en rango */
-			pos = pos + 3;
-		}
-		
-		/* La cantidad de ataques por parte de los enemigos */
-		if (len < pos + 1) return -1;
-		msg->server.enemy_attacks = buffer[pos];
-		pos++;
-		
-		if (len < pos + (2 * msg->server.enemy_attacks)) return -1;
-		for (g = 0; g < msg->server.enemy_attacks; g++) {
-			msg->server.enemy_attack_coords[g].object = buffer[pos];
-			msg->server.enemy_attack_coords[g].dest   = buffer[pos + 1];
 			
-			/* TODO: Validar que estos datos estén en rango */
-			pos = pos + 2;
+			pos = pos + 4;
 		}
 		
 		/* Leer el round */

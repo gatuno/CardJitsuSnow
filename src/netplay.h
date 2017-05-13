@@ -55,14 +55,19 @@ typedef struct {
 } NetworkAttack;
 
 typedef struct {
+	int object;
+	int x, y;
+	int dest;
+} NetworkEnemyAction;
+
+typedef struct {
 	int ninja_movs;
 	NetworkMove ninja_movs_coords[3];
 	int ninja_attacks;
 	NetworkAttack ninja_attack_coords[3];
 	int enemy_movs;
-	NetworkMove enemy_movs_coords[4];
-	int enemy_attacks;
-	NetworkAttack enemy_attack_coords[4];
+	NetworkEnemyAction enemy_actions[4];
+	
 	int round;
 	int count_next_enemys;
 	ObjectPos next_enemys[4];
@@ -128,6 +133,7 @@ void close_netplay (void);
 void send_join (int ninja, char *nick);
 void send_ready (void);
 void send_actions_done (void);
+void send_action (int ninja, int tipo, int x, int y);
 void process_network_events (void);
 
 extern int NETWORK_EVENT;

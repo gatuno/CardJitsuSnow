@@ -28,6 +28,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <unistd.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -36,6 +38,194 @@
 
 #include "netplay.h"
 #include "snow.h"
+
+#define SERV_PORT 3301
+
+typedef struct PendingWrite {
+	int fd;
+	char buffer[128];
+	int size;
+	
+	int close;
+	
+	struct PendingWrite *next;
+} PendingWrite;
+
+/* Globales manejador de los sockets */
+struct pollfd vigilar[MAX_FDS];
+int fds;
+int agregar_fd[MAX_FDS];
+int agregar_count = 0;
+int eliminar_fd[MAX_FDS];
+int eliminar_count = 0;
+static PendingWrite *writes;
+
+int inicializar_socket (void) {
+	int server, res;
+	struct sockaddr_in6 serv_bind;
+	
+	writes = NULL;
+	
+	server = socket (AF_INET6, SOCK_STREAM, 0);
+	
+	if (server < 0) {
+		perror ("Error al crear el socket");
+		
+		return -1;
+	}
+	
+	memset (&serv_bind, 0, sizeof (serv_bind));
+	
+	serv_bind.sin6_family = AF_INET6;
+	serv_bind.sin6_port = htons (SERV_PORT);
+	memcpy (&serv_bind.sin6_addr.s6_addr, &in6addr_any, sizeof (in6addr_any));
+	
+	if (bind (server, (struct sockaddr *) &serv_bind, sizeof (serv_bind)) < 0) {
+		perror ("Error en el bind");
+		
+		return -1;
+	}
+	
+	res = listen (server, 6);
+	
+	if (res < 0) {
+		perror ("Error en el listen");
+		
+		return -1;
+	}
+	
+	return server;
+}
+
+/* Manejo de sockets */
+void agregar_a_fd (int fd) {
+	agregar_fd[agregar_count] = fd;
+	
+	agregar_count++;
+}
+
+void eliminar_a_fd (int fd) {
+	eliminar_fd[eliminar_count] = fd;
+	
+	eliminar_count++;
+	
+	close (fd);
+}
+
+void agregar_poll (void) {
+	int g;
+	for (g = 0; g < agregar_count; g++) {
+		vigilar[fds].fd = agregar_fd[g];
+		vigilar[fds].events = POLLIN;
+		vigilar[fds].revents = 0;
+		
+		fds++;
+	}
+	
+	agregar_count = 0;
+}
+
+void eliminar_poll (void) {
+	int g, h;
+	
+	/* Recorrer la lista para eliminar los fds viejos */
+	for (g = 0; g < eliminar_count; g++) {
+		for (h = 1; h < fds; h++) {
+			if (eliminar_fd[g] == vigilar[h].fd) {
+				cancel_writes (vigilar[h].fd);
+				/* Sustituir la posición h con la fds - 1 */
+				vigilar[h] = vigilar[fds - 1];
+				
+				fds--;
+				break;
+			}
+		}
+	}
+	
+	eliminar_count = 0;
+}
+
+void agregar_write (int fd, char *buffer, int size, int close) {
+	PendingWrite **pos, *new;
+	int g;
+	
+	pos = &writes;
+	
+	while (*pos != NULL) {
+		pos = &((*pos)->next);
+	}
+	
+	new = (PendingWrite *) malloc (sizeof (PendingWrite));
+	
+	memcpy (new->buffer, buffer, size);
+	new->size = size;
+	new->fd = fd;
+	new->close = close;
+	new->next = NULL;
+	
+	*pos = new;
+	
+	for (g = 1; g < fds; g++) {
+		if (vigilar[g].fd == fd) {
+			vigilar[g].events |= POLLOUT;
+			break;
+		}
+	}
+}
+
+void do_writes (int fd) {
+	PendingWrite *pos, **prev;
+	int g;
+	
+	pos = writes;
+	prev = &writes;
+	while (pos != NULL && pos->fd != fd) {
+		prev = &((*prev)->next);
+		pos = pos->next;
+	}
+	
+	if (pos != NULL) {
+		//printf ("Se envia una escritura pendiente para el fd [%i].\n", fd);
+		/* Ejecutar el write */
+		write (pos->fd, pos->buffer, pos->size);
+		
+		if (pos->close) {
+			//printf ("Y después se solicitó cerrar\n");
+			eliminar_a_fd (pos->fd);
+		}
+		*prev = pos->next;
+		free (pos);
+	} else {
+		/* Desactivar su bandera de POLLOUT */
+		for (g = 1; g < fds; g++) {
+			if (vigilar[g].fd == fd) {
+				vigilar[g].events = POLLIN;
+				break;
+			}
+		}
+	}
+}
+
+void cancel_writes (int fd) {
+	PendingWrite *pos, **prev, *n;
+	
+	prev = &writes;
+	pos = writes;
+	while (pos != NULL) {
+		if (pos->fd == fd) {
+			/* Eliminar este write pendiente */
+			(*prev) = pos->next;
+			n = pos->next;
+			
+			free (pos);
+			pos = n;
+			//printf ("Se canceló una escritura pendiente para el fd [%i]\n", fd);
+		} else {
+			prev = &(pos->next);
+			pos = pos->next;
+		}
+	}
+}
 
 int unpack (NetworkMessage *msg, unsigned char *buffer, int len) {
 	int g, h, e, pos;

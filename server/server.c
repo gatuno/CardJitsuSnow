@@ -47,10 +47,9 @@
 #include "netplay.h"
 #include "server_timer.h"
 
-#define NICK_SIZE 16
-#define SERV_PORT 3301
+#include "server_ia.h"
 
-#define MAX_FDS 50
+#define NICK_SIZE 16
 
 enum {
 	WAITING_CLIENTS = 0,
@@ -89,32 +88,14 @@ typedef struct SnowFight {
 	struct SnowFight *next;
 } SnowFight;
 
-typedef struct PendingWrite {
-	int fd;
-	char buffer[128];
-	int size;
-	
-	int close;
-	
-	struct PendingWrite *next;
-} PendingWrite;
-
 /* Prototipos de función */
-void cancel_writes (int fd);
 void start_tabla (SnowFight *tabla);
 void calculate_actions (SnowFight *tabla);
 void remove_table (SnowFight *tabla);
 
 static SnowFight *lista_partidas;
-static PendingWrite *writes;
 
 static int server_fd;
-static struct pollfd vigilar[MAX_FDS];
-static int fds;
-int agregar_fd[MAX_FDS];
-int agregar_count = 0;
-int eliminar_fd[MAX_FDS];
-int eliminar_count = 0;
 
 int ids_tablas = 1;
 
@@ -128,171 +109,6 @@ static void sigterm_handler (int signum) {
 		}
 		close (sigterm_pipe_fds[1]);
 		sigterm_pipe_fds[1] = -1;
-	}
-}
-
-int inicializar_socket (void) {
-	int server, res;
-	struct sockaddr_in6 serv_bind;
-	
-	server = socket (AF_INET6, SOCK_STREAM, 0);
-	
-	if (server < 0) {
-		perror ("Error al crear el socket");
-		
-		return -1;
-	}
-	
-	memset (&serv_bind, 0, sizeof (serv_bind));
-	
-	serv_bind.sin6_family = AF_INET6;
-	serv_bind.sin6_port = htons (SERV_PORT);
-	memcpy (&serv_bind.sin6_addr.s6_addr, &in6addr_any, sizeof (in6addr_any));
-	
-	if (bind (server, (struct sockaddr *) &serv_bind, sizeof (serv_bind)) < 0) {
-		perror ("Error en el bind");
-		
-		return -1;
-	}
-	
-	res = listen (server, 6);
-	
-	if (res < 0) {
-		perror ("Error en el listen");
-		
-		return -1;
-	}
-	
-	return server;
-}
-
-/* Manejo de sockets */
-void agregar_a_fd (int fd) {
-	agregar_fd[agregar_count] = fd;
-	
-	agregar_count++;
-}
-
-void eliminar_a_fd (int fd) {
-	eliminar_fd[eliminar_count] = fd;
-	
-	eliminar_count++;
-	
-	close (fd);
-}
-
-void agregar_poll (void) {
-	int g;
-	for (g = 0; g < agregar_count; g++) {
-		vigilar[fds].fd = agregar_fd[g];
-		vigilar[fds].events = POLLIN;
-		vigilar[fds].revents = 0;
-		
-		fds++;
-	}
-	
-	agregar_count = 0;
-}
-
-void eliminar_poll (void) {
-	int g, h;
-	
-	/* Recorrer la lista para eliminar los fds viejos */
-	for (g = 0; g < eliminar_count; g++) {
-		for (h = 1; h < fds; h++) {
-			if (eliminar_fd[g] == vigilar[h].fd) {
-				cancel_writes (vigilar[h].fd);
-				/* Sustituir la posición h con la fds - 1 */
-				vigilar[h] = vigilar[fds - 1];
-				
-				fds--;
-				break;
-			}
-		}
-	}
-	
-	eliminar_count = 0;
-}
-
-void agregar_write (int fd, char *buffer, int size, int close) {
-	PendingWrite **pos, *new;
-	int g;
-	
-	pos = &writes;
-	
-	while (*pos != NULL) {
-		pos = &((*pos)->next);
-	}
-	
-	new = (PendingWrite *) malloc (sizeof (PendingWrite));
-	
-	memcpy (new->buffer, buffer, size);
-	new->size = size;
-	new->fd = fd;
-	new->close = close;
-	new->next = NULL;
-	
-	*pos = new;
-	
-	for (g = 1; g < fds; g++) {
-		if (vigilar[g].fd == fd) {
-			vigilar[g].events |= POLLOUT;
-			break;
-		}
-	}
-}
-
-void do_writes (int fd) {
-	PendingWrite *pos, **prev;
-	int g;
-	
-	pos = writes;
-	prev = &writes;
-	while (pos != NULL && pos->fd != fd) {
-		prev = &((*prev)->next);
-		pos = pos->next;
-	}
-	
-	if (pos != NULL) {
-		//printf ("Se envia una escritura pendiente para el fd [%i].\n", fd);
-		/* Ejecutar el write */
-		write (pos->fd, pos->buffer, pos->size);
-		
-		if (pos->close) {
-			//printf ("Y después se solicitó cerrar\n");
-			eliminar_a_fd (pos->fd);
-		}
-		*prev = pos->next;
-		free (pos);
-	} else {
-		/* Desactivar su bandera de POLLOUT */
-		for (g = 1; g < fds; g++) {
-			if (vigilar[g].fd == fd) {
-				vigilar[g].events = POLLIN;
-				break;
-			}
-		}
-	}
-}
-
-void cancel_writes (int fd) {
-	PendingWrite *pos, **prev, *n;
-	
-	prev = &writes;
-	pos = writes;
-	while (pos != NULL) {
-		if (pos->fd == fd) {
-			/* Eliminar este write pendiente */
-			(*prev) = pos->next;
-			n = pos->next;
-			
-			free (pos);
-			pos = n;
-			//printf ("Se canceló una escritura pendiente para el fd [%i]\n", fd);
-		} else {
-			prev = &(pos->next);
-			pos = pos->next;
-		}
 	}
 }
 
@@ -751,44 +567,35 @@ void calculate_actions (SnowFight *tabla) {
 		/* Por cada movimiento, mandar los bytes correspondientes */
 		for (g = 0; g < 4; g++) {
 			if (tabla->enemigos[g] == NULL) continue;
-			if (tabla->enemigos[g]->old_x != tabla->enemigos[g]->x ||
-			    tabla->enemigos[g]->old_y != tabla->enemigos[g]->y) {
+			if ((tabla->enemigos[g]->old_x != tabla->enemigos[g]->x ||
+			    tabla->enemigos[g]->old_y != tabla->enemigos[g]->y) ||
+			    (tabla->enemigos[g]->attack_x != -1 && tabla->enemigos[g]->attack_y != -1)) {
 				
+				/* El enemigo se movió o va a atacar */
+				s++;
+				
+				/* Este es el movimiento */
 				buffer_send[pos] = ENEMY_1 + g;
 				buffer_send[pos + 1] = tabla->enemigos[g]->x;
 				buffer_send[pos + 2] = tabla->enemigos[g]->y;
 				
-				pos = pos + 3;
-				s++;
+				/* Enviar el ataque si es que existe */
+				if (tabla->enemigos[g]->attack_x != -1 && tabla->enemigos[g]->attack_y != -1) {
+					i = tabla->enemigos[g]->attack_x;
+					j = tabla->enemigos[g]->attack_y;
+					
+					buffer_send[pos + 3] = tabla->escenario[j][i];
+				} else {
+					buffer_send[pos + 3] = NONE;
+				}
+				
+				pos = pos + 4;
 			}
 		}
 		
 		buffer_send[save_pos] = s;
-		
-		save_pos = pos++;
-		s = 0;
-		/* Por cada ataque, mandar los bytes */
-		for (g = 0; g < 4; g++) {
-			if (tabla->enemigos[g] == NULL) continue;
-			if (tabla->enemigos[g]->attack_x != -1 && tabla->enemigos[g]->attack_y != -1) {
-				
-				i = tabla->enemigos[g]->attack_x;
-				j = tabla->enemigos[g]->attack_y;
-				
-				buffer_send[pos] = ENEMY_1 + g;
-				buffer_send[pos + 1] = tabla->escenario[j][i];
-				
-				pos = pos + 2;
-				
-				s++;
-			}
-		}
-		
-		buffer_send[save_pos] = s;
-		
 	} else {
 		/* No hay enemigos, mandar 0 en sus movimientos y ataques */
-		buffer_send[pos++] = 0;
 		buffer_send[pos++] = 0;
 	}
 	
@@ -1222,7 +1029,6 @@ int main (int argc, char *argv[]) {
 	}
 	
 	lista_partidas = NULL;
-	writes = NULL;
 	
 	if (pipe (sigterm_pipe_fds) != 0) {
 		perror ("Failed to create SIGTERM pipe");

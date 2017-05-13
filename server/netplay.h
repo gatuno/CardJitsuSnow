@@ -23,10 +23,14 @@
 
 #include <stdint.h>
 
+#include <sys/poll.h>
+
 #define NICK_SIZE 16
 
 #define GPOINTER_TO_INT(p) ((int)  (long) (p))
 #define GINT_TO_POINTER(i) ((void *) (long) (i))
+
+#define MAX_FDS 50
 
 typedef struct {
 	int object, x, y;
@@ -123,14 +127,20 @@ typedef struct {
 	char nick[NICK_SIZE];
 } NinjaInfo;
 
-int setup_netplay (char *server, int puerto);
-void close_netplay (void);
-void send_join (int ninja, char *nick);
-void send_ready (void);
-void send_actions_done (void);
-void process_network_events (void);
+int inicializar_socket (void);
+void agregar_a_fd (int fd);
+void eliminar_a_fd (int fd);
+void agregar_poll (void);
+void eliminar_poll (void);
+void agregar_write (int fd, char *buffer, int size, int close);
+void do_writes (int fd);
+void cancel_writes (int fd);
+int unpack (NetworkMessage *msg, unsigned char *buffer, int len);
 
 extern int NETWORK_EVENT;
+
+extern struct pollfd vigilar[MAX_FDS];
+extern int fds;
 
 #endif /* __NETPLAY_H__ */
 
