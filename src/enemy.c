@@ -72,14 +72,14 @@ static const char *enemy_images_names[NUM_ENEMY_IMAGES] = {
 	
 	"images/enemy/sly_idle.png",
 	"images/enemy/sly_attack.png",
-	"images/enemy/sly_daze.png",
+	"images/enemy/sly_daze.png", // Falta ajuste
 	"images/enemy/sly_hit.png",
 	"images/enemy/sly_move.png",
 	"images/enemy/sly_ko.png",
 	
 	"images/enemy/scrap_idle.png",
 	"images/enemy/scrap_attack.png",
-	"images/enemy/scrap_daze.png",
+	"images/enemy/scrap_daze.png", // Falta ajuste
 	"images/enemy/scrap_hit.png",
 	"images/enemy/scrap_move.png",
 	"images/enemy/scrap_ko.png",
@@ -718,6 +718,7 @@ SnowSprite *enemy_tank_animations[6] = {
 static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.46875, 0.90625, 185.0, 133.0},
 	
+	/* Sly */
 	{0.53125, 1.0625, 63.0, 60.0},
 	{0.46875, 1.0, 152.0, 106.0},
 	{0.625, 1.0625, 74.0, 83.0},
@@ -725,19 +726,21 @@ static float enemy_offsets[NUM_ENEMY_IMAGES][4] = {
 	{0.53125, 1.03125, 68.0, 64.0},
 	{0.5, 0.65625, 195.0, 167.0},
 	
+	/* Scrap */
 	{0.5, 1.03125, 112.0, 93.0},
-	{0.53125, 0.96875, 76.0, 68.0},
+	{1.47368, 2.89705, 76.0, 68.0},
 	{0.40625, 0.9375, 67.0, 85.0},
-	{0.40625, 0.9375, 67.0, 60.0},
-	{0.5, 0.84375, 68.0, 70.0},
-	{0.59375, 0.65625, 77.0, 69.0},
+	{0.83582, 2.03333, 67.0, 60.0},
+	{0.83823, 1.38571, 68.0, 70.0},
+	{1.46753, 1.84057, 77.0, 69.0},
 	
-	{0.53125, 1.0, 77.0, 65.0},
-	{0.5, 1.0, 99.0, 79.0},
+	/* Tank */
+	{0.63636, 1.07692, 77.0, 65.0},
+	{0.78787, 1.45569, 99.0, 79.0},
 	{0.59375, 1.0, 78.0, 72.0},
-	{0.5625, 0.96875, 76.0, 66.0},
-	{0.53125, 1.0, 77.0, 65.0},
-	{0.4375, 0.78125, 77.0, 67.0}
+	{0.7922, 1.36363, 76.0, 66.0},
+	{0.64935, 1.07692, 77.0, 65.0},
+	{1.0, 1.7015, 77.0, 67.0}
 };
 
 struct _Enemy {
@@ -872,8 +875,8 @@ void draw_enemy (Enemy *enemy) {
 		enemy->y_real += enemy->sum_y;
 	}
 	
-	rect.x = enemy->x_real - enemy_offsets_int[est][0] + animation[calc].dest_x;
-	rect.y = enemy->y_real - enemy_offsets_int[est][1] + animation[calc].dest_y;
+	rect.x = enemy->x_real - enemy_offsets_int[enemy->image][0] + animation[calc].dest_x;
+	rect.y = enemy->y_real - enemy_offsets_int[enemy->image][1] + animation[calc].dest_y;
 	
 	if (animation[calc].rot) {
 		rect2.w = rect.h;
@@ -1026,7 +1029,7 @@ int enemy_get_hit_zone (Enemy *enemy, EnemyHitZone *hitzone, int x, int y) {
 		if (h < 0) h = -h;
 		
 		hitzone[0].damage = g + h + 2;
-		hitzone[0].delay = 20;
+		hitzone[0].delay = 50;
 		
 		return 1;
 	} else if (enemy->tipo == ENEMY_SCRAP) {
@@ -1037,10 +1040,10 @@ int enemy_get_hit_zone (Enemy *enemy, EnemyHitZone *hitzone, int x, int y) {
 				hitzone[i].x = g;
 				hitzone[i].y = h;
 				if (g == x && h == y) {
-					hitzone[i].delay = 20;
+					hitzone[i].delay = 54;
 					hitzone[i].damage = 8;
 				} else {
-					hitzone[i].delay = 40;
+					hitzone[i].delay = 64;
 					hitzone[i].damage = 4;
 				}
 				i++;
@@ -1130,3 +1133,11 @@ void setup_enemy (void) {
 		enemy_offsets_int[g][1] = (int) roundf (enemy_offsets[g][1] * enemy_offsets[g][3]);
 	}
 }
+
+void adjust_enemy (int x, int y) {
+	int g = TANK_KO;
+	enemy_offsets_int[g][0] += x;
+	enemy_offsets_int[g][1] += y;
+	printf ("Offset actual: %i, %i\n", enemy_offsets_int[g][0], enemy_offsets_int[g][1]);
+}
+

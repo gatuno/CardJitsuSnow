@@ -47,7 +47,8 @@
 
 #include "select_server.h"
 
-#define FPS (1000/30)
+//#define FPS (2000/1)
+int FPS = (1000/30);
 
 /* Enumerar las imágenes */
 enum {
@@ -887,6 +888,8 @@ int game_finish (void) {
 }
 #endif
 
+void adjust_enemy (int x, int y);
+
 int game_loop (SnowStage *stage) {
 	int done = 0;
 	SDL_Event event;
@@ -990,9 +993,32 @@ int game_loop (SnowStage *stage) {
 							full_screen = 0;
 						}
 						SDL_SetWindowFullscreen (ventana, full_screen);
-					}
-					if (key == SDLK_ESCAPE) {
+					} else if (key == SDLK_ESCAPE) {
 						done = GAME_QUIT;
+					} else if (key == SDLK_DOWN) {
+						adjust_enemy (0, -1);
+					} else if (key == SDLK_UP) {
+						adjust_enemy (0, 1);
+					} else if (key == SDLK_RIGHT) {
+						adjust_enemy (-1, 0);
+					} else if (key == SDLK_LEFT) {
+						adjust_enemy (1, 0);
+					} else if (key == SDLK_a) {
+						FPS = (2000/1);
+					} else if (key == SDLK_s) {
+						FPS = (1000/1);
+					} else if (key == SDLK_d) {
+						FPS = (1000/2);
+					} else if (key == SDLK_f) {
+						FPS = (1000/4);
+					} else if (key == SDLK_g) {
+						FPS = (1000/8);
+					} else if (key == SDLK_h) {
+						FPS = (1000/16);
+					} else if (key == SDLK_j) {
+						FPS = (1000/24);
+					} else if (key == SDLK_k) {
+						FPS = (1000/30);
 					}
 					
 					break;

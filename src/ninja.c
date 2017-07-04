@@ -1136,7 +1136,7 @@ int ninja_get_hit_delay (Ninja *ninja) {
 	if (ninja->tipo == NINJA_SNOW) {
 		return 20;
 	} else if (ninja->tipo == NINJA_WATER) {
-		return 14;
+		return 20;
 	} else if (ninja->tipo == NINJA_FIRE) {
 		return 50;
 	}
